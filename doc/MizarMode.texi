@@ -12,11 +12,11 @@
 @end iftex
 
 
-@set version 1.38
+@set version 1.98
 @set xemacsversion 21.4
-@set fsfversion 20.7
+@set fsfversion 21.2
 @set dosversion 21.2
-@set last-update Sun Jul 27 2003
+@set last-update Sun Dec 12 2004
 
 @ifinfo
 @format
@@ -84,6 +84,7 @@ Mizar Mode @value{version} has been tested with
 * MML Query::                   
 * Mizar Proof Advisor::         
 * MoMM::                        
+* Proof Skeletons::                        
 * Mizar TWiki::                 
 * Function Index::              
 * Variable Index::              
@@ -241,25 +242,16 @@ For basic survival, remember at least that:
 @end table
 
 @c TEXI DOCSTRING MAGIC: mizar-it
-@deffn Command mizar-it &optional util noqr compil
+@deffn Command mizar-it &optional util noqr compil silent forceacc
 Run mizar verifier on the text in the current .miz buffer.@*
 Show the result in buffer *mizar-output*.
 If @var{util} is given, run it instead of verifier.
 If @samp{@code{mizar-use-momm}}, run tptpver instead.
 If @var{noqr}, does not use quick run.
 If @var{compil}, emulate compilation-like behavior for error messages.
+If @var{silent}, just run @var{util} without messaging and errorflagging.
+If @var{forceacc}, run makeenv with the -a option.
 @end deffn
-
-@c TEXI DOCSTRING MAGIC: mizar-launch-dir
-@defopt mizar-launch-dir 
-If non-nil, verifier and other programs are called from here.@*
-Can be set from menu.
-Set this to parent directory, if you use
-private vocanulary file residing in ../dict/ , 
-otherwise Mizar *will not* find it.
-
-The default value is @code{nil}.
-@end defopt
 
 @c TEXI DOCSTRING MAGIC: mizar-compile
 @deffn Command mizar-compile &optional util
@@ -281,18 +273,16 @@ The default value is @code{t}.
 
 @c TEXI DOCSTRING MAGIC: mizar-show-output
 @defopt mizar-show-output 
-Possible values: none, 4, 10, all.@*
-Determines the size of the output window after processing. 
-Can be set from menu
+Determines the size of the output window after processing.@*
+Possible values: none, 4, 10, all.
 
-The default value is @code{10}.
+The default value is @code{4}.
 @end defopt
 
 @c TEXI DOCSTRING MAGIC: mizar-goto-error
 @defopt mizar-goto-error 
 What error to move to after processing.@*
 Possible values are none, first, next, previous.
-Can be set from menu
 
 The default value is @code{"next"}.
 @end defopt
@@ -331,8 +321,7 @@ Indent each nonblank line in the region.
 
 @c TEXI DOCSTRING MAGIC: mizar-indent-width
 @defopt mizar-indent-width 
-Indentation width for Mizar articles.@*
-Customizable from Mizar Mode menu.
+Indentation width for Mizar articles.
 
 The default value is @code{2}.
 @end defopt
@@ -390,7 +379,7 @@ These are lines beginning with ::>.
 @c TEXI DOCSTRING MAGIC: make-reserve-summary
 @deffn Command make-reserve-summary 
 Make a summary of all type reservations before current point in the article.@*
-Display it in the buffer *Reservation-Summary* in other window.
+Display it in the @samp{@strong{Occur}} buffer, which uses the @samp{@code{occur-mode}}.
 Previous contents of that buffer are killed first.
 Useful for finding out the exact meaning of variables used in
 some Mizar theorem or definition.
@@ -525,13 +514,13 @@ Find vocabulary for a symbol.
 
 @c TEXI DOCSTRING MAGIC: mizar-listvoc
 @deffn Command mizar-listvoc 
-List vocabularies.
+List vocabulary.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-constr
 @deffn Command mizar-constr 
-Show required constructors directives.@*
-Directives needed for Mizar theorems, definitions, 
+Show required constructors files.@*
+Constructor files needed for Mizar theorems, definitions, 
 schemes or complete articles can be queried.
 @end deffn
 
@@ -762,7 +751,7 @@ shows the symbol's completions.
 @c TEXI DOCSTRING MAGIC: mizar-mouse-direct-symbol-def
 @deffn Command mizar-mouse-direct-symbol-def 
 <S-down-mouse-3> is bound to this function.@*
-Goes directly to the best match of the symbol under the mouse click.
+Goes directly to the first match of the symbol under the mouse click.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-show-ref
@@ -1025,7 +1014,10 @@ explanation points to appear, @xref{How Constructor explanations work}.
 
 @c TEXI DOCSTRING MAGIC: mizar-do-expl
 @defopt mizar-do-expl 
+Use constructor explanations.@*
 Put constructor format of @code{'by'} items as properties after verifier run.
+The constructor representation can then be displayed 
+(according to the value of @samp{@code{mizar-expl-kind}}) and queried.
 
 The default value is @code{nil}.
 @end defopt
@@ -1033,12 +1025,19 @@ The default value is @code{nil}.
 @c TEXI DOCSTRING MAGIC: mizar-expl-kind
 @defopt mizar-expl-kind 
 Variable controlling the display of constructor representation of formulas.@*
+Has effect iff @samp{@code{mizar-do-expl}} is non-nil.
 Possible values are now 
+
+@code{'sorted} for sorted list of constructors in absolute notation.
+@code{'constructors} for list of constructors in absolute notation,
+@code{'mmlquery} behaves as @code{'sorted}, but constructors are inserted
+directly into the @strong{mmlquery} input buffer.
+The mmlquery interpreter has to be installed for this,
+see @samp{@code{mmlquery-program-name}}.
+@code{'translate} for expanded formula in absolute notation,
 @code{'raw} for the internal Mizar representation,
 @code{'expanded} for expansion of clusters,
-@code{'translate} for expanded formula in absolute notation,
-@code{'constructors} for list of constructors in absolute notation,
-@code{'sorted} for sorted list of constructors in absolute notation.
+
 The values @code{'raw} and @code{'expanded} are for debugging only, do
 not use them to get constructor explanatios.
 
@@ -1047,7 +1046,8 @@ The default value is @code{sorted}.
 
 @c TEXI DOCSTRING MAGIC: mizar-underline-expls
 @defopt mizar-underline-expls 
-If t, the clickable explanation spots in mizar buffer are underlined.
+If t, the clickable explanation spots in mizar buffer are underlined.@*
+Has effect iff @samp{@code{mizar-do-expl}} is non-nil.
 
 The default value is @code{nil}.
 @end defopt
@@ -1056,7 +1056,8 @@ The default value is @code{nil}.
 @deffn Command mizar-show-constrs-other-window event
 Show constructors of the inference you click on.@*
 The constructors are translated according to the variable 
-@samp{@code{mizar-expl-kind}}, and shown in the buffer *Constructors list*.
+@samp{@code{mizar-expl-kind}}, and shown in the buffer *Constructors list*
+or @strong{mmlquery} if @samp{@code{mizar-expl-kind}} is @code{'mmlquery}.
 The variable @samp{@code{mizar-do-expl}} should be non-nil.
 @end deffn
 
@@ -1075,12 +1076,19 @@ useful information.
 
 Available operations now include 
 @itemize
+@item Browsing the semantically disambiguated MMLQuery abstract (GABs, see below)
 @item Asking MML Query (@xref{MML Query},) for meaning of a constructor.
 @item Using tags (@xref{Browsing Functions},) to see the definition 
       of a constructor.
 @item Sending the whole formula to Mizar Proof Advisor,
 @xref{Mizar Proof Advisor}.
 @end itemize
+
+The MMlQuery abstracts (GABs) are now the preferred browsing methods,
+however they are not yet distributed with Mizar. They are downloadable
+from Grezgorz Bancerek's site 
+@uref{http://merak.pb.bialystok.pl/mmlquery/downloads/}. The detailed
+description is at @uref{http://kti.mff.cuni.cz/~urban/integration.pdf}.
 
 The following special keybindings are available in the buffer
 *Constructors list*.
@@ -1100,22 +1108,22 @@ The following special keybindings are available in the buffer
 
 @c TEXI DOCSTRING MAGIC: mizar-mouse-cstr-tag
 @deffn Command mizar-mouse-cstr-tag event
-Find the definition of the constructor we clicked on.
+Find the definition of the mmlquery resource we clicked on.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-kbd-cstr-tag
 @deffn Command mizar-kbd-cstr-tag pos
-Find the definition of the constructor at position @var{pos}.
+Find the definition of the mmlquery resource at position @var{pos}.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-mouse-ask-query
 @deffn Command mizar-mouse-ask-query event
-Ask MML Query about the constructor we clicked on.
+Ask MML Query about the mmlquery resource we clicked on.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-kbd-ask-query
 @deffn Command mizar-kbd-ask-query pos
-Ask MML Query about the constructor at position @var{pos}.
+Ask MML Query about the mmlquery resource at position @var{pos}.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-ask-advisor
@@ -1210,7 +1218,7 @@ With a numeric prefix @var{arg}, go back @var{arg} queries.
 
 @c TEXI DOCSTRING MAGIC: query-next-squery
 @deffn Command query-next-squery arg
-Cycle forwards through comment history.@*
+Cycle forward through comment history.@*
 With a numeric prefix @var{arg}, go forward @var{arg} queries.
 @end deffn
 
@@ -1221,7 +1229,7 @@ Search forwards through squery history for substring match of @var{str}.
 
 @c TEXI DOCSTRING MAGIC: query-squery-search-reverse
 @deffn Command query-squery-search-reverse str
-Search backwards through squery history for substring match of @var{str}.
+Search backward through squery history for substring match of @var{str}.
 @end deffn
 
 
@@ -1252,7 +1260,7 @@ command @kbd{C-c C-c} (@code{mizar-ask-advisor}) to get the advice.
 
 @c TEXI DOCSTRING MAGIC: advisor-limit
 @defopt advisor-limit 
-The number of hits you want Mizar proof Advisor to send you.
+The number of hits you want Mizar Proof Advisor to send you.
 
 The default value is @code{30}.
 @end defopt
@@ -1265,7 +1273,7 @@ keyboard bindings can be used to view the suggested references.
 
 @end deffn
 
-@node MoMM, Mizar TWiki, Mizar Proof Advisor, Top
+@node MoMM, Proof Skeletons, Mizar Proof Advisor, Top
 @chapter MoMM
 @cindex momm
 
@@ -1397,7 +1405,72 @@ Ask MoMM for hints on an error at click @var{event}.@*
 The results are put into the buffer *MoMM's Hints*.
 @end deffn
 
-@node Mizar TWiki, Function Index, MoMM, Top
+@node Proof Skeletons, Mizar TWiki, MoMM, Top
+@chapter Proof Skeletons
+@kindex C-c s
+@cindex skeletons
+
+@table @kbd
+@item  C-c s
+@code{mizar-insert-skeleton}
+@end table
+
+You can use this feature to automatically create the basic
+skeleton proof steps for a proof of any formula.
+
+@c TEXI DOCSTRING MAGIC: mizar-skeleton-labels
+@defopt mizar-skeleton-labels 
+If set, skeleton steps produced by @samp{@code{mizar-insert-skeleton}} are labeled.
+
+The default value is @code{nil}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-default-label-name
+@defopt mizar-default-label-name 
+Default name of labels inserted when @samp{@code{mizar-skeleton-labels}} is set.@*
+This is appended with a label number.
+
+The default value is @code{"Z"}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-assume-items-func
+@defopt mizar-assume-items-func 
+The function creating assumption skeletons out of a parsed formula.@*
+See @samp{@code{mizar-default-assume-items}} for an example.
+This function is called for creating assumptions in the function
+@samp{@code{mizar-default-skeleton-items}}.
+
+The default value is @code{mizar-default-assume-items}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-skeleton-items-func
+@defopt mizar-skeleton-items-func 
+The function creating proof skeletons out of a parsed formula.@*
+See @samp{@code{mizar-default-skeleton-items}} for an example.
+This function is called in the interactive function
+@samp{@code{mizar-insert-skeleton}}.
+
+The default value is @code{mizar-default-skeleton-items}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-insert-skeleton
+@deffn Command mizar-insert-skeleton beg end &optional labnr
+Insert a proof skeleton for formula starting at @var{beg} after point @var{end}.@*
+For normal interactive usage, just select the region containing 
+the formula, and run this function. 
+If @samp{@code{mizar-skeleton-labels}} is set, prompts additionaly for the
+first starting label number @var{labnr}. The labels are then generated
+using the @samp{@code{mizar-default-label-name}} string.
+The lisppars utility needs to be installed for this to work -
+it is distributed with Mizar since version 6.4, and the
+formula has to be accessible in the article to the Mizar parser -
+e.g. not commented.
+Calls @samp{@code{mizar-parse-region-fla}} to parse the formula, Then creates the
+skeleton using @samp{@code{mizar-skeleton-items-func}}, and pretty prints it using
+@samp{@code{mizar-skeleton-string}}.
+@end deffn
+
+@node Mizar TWiki, Function Index, Proof Skeletons, Top
 @chapter Mizar TWiki
 @cindex twiki
 
