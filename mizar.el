@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.40 $
+;; $Revision: 1.41 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -388,7 +388,7 @@ Used for exact completion.")
 ;; ref-completion,should be improved for definitions
 (defvar mizar-ref-char-regexp "[A-Za-z0-9:'_]")
 (defun mizar-ref-complete ()
-"Complete the current reference useing dabbrevs from current buffer."
+"Complete the current reference using dabbrevs from current buffer."
 (interactive)
 (let ((old-check dabbrev-check-other-buffers)
       (old-regexp dabbrev-abbrev-char-regexp)
@@ -492,7 +492,7 @@ INDENT is the current indentation level."
   (let ((file (speedbar-line-path indent)))
     (speedbar-find-file-in-frame file)
     (save-excursion (speedbar-stealthy-updates))
-    ;; Reset the timer with a new timeout when cliking a file
+    ;; Reset the timer with a new timeout when clicking a file
     ;; in case the user was navigating directories, we can cancel
     ;; that other timer.
     (speedbar-set-timer speedbar-update-speed)
@@ -503,7 +503,7 @@ INDENT is the current indentation level."
     (speedbar-maybee-jump-to-attached-frame)
     ))
 
-;;;;;;;;;;;;  tha tags handling starts here ;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;  the tags handling starts here ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; xemacs seems unhappy yet
 
 (put 'mizar-mode 'find-tag-default-function 'mizar-ref-at-point)
@@ -911,7 +911,7 @@ Nil if no errors."
     mizar-symbols-regexp)))
 
 ;;;;;;; some cluster hacking (also for MMLQuery) ;;;;;;;;;;;;;;;;;;
-;;; this should be improved by outputing the cluster tables after
+;;; this should be improved by outputting the cluster tables after
 ; analyzer (or having interactive verifier), we now have only clusters
 ; after accommodation
 
@@ -1180,7 +1180,7 @@ The clusters inside FRM must already be expanded here."
 (frmrepr (fix-pre-type frm) cstronly))
 
 (defun mizar-getbys (aname)
-  "Get consructor repr of bys from the .pre file for ANAME."
+  "Get constructor repr of bys from the .pre file for ANAME."
   (let ((prename (concat aname ".pre")))
     (or (file-readable-p prename)
 	(error "File unreadable: %s" prename))
@@ -1414,7 +1414,7 @@ keyboard bindings can be used to view the suggested references.
       (if abuffer
 	  (progn (set-buffer abuffer)
 		 (mizar-mode))
-	(message "No refernces advised")))
+	(message "No references advised")))
     ))
 
 (defun mizar-toggle-cstr-expl (to)
@@ -1589,7 +1589,7 @@ With a numeric prefix ARG, go forward ARG queries."
 ;;;;;;;;;;;;;;;;;;;;; MoMM ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Caution, this version of mizar.el is transitory. I have
 ;; ported the Constr. Explanations to Mizar 6.2. here, but MoMM 0.2
-;; is still based on Mizar 6.1, so incase you have Mizar 6.2, MoMM
+;; is still based on Mizar 6.1, so in case you have Mizar 6.2, MoMM
 ;; will not work. I hope to port MoMM to Mizar 6.2. shortly. If you
 ;; want to use it in the meantime, use Mizar 6.1. and previous
 ;; version of mizar.el .
@@ -1710,7 +1710,7 @@ Get COUNT of them beginning at the START position."
 Created from its .evl file."
 (let ((evlname (concat aname ".evl")))
   (or (file-readable-p evlname)
-	(error "File unreadable: %s, run accomodator first" evlname))
+	(error "File unreadable: %s, run accommodator first" evlname))
   (let ((evldate (cadr (nth 5 (file-attributes evlname)))))
     (if (/= evl-table-date evldate)
 	(let ((decl (with-temp-buffer
@@ -1732,7 +1732,7 @@ Created from its .evl file."
   (elt (get-evl aname) the-dir-order))
 
 (defun get-all-dirs (aname)
-"Return list of all names occuring in some directive for ANAME."
+"Return list of all names occurring in some directive for ANAME."
 (let ((d (get-evl aname))
       res (i 0))
   (while  (< i directivenbr)
@@ -1741,7 +1741,7 @@ Created from its .evl file."
   (unique res)))
 
 (defun get-all-dirs-rec (aname)
-"Return list of all names occuring in some directive for ANAME,
+"Return list of all names occurring in some directive for ANAME,
 plus transitive hull of constructors."
 (get-sgl-table aname)
 (unique (append cstrnames (get-all-dirs aname))))
@@ -2484,7 +2484,7 @@ If UTIL is given, call it instead of the Mizar verifier."
 	   (mizar-previous-error))
 	  (t pos))))
 
-(defvar makeenv "makeenv" "Program used for creating the article envionment.")
+(defvar makeenv "makeenv" "Program used for creating the article environment.")
 
 (defun mizar-it (&optional util noqr compil)
 "Run mizar verifier on the text in the current .miz buffer.
@@ -2694,7 +2694,7 @@ schemes or complete articles can be queried."
 Show the error explanation in the minibuffer."
   (interactive)
   (let ((oldpos (point))
-	(inerrl nil) ;; tells if we strat from an error line
+	(inerrl nil) ;; tells if we start from an error line
 	result pos)
     (beginning-of-line)
     (if (looking-at mizar-error-start)
@@ -2721,7 +2721,7 @@ Show the error explanation in the minibuffer."
 Show the error explanation in the minibuffer."
   (interactive)
   (let ((oldpos (point))
-	(inerrl nil) ;; tells if we strat from an error line
+	(inerrl nil) ;; tells if we start from an error line
 	result pos)
     (beginning-of-line)
     (if (looking-at mizar-error-start)
