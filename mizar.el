@@ -253,10 +253,17 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
   (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
-  (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
-  (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
-  (define-key mizar-mode-map [(shift down-mouse-1)]     'mizar-mouse-direct-show-ref)
-  (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history)
+  (define-key mizar-mode-map "\C-c\C-q" 'query-start-entry)
+  (if (eq mizar-emacs 'xemacs)
+      (progn
+	(define-key mizar-mode-map [button3]     'mizar-mouse-symbol-def)
+	(define-key mizar-mode-map [(shift button3)]     'mizar-mouse-direct-symbol-def)
+	(define-key mizar-mode-map [(shift button1)]     'mizar-mouse-direct-show-ref)
+	(define-key mizar-mode-map [(shift button2)]     'mouse-find-tag-history))
+    (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
+    (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
+    (define-key mizar-mode-map [(shift down-mouse-1)]     'mizar-mouse-direct-show-ref)
+    (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history))
   (define-key mizar-mode-map "\M-."     'mizar-show-ref)
   (mizar-mode-commands mizar-mode-map))
 
@@ -1109,10 +1116,15 @@ mizar buffer, underlines and mouse-highlites the places"
   (let ((bys (mizar-getbys aname))
 	(oldhook after-change-functions)
 	(map (make-sparse-keymap))
-	props)
+	map_kword button_kword props)
     (setq after-change-functions nil)
-    (define-key map [mouse-2] 'mizar-show-constrs-other-window)
-    (setq props (list 'mouse-face 'highlight 'local-map map))
+    (if (eq mizar-emacs 'xemacs) 
+	(setq map_kword 'keymap
+	      button_kword [button2])
+      (setq map_kword 'local-map
+	      button_kword [mouse-2]))
+    (define-key map button_kword 'mizar-show-constrs-other-window)
+    (setq props (list 'mouse-face 'highlight map_kword map))
     (if mizar-underline-expls 
 	(setq props (append props '(face underline))))
     (while bys
@@ -1143,26 +1155,40 @@ mizar buffer, underlines and mouse-highlites the places"
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-m" 'mizar-kbd-ask-query)
     (define-key map "\M-." 'mizar-kbd-cstr-tag)    
-    (define-key map [mouse-2] 'mizar-mouse-ask-query)
-    (define-key map [mouse-3] 'mizar-mouse-cstr-tag)    
+    (if (eq mizar-emacs 'xemacs)
+	(progn 
+	  (define-key map [button2] 'mizar-mouse-ask-query)
+	  (define-key map [button3] 'mizar-mouse-cstr-tag))      
+      (define-key map [mouse-2] 'mizar-mouse-ask-query)
+      (define-key map [mouse-3] 'mizar-mouse-cstr-tag))
     map)
 "Keymap used in the buffer *Constructors list* for viewing constructor 
 meanings via symbtags or sending constructor queries to MML Query. 
 Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 
-(defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/meaning.cgi")
-(defvar megrez-url "http://smegrez.cs.shinshu-u.ac.jp/cgi-bin/meaning.cgi")
-(defvar query-meaning-url megrez-url)
+(defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/")
+(defvar megrez-url "http://smegrez.cs.shinshu-u.ac.jp/cgi-bin/")
+(defvar query-url megrez-url)
+(defvar query-text-output nil 
+"if nonnil, text output is required from MML Query")
 (defvar mizar-query-browser nil 
 "browser for Query, we allow 'w3 or default")
 
-(defun mizar-ask-query (cstr)
-"Send a constructor query to MML Query"
-(interactive "s")
-(let ((query (concat query-meaning-url "?entry=" cstr)))
+; Xemacs vs. Emacs
+(if (not (fboundp 'event-window))
+    (fset 'event-window (lambda (e) (posn-window (event-end e)))))
+(if (not (fboundp 'event-point))
+    (fset 'event-point (lambda (e) (posn-point (event-end e)))))
+
+(defun mizar-ask-query (query)
   (if (eq mizar-query-browser 'w3)
       (browse-url-w3 query)
-    (browse-url query))))
+    (browse-url query)))
+
+(defun mizar-ask-meaning-query (cstr)
+"Send a constructor query to MML Query"
+(interactive "s")
+(mizar-ask-query (concat query-url "meaning.cgi?entry=" cstr)))
 
 (defun mizar-cstr-at-point (pos &optional agg2str)
 "Get the constructor around pos, if agg2str, replace aggr by struct"
@@ -1177,15 +1203,15 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 
 (defun mizar-mouse-ask-query (event)
   (interactive "e")
-  (select-window (posn-window (event-end event)))
-  (let ((cstr (mizar-cstr-at-point (posn-point (event-end event)))))
-    (if cstr (mizar-ask-query cstr)
+  (select-window (event-window event))
+  (let ((cstr (mizar-cstr-at-point (event-point event))))
+    (if cstr (mizar-ask-meaning-query cstr)
       (message "No constructor at point"))))
 
 (defun mizar-kbd-ask-query (pos)
   (interactive "d")
   (let ((cstr (mizar-cstr-at-point pos)))
-    (if cstr (mizar-ask-query cstr)
+    (if cstr (mizar-ask-meaning-query cstr)
       (message "No constructor at point"))))
 
 (defun mizar-kbd-cstr-tag (pos)
@@ -1196,8 +1222,8 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 
 (defun mizar-mouse-cstr-tag (event)
   (interactive "e")
-  (select-window (posn-window (event-end event)))
-  (let ((cstr (mizar-cstr-at-point (posn-point (event-end event)) t)))
+  (select-window (event-window event))
+  (let ((cstr (mizar-cstr-at-point (event-point event) t)))
     (if cstr (mizar-symbol-def t cstr t)
       (message "No constructor at point"))))
 
@@ -1212,9 +1238,9 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 (defun mizar-show-constrs-other-window (event)
   "show constr of the inference you click on."
   (interactive "e")
-  (select-window (posn-window (event-end event)))
+  (select-window (event-window event))
   (save-excursion
-    (let ((frm (get-text-property (posn-point (event-end event)) 'expl)))
+    (let ((frm (get-text-property (event-point event) 'expl)))
       (if frm
 	  (let ((res 
 		 (cond ((eq mizar-expl-kind 'raw) frm)
@@ -1224,7 +1250,7 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 			(prin1-to-string (expfrmrepr frm cluster-table t)))
 		       (t "")))
 		(cbuf (get-buffer-create "*Constructors list*")))
-	    (goto-char (posn-point (event-end event)))
+	    (goto-char (event-point event))
 	    (set-buffer cbuf)
 	    (erase-buffer)
 	    (insert res)    
@@ -1237,6 +1263,162 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
   (cond ((eq to 'none) (setq  mizar-do-expl nil))
 	(t (setq  mizar-expl-kind to
 		  mizar-do-expl t))))
+
+
+
+
+;; Code for access to the squery ring
+;; mostly stolen from vc 
+;; (these history funcs should be done generically in some emacs library)
+(defconst query-maximum-squery-ring-size 128
+  "Maximum number of saved comments in the comment ring.")
+(defvar query-squery-ring (make-ring query-maximum-squery-ring-size))
+(defvar query-squery-ring-index nil)
+(defvar query-last-squery-match nil)
+(defvar query-entry-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\M-n" 'query-next-squery)
+    (define-key map "\M-p" 'query-previous-squery)
+    (define-key map "\M-r" 'query-squery-search-reverse)
+    (define-key map "\M-s" 'query-squery-search-forward)
+    (define-key map "\C-c\C-c" 'query-send-entry)
+    map)
+"Keymap used in the *MML Query Input* buffer"
+)
+
+(defun query-entry-mode ()
+  "Minor mode for sending MML Queries.
+These bindings are added to the global keymap when you enter this mode:
+\\[query-send-entry]	send the query to MML Query, ending log message entry
+
+Whenever you send a query, it is added to a ring of
+saved queries.  These can be recalled as follows:
+
+\\[query-next-squery]	replace region with next message in squery ring
+\\[query-previous-squery]	replace region with previous message in squery ring
+\\[query-squery-search-reverse]	search backward for regexp in the squery ring
+\\[query-squery-search-forward]	search backward for regexp in the squery ring
+
+Entry to the query-entry submode calls the value of text-mode-hook, then
+the value of query-entry-mode-hook.
+"
+  (interactive)
+  (set-syntax-table text-mode-syntax-table)
+  (use-local-map query-entry-map)
+  (setq local-abbrev-table text-mode-abbrev-table)
+  (setq major-mode 'query-entry-mode)
+  (setq mode-name "Query-entry")
+  (make-local-variable 'query-squery-ring-index)
+  (set-buffer-modified-p nil)
+  (setq buffer-file-name nil)
+  (run-hooks 'text-mode-hook 'query-entry-mode-hook)
+)
+
+(defun query-start-entry ()
+"Starts a new query in buffer *MML Query input*"
+  (interactive)
+  (let ((buf  (or (get-buffer "*MML Query input*")
+		  (get-buffer-create "*MML Query input*"))))
+    (pop-to-buffer buf)
+    (erase-buffer)
+    (if (not (eq major-mode 'query-entry-mode))
+	(query-entry-mode)))
+  (message "Enter a query. Type C-c C-c when done.")
+)
+
+(defun alfanump (nr)
+  (or (and (< nr 123) (< 96 nr))
+      (and (< nr 91) (< 64 nr))
+      (and (< nr 58) (< 47 nr))))
+
+(defun query-handle-chars-cgi (str)
+"replace nonalfanumeric chars by %code"
+(let ((slist (string-to-list str))
+      (space (nreverse (string-to-list (format "%%%x" 32))))
+      res codel)
+  (if (eq mizar-emacs 'xemacs)
+      (setq slist (mapcar 'char-to-int slist)))
+  (while slist
+    (let ((i (car slist)))
+      (cond ((alfanump i)
+	     (setq res (cons i res)))   
+	    ((member i '(32 10 9 13))        ; "[ \n\t\r]"
+	     (setq res (append space res)))
+	    (t
+	     (setq codel (nreverse (string-to-list (format "%x" i))))
+	     (setq res (nconc codel (cons 37 res))))))
+    (setq slist (cdr slist)))
+  (concat (nreverse res))))
+
+
+
+(defun query-send-entry (&optional nocomment)
+  "Send the contents of the current buffer to MML Query."
+  (interactive)
+  (ring-insert query-squery-ring (buffer-string))
+  (let ((query (concat query-url "search.cgi?input=" 
+		     (query-handle-chars-cgi (buffer-string)))))
+  (if query-text-output
+      (setq query (concat query "&text=1")))
+  (mizar-ask-query query)))
+
+(defun query-previous-squery (arg)
+  "Cycle backwards through query-squery history."
+  (interactive "*p")
+  (let ((len (ring-length query-squery-ring)))
+    (cond ((<= len 0)
+	   (message "Empty query-squery ring")
+	   (ding))
+	  (t
+	   (erase-buffer)
+	   ;; Initialize the index on the first use of this command
+	   ;; so that the first M-p gets index 0, and the first M-n gets
+	   ;; index -1.
+	   (if (null query-squery-ring-index)
+	       (setq query-squery-ring-index
+		     (if (> arg 0) -1
+			 (if (< arg 0) 1 0))))
+	   (setq query-squery-ring-index
+		 (mod (+ query-squery-ring-index arg) len))
+	   (message "%d" (1+ query-squery-ring-index))
+	   (insert (ring-ref query-squery-ring query-squery-ring-index))))))
+
+(defun query-next-squery (arg)
+  "Cycle forwards through comment history."
+  (interactive "*p")
+  (query-previous-squery (- arg)))
+
+(defun query-squery-search-reverse (str)
+  "Searches backwards through squery history for substring match."
+  (interactive "sPrevious query matching (regexp): ")
+  (if (string= str "")
+      (setq str query-last-squery-match)
+    (setq query-last-squery-match str))
+  (if (null query-squery-ring-index)
+      (setq query-squery-ring-index -1))
+  (let ((len (ring-length query-squery-ring))
+	(n (1+ query-squery-ring-index)))
+    (while (and (< n len) (not (string-match str (ring-ref query-squery-ring n))))
+      (setq n (+ n 1)))
+    (cond ((< n len)
+	   (query-previous-squery (- n query-squery-ring-index)))
+	  (t (error "Not found")))))
+
+(defun query-squery-search-forward (str)
+  "Searches forwards through squery history for substring match."
+  (interactive "sNext query matching (regexp): ")
+  (if (string= str "")
+      (setq str query-last-squery-match)
+    (setq query-last-squery-match str))
+  (if (null query-squery-ring-index)
+      (setq query-squery-ring-index 0))
+  (let ((len (ring-length query-squery-ring))
+	(n query-squery-ring-index))
+    (while (and (>= n 0) (not (string-match str (ring-ref query-squery-ring n))))
+      (setq n (- n 1)))
+    (cond ((>= n 0)
+	   (query-next-squery (- n query-squery-ring-index)))
+	  (t (error "Not found")))))
 
 
 ;;;;;;;;;;;;;;;  abbrevs for article references ;;;;;;;;;;;;
@@ -2016,13 +2198,13 @@ functions:
 	     :style radio :selected 
 	     (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]   
 	    )
-	    ("MML Query server" :active mizar-do-expl
-	     ["Megrez" (setq query-meaning-url megrez-url) :style radio :selected (equal query-meaning-url megrez-url) :active t]
-	     ["Alioth" (setq query-meaning-url alioth-url) :style radio :selected (equal query-meaning-url alioth-url) :active t]
+	    ("MML Query server" 
+	     ["Megrez" (setq query-url megrez-url) :style radio :selected (equal query-url megrez-url) :active mizar-do-expl]
+	     ["Alioth" (setq query-url alioth-url) :style radio :selected (equal query-url alioth-url) :active mizar-do-expl]
 	     )
-	    ("MML Query browser" :active mizar-do-expl
-	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active t]
-	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active t]
+	    ("MML Query browser" 
+	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active mizar-do-exp]
+	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active mizar-do-exp]
 	     )	    
 	    ["Underline explanation points" 
 	     (setq mizar-underline-expls 
