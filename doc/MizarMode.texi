@@ -12,11 +12,11 @@
 @end iftex
 
 
-@set version 1.36
+@set version 1.38
 @set xemacsversion 21.4
 @set fsfversion 20.7
 @set dosversion 21.2
-@set last-update Thu Jul 24 2003
+@set last-update Sun Jul 27 2003
 
 @ifinfo
 @format
