@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.70 $
+;; $Revision: 1.71 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -3872,7 +3872,7 @@ If FORCEACC, run makeenv with the -a option."
 		  (name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
 		  (old-dir (file-name-directory name)))
-	     (cd (concat old-dir "/.."))
+	     (cd (concat old-dir ".."))
 	     (if mizar-noqr-data (kill-process (cdr mizar-noqr-data)))
 	     ;; now mizar-noqr-data is nil, it was cleared by the handler
 	     (if mizar-noqr-data (error "Previous process unkillable"))
@@ -3921,7 +3921,7 @@ If FORCEACC, run makeenv with the -a option."
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
 		  (old-dir (file-name-directory name)))
-	     (cd (concat old-dir "/.."))
+	     (cd (concat old-dir ".."))
 ;;	     (if mizar-launch-dir (cd mizar-launch-dir))
 	     (unless silent (mizar-strip-errors))
 	     (save-buffer)
