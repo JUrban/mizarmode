@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.101 $
+;; $Revision: 1.102 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -391,7 +391,8 @@ MoMM should be installed for this."
 (defcustom mizar-main-keywords 
 (list "theorem" "scheme" "definition" "registration" 
       "notation" "schemes" "constructors" "definitions" 
-      "theorems" "vocabulary" "clusters" "requirements" )
+      "theorems" "vocabulary" "requirements" "registrations" 
+      "notations")
 "*Keywords starting main mizar text items. 
 Now also the environmental declarations."
 :type '(repeat string)
@@ -678,7 +679,7 @@ Used for exact completion.")
     (cond
      ((looking-at "::::::") 0)		;Large comment starts
      ((looking-at "::") (current-column)) ;Small comment starts
-     ((looking-at "\\b\\(theorem\\|scheme\\|definition\\|registration\\|environ\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\|reserve\\|begin\\)\\b") 0)
+     ((looking-at "\\b\\(theorem\\|scheme\\|definition\\|registration\\|registrations\\|environ\\|vocabulary\\|constructors\\|requirements\\|notation\\|notations\\|reserve\\|begin\\)\\b") 0)
      ((bobp) 0)				;Beginning of buffer
      (t
       (let ((empty t) ind more less res)
@@ -710,7 +711,7 @@ Used for exact completion.")
 	  ;; Real mizar code
 	  (cond ((looking-at "\\b\\(proof\\|now\\|hereby\\|case\\|suppose\\)\\b")
 		 (setq res (+ ind mizar-indent-width)))
-		((looking-at "\\b\\(definition\\|scheme\\|theorem\\|registration\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\|reserve\\|begin\\)\\b")
+		((looking-at "\\b\\(definition\\|scheme\\|theorem\\|registration\\|registrations\\|vocabulary\\|constructors\\|requirements\\|notation\\|notations\\|reserve\\|begin\\)\\b")
 		 (setq res (+ ind 2)))
  		(t (setq res ind)))
 	  (if less (max (- ind mizar-indent-width) 0)
@@ -4373,8 +4374,8 @@ Show them in the buffer *Constructors List*."
   ("Attributes" "[ \n\r]\\(attr\\b.*\\)" 1)
   ("Predicates" "[ \n\r]\\(pred\\b.*\\)" 1)
   ("Functors" "[ \n\r]\\(func\\b.*\\)" 1)
-  ("Notation" "[ \n\r]\\(\\(synonym\\|antonym\\)\\b.*\\)" 1)
-  ("Clusters" "[ \n\r]\\(cluster\\b.*\\)" 1)
+  ("Notations" "[ \n\r]\\(\\(synonym\\|antonym\\)\\b.*\\)" 1)
+  ("Registrations" "[ \n\r]\\(cluster\\b.*\\)" 1)
   ("Schemes" "^[ ]*scheme[ \n\r]+\\([a-zA-Z0-9_']+\\)" 1)
   ("Named Defs" "[ \n\r]\\(:[a-zA-Z0-9_']+:\\)[ \n\r]" 1)
   ("Named Theorems" "^[ ]*theorem[ \n\r]+\\([a-zA-Z0-9_']+:\\)[ \n\r]" 1)
