@@ -1,0 +1,23 @@
+installing the fonts in X windows:
+
+1. put the fonts in the directory where your other X windows fonts are stored
+   (e.g. /usr/X11R6/lib/X11/fonts/misc )
+2. run "mkfontdir" in the directory
+3. restart xfs (X Font Server) ... under RedHat this can be done by running
+   "/etc/rc.d/init.d/xfs restart", generally, if you do not find out how to do it,
+   just reboot
+4. try it, run e.g. "xterm -fn sabvga" and inside the xterm run e.g.
+   "more boole.miz" and see if the dos-specific characters are displayed properly
+
+
+to use it then in Emacs, run "M-x set-default-font sabvga"
+
+To enter special characters inside Emacs, run "C-q xxx RET",
+where "xxx" stands for ASCII code of the character.
+E.g. "C-q 237 RET" enters the symbol for empty set.
+Emacs can use octal, decimal and hexadecimal digits for the ASCII code,
+so if you want to use e.g. decimal ASCII codes, you may need to customize
+the variable "read-quoted-char-radix".
+It's done e.g. this way: run "M-x customize-save-variable RET",
+on prompt type   "read-quoted-char-radix RET" and then "10 RET".
+ 
