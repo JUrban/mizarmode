@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.49 $
+;; $Revision: 1.50 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -359,6 +359,7 @@ MoMM should be installed for this."
   (define-key mizar-mode-map "\C-c\C-z" 'make-theorem-summary)
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
   (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
+  (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
   (define-key mizar-mode-map "\M-\C-i"     'mizar-ref-complete)
   (define-key mizar-mode-map "\C-c\C-q" 'query-start-entry)
@@ -3465,6 +3466,18 @@ These are lines beginning with ::>."
     (while (re-search-forward "^::>.*\n" nil t)
       (replace-match "" nil nil))
     ))
+
+
+(defun mizar-show-environ ()
+"*Show the environment part of the current article in other window.
+Use for convenient editing of article's environment directives."
+(interactive)
+(switch-to-buffer-other-window (current-buffer))
+(goto-char (point-min))
+(unless (re-search-forward "\\benviron\\b" (point-max) t)
+  (error "Current buffer has no environment part!"))
+(set-window-start (get-buffer-window (current-buffer)) (point)) )
+
 
 (defun mizar-hide-proofs (&optional beg end remove)
   "Put @@ before all proof keywords between BEG and END to disable checking.
