@@ -63,15 +63,15 @@
 ;      C-c C-t ............ interface to thconstr ... 9.3. 2001: changed to run constr
 ;      C-c C-s ............ interface to scconstr ... 9.3. 2001: defunct, replaced now by constr
 ;      C-c C-h ............ runs irrths on current buffer, refreshes it 
-;                           and goes to firts error found
+;                           and goes to first error found
 ;      C-c C-i or C-c TAB.. runs relinfer on current buffer, refreshes it 
-;                           and goes to firts error found 
+;                           and goes to first error found 
 ;      C-c C-y ............ runs relprem on current buffer, refreshes it 
-;                           and goes to firts error found 
+;                           and goes to first error found 
 ;      C-c C-v ............ runs irrvoc on current buffer, refreshes it 
-;                           and goes to firts error found 
+;                           and goes to first error found 
 ;      C-c C-a ............ runs inacc on current buffer, refreshes it 
-;                           and goes to firts error found
+;                           and goes to first error found
 
 ;;; added 31.8. 2000:
 ;      C-c C-r ............ shows all reservations before current point
@@ -137,6 +137,7 @@
   )
 
 (require 'comint)
+(require 'cl)
 (require 'easymenu)
 (require 'etags)
 (require 'hideshow)
@@ -163,8 +164,11 @@
    '(hs-hide-comments-when-hiding-all nil)
    '(hs-minor-mode-hook nil))) 
 
-(font-lock-mode)
-(defvar mizar-indent-width 3)
+(defvar mizar-indent-width 2 "Indent for Mizar articles")
+
+(defun mizar-set-indent-width (to)
+(interactive)
+(setq mizar-indent-width to))
 
 (if mizar-mode-syntax-table
     ()
@@ -214,6 +218,8 @@
   (define-key mizar-mode-map  "\C-c\C-n" 'mizar-next-error)
   (define-key mizar-mode-map  "\C-c\C-p" 'mizar-previous-error)
   (define-key mizar-mode-map "\C-c\C-e" 'mizar-strip-errors)
+  (define-key mizar-mode-map "\C-c\C-d" 'mizar-hide-proofs)
+  (define-key mizar-mode-map "\C-c\C-g" 'mizar-grep-abs)
   (define-key mizar-mode-map "\C-c\C-c" 'comment-region)
   (define-key mizar-mode-map "\C-c\C-f" 'mizar-findvoc)
   (define-key mizar-mode-map "\C-c\C-l" 'mizar-listvoc)
@@ -231,11 +237,8 @@
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
   (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
-;  (define-key mizar-mode-map [(S-down-mouse-3)]     'mizar-mouse-direct-symbol-def)
-;  (define-key mizar-mode-map [(S-down-mouse-1)]     'mizar-mouse-direct-show-ref)
-;  (define-key mizar-mode-map [(S-down-mouse-2)]     'mouse-find-tag-history)
-    (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
-    (define-key mizar-mode-map [(shift down-mouse-1)]     'mizar-mouse-direct-show-ref)
+  (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
+  (define-key mizar-mode-map [(shift down-mouse-1)]     'mizar-mouse-direct-show-ref)
   (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history)
   (define-key mizar-mode-map "\M-."     'mizar-show-ref)
   (mizar-mode-commands mizar-mode-map))
@@ -265,6 +268,10 @@ used for exact completion")
   (while l1
       (setq l1 (setcdr l1 (delete (car l1) (cdr l1))))))
   l1)
+
+(defun file-size (fname)
+"size of a file"
+(elt (file-attributes fname) 7))
 
 ;; returns sublist satisfying test
 ;; loop without recursion probably better than previous
@@ -375,23 +382,48 @@ rigidly along with this one (not yet)."
 ;;;;;;;;;;;;;;;;  end of indentation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-
-
-
-
 (defun mizar-ref-at-point ()
   "Return the reference at the point."
   (save-excursion
-    (skip-chars-backward "^ \n,;()")
-    (if (or (looking-at "\\([^ \n:,;]+:def [0-9]+\\)")
-	    (looking-at "\\([^ \n:,;]+:[0-9]+\\)")
-	    (looking-at "\\([^ \n:,;()]+\\)[ \n,;:.()]"))
+    (skip-chars-backward "^ \t\n,;()")
+    (if (or (looking-at "\\([^ \t\n:,;]+:def [0-9]+\\)")
+	    (looking-at "\\([^ \t\n:,;]+:[0-9]+\\)")
+	    (looking-at "\\([^ \t\n:,;()]+\\)[ \t\n,;:.()]"))
 	(buffer-substring-no-properties (match-beginning 1) (match-end 1))
       (current-word))
     ))
 
+
+;;;;;;;;;;; grepping ;;;;;;;;;;;;;;;;;;;;;
+;;; we should do some additional checks for winemacs
+
+(defvar mizar-grep-case-sensitive t
+"tells if grepping is case sensitive or not")
+
+(defun mizar-toggle-grep-case-sens ()
+(interactive)
+(setq mizar-grep-case-sensitive (not mizar-grep-case-sensitive)))
+
+(defun mizar-grep-abs (exp)
+"Runs grep on abstracts"
+  (interactive "sregexp: ")
+  (let ((abs (substitute-in-file-name "$MIZFILES/abstr/*.abs")))
+    (if mizar-grep-case-sensitive
+	(grep (concat "grep -n -e \"" exp "\" " abs))
+      (grep (concat "grep -i -n -e \"" exp "\" " abs)))
+    ))
+
+(defun mizar-grep-full (exp)
+"Runs grep on full articles"
+  (interactive "sregexp: ")
+  (let ((miz (substitute-in-file-name "$MIZFILES/mml/*.miz")))
+    (if mizar-grep-case-sensitive
+	(grep (concat "grep -n -e \"" exp "\" " miz))
+      (grep (concat "grep -i -n -e \"" exp "\" " miz)))
+    ))
+
 ;;;;;;;;;;;;  tha tags handling starts here ;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; xemacs seems unhappy yet
 
 (put 'mizar-mode 'find-tag-default-function 'mizar-ref-at-point)
 
@@ -562,7 +594,127 @@ and you want to get to your editing buffers"
   (message "%d abstracts buried" i)))
 
 
-;;;;;;;;;;;;;;;;;; end of tags handling ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;; end of tags handling ;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;; errflag              ;;;;;;;;;;;;;;;;;;
+;; error format in *.err: Line Column ErrNbr
+
+
+(defvar mizfiles
+(substitute-in-file-name "$MIZFILES/")) 
+
+;; fixed for xemacs leaving "" in the end
+(defun buff-to-numtable ()
+(let ((l (delete "" (split-string (buffer-string) "\n"))))
+  (mapcar '(lambda (x) 
+	     (mapcar 'string-to-number (split-string x)))
+	  l)
+  ))
+
+(defun mizar-get-errors (aname)
+"Returns an unsorted table of errors on aname or nil."
+(save-excursion
+  (let ((errors (concat aname ".err"))) 
+    (if (file-readable-p errors)
+	(with-temp-buffer           ; sort columns, then lines
+	  (insert-file-contents errors) 
+	  (buff-to-numtable)
+	  )
+      )))) 
+
+(defun sort-for-errflag (l)
+"Greater lines first, then by column"
+(let ((l (copy-alist l)))
+  (sort l '(lambda (x y) (or (> (car x) (car y))
+			     (and (= (car x) (car y))
+				  (< (cadr x) (cadr y)))))
+	)))
+
+(defun mizar-error-flag (aname &optional table)
+"Insert error flags into main mizar buffer (like errflag)."
+(interactive "s")
+(let ((atab (sort-for-errflag (or table (mizar-get-errors aname)))))
+  (if atab
+      (save-excursion	  
+	(if (< 0 (goto-line (caar atab)))
+	    (error "Main buffer and the error file do not agree, run verifier!"))
+	(end-of-line)
+	(insert "\n::>")
+	(let ((cline (caar atab)) srec sline scol snr)
+	  (while atab 
+	    (setq srec (car atab) sline (car srec) 
+		  scol (- (cadr srec) 1)         ; 0 based in emacs
+		  snr (caddr srec) atab (cdr atab))
+	    (if (> cline sline)		; start new line ... go back
+		(progn
+		  (forward-line (- sline cline))
+		  (insert "::>\n")
+		  (backward-char)
+		  (setq cline sline)
+		  ))
+	    (if (> scol (current-column)) ; enough space
+		(progn
+		  (move-to-column scol t)
+		  (insert (concat "*" (number-to-string snr))))
+	      (insert (concat "," (number-to-string snr))) ; not enough space
+	      )))))))
+
+(defvar mizar-err-msgs (substitute-in-file-name "$MIZFILES/mizar.msg")
+  "File with explanations of Mizar error messages")
+(defun mizar-getmsgs (errors)
+"Gets sorted errors, returns string of messages"
+(save-excursion
+  (let ((buf (find-file-noselect  mizar-err-msgs))
+	(msgs ""))
+    (set-buffer buf)
+    (goto-char (point-min))
+    (while errors
+      (let* ((s (number-to-string (car errors)))
+	     (res (concat mizar-error-start " " s ": "))
+	     msg)
+	(if (re-search-forward (concat "^# +" s "\\b") (point-max) t)
+	    (let (p)
+	      (forward-line 1)
+	      (setq p (point))
+	      (end-of-line)
+	      (setq msg (buffer-substring p (point)))
+	      (setq res (concat res  msg "\n")))
+	  (setq res (concat res  "  ?" "\n"))
+	  (goto-char (point-min)))
+	(setq msgs (concat msgs res))
+	(setq errors (cdr errors))))
+    msgs)))
+
+
+(defun mizar-err-codes (aname &optional table)
+  (sort (unique (mapcar 'third (or table (mizar-get-errors aname)))) '<))
+  
+(defun mizar-addfmsg (aname &optional table)
+"Insert error explanations into main mizar buffer (like addfmsg)."
+(interactive "s")
+(save-excursion
+  (goto-char (point-max))
+  (if (not (bolp)) (insert "\n"))
+  (insert (mizar-getmsgs (mizar-err-codes aname table)))))
+
+
+(defun mizar-do-errors (aname)
+"add err-flags and errmsgs using aname.err in current buffer"
+(save-excursion
+  (let ((errors (concat aname ".err"))) 
+    (if (and (file-readable-p errors)
+	     (< 0 (file-size errors)))
+	(let ((table (mizar-get-errors aname)))
+	  (mizar-error-flag aname table)
+	  (mizar-addfmsg aname table))))))
+  
+
+
+
+
+
+;;;;;;;;;;;;;;; end of errflag ;;;;;;;;;;;;;;;;;;
+
 
 (defconst mizar-error-regexp "\\(\\*\\|::>,\\)\\([0-9]+\\)" "regexp used to locate error messages in a mizar text")
 
@@ -579,10 +731,26 @@ and you want to get to your editing buffers"
 (defvar mizar-launch-dir nil 
 "If non-nil, mizf and other scripts are called from here")
 
+(defvar mizar-show-output 10
+"possible values: none,4,10,all; determines the size of the 
+output window ")
+
+(defvar mizar-goto-error "next"
+"what error to move to after processing, possible values are
+none,first,next,previous")
+
 
 (defun toggle-quick-run ()
 (interactive)
 (setq mizar-quick-run (not mizar-quick-run)))
+
+(defun mizar-toggle-show-output (what)
+(interactive)
+(setq mizar-show-output what))
+
+(defun mizar-toggle-goto-error (where)
+(interactive)
+(setq mizar-goto-error where))
 
 (defun toggle-use-revf ()
 (interactive)
@@ -633,34 +801,12 @@ and you want to get to your editing buffers"
       (goto-char (point-min))))
   (message "Making theorem summary...done"))
 
-(defun display-mizar-results (file)
-"return string of mizar results"
-(let ((buf (find-file-noselect file t)))
-  (save-excursion
-  (set-buffer buf)
-  (revert-buffer t t t)
-  (goto-char (point-max))
-  (if (re-search-backward "\rChecker[^\r\n]*$" (point-min) t)
-    (progn
-      (replace-match "")
-      (goto-char (point-max))
-      (mizar-search-output "Time")
-      (let* ((endstr (buffer-substring-no-properties 
-		      (match-beginning 0) (point-max)))
-	     (chstr (mizar-search-output "Checker "))
-	     (anstr (mizar-search-output "Analyzer"))
-	     (pastr (mizar-search-output "Parser  ")))
-	(revert-buffer t t t)
-	(concat pastr "\n" anstr "\n" chstr "\n" endstr "\n")))
-    (buffer-string)))))
 
+;;;;;;;;;;;;;;;; Running Mizar ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun mizar-search-output (what)
-(re-search-backward (concat what ".*$") (point-min) t ) 
-(match-string 0))
 
 (defun mizar-new-term-output (&optional force)
-"prepare output buffer if it was destroyed by quick-run; 
+"Prepare output buffer if it was destroyed by quick-run; 
 if force is non nil, do it regardless of the value of mizar-quick-run"
 (if (or force (not mizar-quick-run))
     (let ((buff (get-buffer "*mizar-output*"))
@@ -679,13 +825,6 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	(cd  dir))
       (end-of-buffer-other-window 0))))
 
-(defun idle-message (fname times period)
-  (let ((count 0)) 
-    (while (< count times)
-      (setq count (+ 1 count))
-      (sit-for period)
-      (message "Verifying %s... %c" fname (aref "/|\\-" (mod count 4))))))
-
 
 (defun mizar-compile ()
   "compile a mizar file in the traditional way"
@@ -695,6 +834,48 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
     (if old-dir (setq default-directory old-dir))))
 
 
+(defun mizar-handle-output  ()
+"Display processing output according to mizar-show-output"
+(cond ((equal "none" mizar-show-output)
+       (delete-other-windows))
+      ((integerp mizar-show-output)
+       (save-selected-window
+; get-buffer-window seems buggy in winemacs
+;		   (select-window (get-buffer-window 
+	 (pop-to-buffer
+	  (get-buffer "*mizar-output*"))
+	 (goto-char (point-max))
+	 (delete-blank-lines)
+	 (let ((new-height
+		(min mizar-show-output 
+		     (count-lines (point-min) (point-max)))))
+; no sense winemacs behaves strange anyway
+;	   (if (fboundp 'set-window-text-height)
+;	       (set-window-text-height (get-buffer-window (current-buffer))
+;				       new-height)
+	   (shrink-window (- (window-height) (+ 1 new-height)))
+	   (goto-char (point-max))
+	   (forward-line (- new-height))
+	   (set-window-start (get-buffer-window (current-buffer)) (point))
+	   )))
+      (t
+       (save-selected-window
+	 (pop-to-buffer
+	  (get-buffer "*mizar-output*"))))))
+
+(defun mizar-show-errors ()
+  "Post processing error explanation"
+  (let ((pos (point)))
+    (cond ((equal "first" mizar-goto-error)
+	   (goto-char (point-min))
+	   (if (not (mizar-next-error))
+	       (goto-char pos)))
+	  ((equal "next" mizar-goto-error)
+	   (mizar-next-error))
+	  ((equal "previous" mizar-goto-error)
+	   (mizar-previous-error))
+	  (t pos))))
+
 (defun mizar-switch-to-ld ()
 "switch to mizar-launch-dir and return old default-directory if switched"
   (if mizar-launch-dir
@@ -702,131 +883,78 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	(cd mizar-launch-dir)
 	old-dir)))
 
-(defun mizar-it (&optional util)
-  "run mizar on the text in the current .miz buffer;
-if util given (eg. miz2prel), runs it instead of mizf"
+(defun mizar-it (&optional util noqr)
+  "Run mizar on the text in the current .miz buffer;
+if util given, runs it instead of mizf, if noqr, does not 
+use quick run"
   (interactive)
-  (let ((util (if util util "mizf"))) 
+  (let ((util (or util "verifier"))) 
     (cond ((not (string-match "miz$" (buffer-file-name)))
 	   (message "Not in .miz file!!"))
 	  ((not (executable-find util))
 	   (message (concat util " not found or not executable!!")))
 	  (t 
-;	 (setq buff (current-buffer))
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
-		  (temp-fname (concat name mizar-quick-run-temp-ext)))
+		  (old-dir (mizar-switch-to-ld)))
+	     (mizar-strip-errors)
 	     (save-buffer)
-	     (if (and mizar-quick-run (equal util "mizf"))
-		 (let ((old-dir (mizar-switch-to-ld)))
-		   (save-excursion
-		     (message (concat "Verifying " fname " "))
-		     (if (file-exists-p temp-fname) (delete-file temp-fname))
-		     (shell-command  (concat "mizf " name ">" temp-fname
-					     "&") "*mizar-output*")
-		     (let ((mizpr (get-buffer-process "*mizar-output*"))
-			   (ctime (cadr (current-time))))
-		       (while  (eq (process-status mizpr) 'run)
-			 (sit-for 1)
-			 (message "Verifying %s (quick-run) ... %d s"
-				  fname (- (cadr (current-time)) ctime))))
-		     (set-buffer "*mizar-output*")
-		     (insert (display-mizar-results temp-fname)))
-		   (if old-dir (setq default-directory old-dir)))
-	       (mizar-new-term-output (not (equal util "mizf")))
-	       (term-exec "*mizar-output*" util util nil (list name))
-	       (while  (term-check-proc "*mizar-output*") 
-		 (sit-for 5)))
-	     (insert-file-contents (buffer-file-name) nil nil nil t)
-	     (clear-visited-file-modtime)
+	     (if (and mizar-quick-run (not noqr))
+		 (save-excursion
+		   (message (concat "Running " util " on " fname " ..."))
+		   (if (get-buffer "*mizar-output*")
+		       (kill-buffer "*mizar-output*"))
+		   (if (= 0 (call-process "makeenv" nil (get-buffer-create "*mizar-output*") nil name))
+		       (shell-command (concat util " -q " name) 
+				      "*mizar-output*")
+		     (switch-to-buffer-other-window "*mizar-output*"))
+		   (message " ... done"))
+	       (if (= 0 (call-process "makeenv" nil nil nil name))
+		   (progn
+		     (mizar-new-term-output noqr)
+		     (term-exec "*mizar-output*" util util nil (list name))
+		     (while  (term-check-proc "*mizar-output*") 
+		       (sit-for 1)))))
+	     (if old-dir (setq default-directory old-dir))	   
+	     (mizar-do-errors name)
 	     (save-buffer)
-	     (save-selected-window
-	       (select-window (get-buffer-window (get-buffer "*mizar-output*")))
-	       (save-excursion
-		 (goto-char (point-max))
-		 (delete-blank-lines))
-	       (let ((new-height
-		      (min 10 (+ 1 (count-lines (point-min) (point-max))))))
-		 (shrink-window (- (window-height) new-height))
-		 )))))))
+	     (mizar-handle-output)
+	     (mizar-show-errors)
+	     )))))
 
+	     
 
+(defun mizar-irrths ()  
+  (interactive)
+(mizar-it "irrths"))
 
-(defun mizar-error-util (util &optional whole-exp)
-  "run mizar uitility util  on the text in the current .miz buffer"
-  (interactive "p")
-  (cond ((not (string-match "miz$" (buffer-file-name)))
- 	 (message "Not in .miz file!!"))
-	(t 
-	 (save-buffer)
-	 (setq mizarg (substring (buffer-file-name) 0 (string-match
-						       "\\.miz$"
-						       (buffer-file-name))  )) 
-	 (mizar-new-term-output t)
-	 (if mizar-use-revf
-	     (term-exec "*mizar-output*" "revf" "revf"  nil (list util mizarg))
-	   (term-exec "*mizar-output*" "makeenv" "makeenv"  nil (list  mizarg))
-	   (while  (term-check-proc "*mizar-output*") (sit-for 1))
-	   (term-exec "*mizar-output*" util util  nil (list  mizarg))
-	   (end-of-buffer-other-window 0)
-	   (while  (term-check-proc "*mizar-output*") (sit-for 1))
-	   (if (file-exists-p (concat mizarg ".err"))
-	       (progn (term-exec "*mizar-output*" "errflag"
-				 "errflag"  nil (list  mizarg))
-		      (end-of-buffer-other-window 0)
-		      (while  (term-check-proc "*mizar-output*") 
-			(sit-for 1))
-		      (term-exec "*mizar-output*" "addfmsg"
-				 "addfmsg"  nil (list  mizarg
-						       (substitute-in-file-name "$MIZFILES/mizar")))
-			
-		      (end-of-buffer-other-window 0)
-		      (while  (term-check-proc "*mizar-output*") 
-			(sit-for 1)))
-	     t)
-	   )
-	 (revert-buffer t t t)
-	 (setq pos (point)) 
-	 (goto-char (point-min))
-	 (mizar-next-error)
-	 (if (= (point) (point-min)) (goto-char pos) t)) 
-	 ))
+(defun mizar-irrvoc ()  
+  (interactive)
+(mizar-it "irrvoc"))
 
+(defun mizar-inacc ()  
+  (interactive)
+(mizar-it "inacc"))
 
+(defun mizar-relinfer ()  
+  (interactive)
+(mizar-it "relinfer"))
 
+(defun mizar-relprem ()  
+  (interactive)
+(mizar-it "relprem"))
 
+(defun mizar-reliters ()  
+  (interactive)
+(mizar-it "reliters"))
 
-(defun mizar-irrths (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "irrths"))
+(defun mizar-trivdemo ()  
+  (interactive)
+(mizar-it "trivdemo"))
 
-(defun mizar-irrvoc (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "irrvoc"))
-
-(defun mizar-inacc (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "inacc"))
-
-(defun mizar-relinfer (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "relinfer"))
-
-(defun mizar-relprem (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "relprem"))
-
-(defun mizar-reliters (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "reliters"))
-
-(defun mizar-trivdemo (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "trivdemo"))
-
-(defun mizar-chklab (&optional whole-exp)
-  (interactive "p")
-  (mizar-error-util "chklab"))
+(defun mizar-chklab ()  
+  (interactive)
+(mizar-it "chklab"))
 
 
 
@@ -914,48 +1042,78 @@ if util given (eg. miz2prel), runs it instead of mizf"
 				       nil nil      (mizar-ref-at-point))
 			 )))
 
+(defvar mizar-error-start "::>")
+
+(defun mizar-end-error (result pos oldpos)
+  "Common end for mizar-next-error and mizar-previous-error"
+  (if result
+      (let ((find (concat "^::>[ \t]*\\(" result ":.*\\)[ \t]*$")))
+	(goto-char (point-max))
+	(re-search-backward find (point-min) t)
+	(message (match-string 1))
+	(goto-char pos))
+    (goto-char oldpos) 
+    (ding)
+    (message "No more errors!!")
+    nil ))
 
 (defun mizar-next-error ()
-  "Go to the next error in a mizar text"
+  "Go to the next error in a mizar text, return nil if not found
+if found end on the first number of the error"
   (interactive)
-  (progn (goto-char (+ (point) 1))	; incase we just did previous-error
-	 (cond ((re-search-forward mizar-error-regexp (point-max) t)
-		(match-string 2)
-		(setq pos (point)) 
-		(goto-char (point-max))
-		(setq find (concat "^::> *\\(" (match-string 2) ":.*\\) *$"))
-		(re-search-backward find (point-min) t)
-		(message (match-string 1))
-		(goto-char pos))
-	       (t
-		(progn
-		  (goto-char (- (point) 1)) ; undo the change
-		  (ding)
-		  (message "No more errors!!"))))))
-
+  (let ((oldpos (point))
+	(inerrl nil) ;; tells if we strat from an error line
+	result pos)
+    (beginning-of-line)
+    (if (looking-at mizar-error-start)
+	(progn
+	  (goto-char (match-end 0))  ;; skip the error start
+	  (if (< (point) oldpos)     ;; we were on an error or between
+	      (progn
+		(goto-char oldpos)
+		(if (looking-at "[0-9]+") ;; on error
+		    (forward-word 1))))
+	  (skip-chars-forward "\t ,*")  ;; now next error or eoln
+	  (if (looking-at "[0-9]+")
+	    (setq pos (point) result (match-string 0)))))
+    (if (and (not result)   
+	     (re-search-forward mizar-error-start (point-max) t))
+	(progn
+	  (skip-chars-forward "\t ,*")
+	  (if (looking-at "[0-9]+")
+	    (setq pos (point) result (match-string 0)))))
+    (mizar-end-error result pos oldpos)))
 
 (defun mizar-previous-error ()
-  "Go to the previous error in a mizar text"
+  "Go to the previous error in a mizar text, return nil if not found
+if found end on the first number of the error"
   (interactive)
-  (progn
-    (goto-char (- (point) 1))
-    (while (looking-at "[0-9]") (backward-char 1)) ;incase we just did next-error
-    (cond ((re-search-backward mizar-error-regexp (point-min) t)
-	   (match-string 2)
-	   (setq pos (point)) 
-	   (goto-char (point-max))
-	   (setq find (concat "^::> *\\(" (match-string 2) ":.*\\) *$"))
-	   (re-search-backward find (point-min) t)
-	   (message (match-string 1))
-	   (goto-char pos))
-	  (t
-	   (progn
-	     (goto-char (+ (point) 1))	; undo the change
-	     (ding)
-	     (message "No more errors!!"))))))
-
-
-
+  (let ((oldpos (point))
+	(inerrl nil) ;; tells if we strat from an error line
+	result pos)
+    (beginning-of-line)
+    (if (looking-at mizar-error-start)
+	(progn
+	  (end-of-line)
+	  (if (> (point) oldpos)     ;; we were on an error or between
+	      (progn
+		(goto-char oldpos)
+		(if (looking-at "[0-9]+") ;; on error
+		    (skip-chars-backward "0-9"))))
+	  (skip-chars-backward "\t ,*") ; whitechars
+	  (skip-chars-backward "0-9") ; startof err if any
+	  (if (looking-at "[0-9]+") ; another on ths line
+	      (setq pos (point) result (match-string 0))
+	    (beginning-of-line))))  ; nothing else here
+    (if (and (not result)   
+	     (re-search-backward mizar-error-start (point-min) t))
+	(progn
+	  (end-of-line)
+	  (forward-word -1)
+	  (if (looking-at "[0-9]+")
+	    (setq pos (point) result (match-string 0)))))
+    (mizar-end-error result pos oldpos)))
+    
 (defun mizar-strip-errors ()
   "Delete all lines beginning with ::> (i.e. error lines)"
   (interactive)
@@ -965,6 +1123,22 @@ if util given (eg. miz2prel), runs it instead of mizf"
       (replace-match "" nil nil))
     ))
 
+(defun mizar-hide-proofs (&optional beg end reverse)
+  "Put @ before all proof keywords to disable checking, with prefix 
+   unhide;"
+  (interactive "r\nP")
+  (save-excursion
+    (let ((beg (or beg (point-min)))
+	  (end (or end (point-max))))
+    (goto-char beg)
+    (message "(un)hiding proofs ...")
+    (if reverse
+	(while (re-search-forward "@proof\\b" end  t)
+	  (replace-match "proof" nil nil))
+      (while (re-search-forward "\\bproof\\b" end t)
+	(replace-match "@proof" nil nil)))
+    (message "... Done")
+    )))
 
 (defun make-theorems-string ()
   "Make string of all theorems"
@@ -993,7 +1167,7 @@ if util given (eg. miz2prel), runs it instead of mizf"
     (setq result "")
     (while
  	(and
-	 (re-search-forward "^ *\\(reserve\\)" maxp t)
+	 (re-search-forward "^[ \t]*\\(reserve\\)" maxp t)
 	 (setq pos (match-beginning 1))
 	 (re-search-forward ";" maxp t))
       (progn 
@@ -1013,9 +1187,6 @@ if util given (eg. miz2prel), runs it instead of mizf"
 
 
 ;; Font lock
-
-
-
 
 (defun mizar-font-lock-keywords ()
   "Set up font lock keywords for the current Mizar system."
@@ -1037,30 +1208,26 @@ if util given (eg. miz2prel), runs it instead of mizf"
 	       (faces
 		(cond
 		 ((memq font-lock-display-type '(mono monochrome))
-		  '((mizar-warning-face nil nil t t nil)
+		  '(
 		    (mizar-builtin-face nil nil nil nil t)
-		    (mizar-redo-face nil nil nil t nil)
 		    (mizar-exit-face nil nil nil nil t)
-		    (mizar-exception-face nil nil t t t)))
+))
 		 ((memq font-lock-display-type '(grayscale greyscale
 							   grayshade greyshade))
-		  '((mizar-warning-face nil nil t t nil)
+		  '(
 		    (mizar-builtin-face nil nil nil nil t)
-		    (mizar-redo-face nil nil nil t nil)
 		    (mizar-exit-face nil nil nil nil t)
-		    (mizar-exception-face nil nil t t t)))
+))
 		 (dark-bg 		; dark colour background
-		  '((mizar-warning-face "red" nil t nil nil)
+		  '(
 		    (mizar-builtin-face "LightSkyBlue" nil nil nil nil)
-		    (mizar-redo-face "darkorchid" nil nil nil nil)
 		    (mizar-exit-face "green" nil nil nil nil)
-		    (mizar-exception-face "black" "Khaki" t nil nil)))
+))
 		 (t			; light colour background
-		  '((mizar-warning-face "red" nil t nil nil)
+		  '(
 		    (mizar-builtin-face "Orchid" nil nil nil nil)
-		    (mizar-redo-face "darkorchid" nil nil nil nil)
 		    (mizar-exit-face "ForestGreen" nil nil nil nil)
-		    (mizar-exception-face "black" "Khaki" t nil nil))))))
+)))))
 
 	  (while faces
 	    (if (fboundp 'font-lock-make-face)
@@ -1099,11 +1266,11 @@ if util given (eg. miz2prel), runs it instead of mizf"
 	       '("\\<\\(proof\\|now\\|end\\|hereby\\)"
 		 0 'font-lock-keyword-face ))
 	      (comments '("::[^\n]*"  0 'font-lock-comment-face ))
-	      (refs '("\\( by\\|from\\)[^;.]*" 0 'font-lock-type-face))
+	      (refs '("[ \n\t]\\(by\\|from\\)[^;.]*" 0 'font-lock-type-face))
 	      (extra '("&"  0  'mizar-builtin-face))
 	      (keywords			; directives (queries)
 	       (list
-		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\)\\>" 
+		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|antisymmetry\\|projectivity\\|involutiveness\\)\\>" 
 		;;		1 'mizar-builtin-face
 		1 font-lock-variable-name-face))
 
@@ -1160,15 +1327,15 @@ functions:
       C-c C-t ............ interface to constr 
       C-c C-s ............ interface to scconstr ...obsolete now by constr
       C-c C-h ............ runs irrths on current buffer, refreshes it 
-                            and goes to firts error found, needs file miz3 in path 
+                            and goes to first error found, needs file miz3 in path 
       C-c C-i or C-c TAB.. runs relinfer on current buffer, refreshes it 
-                            and goes to firts error found, needs file miz3 in path 
+                            and goes to first error found, needs file miz3 in path 
       C-c C-y ............ runs relprem on current buffer, refreshes it 
-                            and goes to firts error found, needs file miz3 in path 
+                            and goes to first error found, needs file miz3 in path 
       C-c C-v ............ runs irrvoc on current buffer, refreshes it 
-                            and goes to firts error found, needs file miz3 in path 
+                            and goes to first error found, needs file miz3 in path 
       C-c C-a ............ runs inacc on current buffer, refreshes it 
-                            and goes to firts error found, needs file miz3 in path 
+                            and goes to first error found, needs file miz3 in path 
       C-c C-r ............ shows all reservations before current point
       C-c C-z ............ makes summary of theorems in current article 
       M-;     ............ runs mizar-symbol-def, see its doc.
@@ -1208,6 +1375,11 @@ functions:
 	  "-"
 	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
+	  '("Grep"
+	    ["Case sensitive" mizar-toggle-grep-case-sens :style
+	     toggle :selected mizar-grep-case-sensitive :active t]
+	    ["Abstracts" mizar-grep-abs t]
+	    ["Full articles" mizar-grep-full t])
 	  ["Symbol apropos" symbol-apropos t]
 	  ["Bury all abstracts" mizar-bury-all-abstracts t]	  
 	  ["Close all abstracts" mizar-close-all-abstracts t]
@@ -1216,9 +1388,21 @@ functions:
 	  ["Reserv. before point" make-reserve-summary t]
 	  "-"
 	  ["Run Mizar" mizar-it t]
-	  ["Mizar Compile" mizar-compile t]
-	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active t]
+	  ["Mizar Compile" mizar-compile (not (eq mizar-emacs 'winemacs))]
+	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active (eq mizar-emacs 'gnuemacs)]
 	  ["Toggle launch-dir" mizar-set-launch-dir :style toggle :selected mizar-launch-dir  :active t]
+	  (list "Show output"
+		["none" (mizar-toggle-show-output "none") :style radio :selected (equal mizar-show-output "none") :active t]
+		["4 lines" (mizar-toggle-show-output 4) :style radio :selected (equal mizar-show-output 4) :active t]
+		["10 lines" (mizar-toggle-show-output 10) :style radio :selected (equal mizar-show-output 10) :active t]
+		["all" (mizar-toggle-show-output "all") :style radio :selected (equal mizar-show-output "all") :active t]
+		)
+	  (list "Show error"
+		["none" (mizar-toggle-goto-error "none") :style radio :selected (equal mizar-goto-error "none") :active t]
+		["first" (mizar-toggle-goto-error "first") :style radio :selected (equal mizar-goto-error "first") :active t]
+		["next" (mizar-toggle-goto-error "next") :style radio :selected (equal mizar-goto-error "next") :active t]
+		["previous" (mizar-toggle-goto-error "previous") :style radio :selected (equal mizar-goto-error "previous") :active t]		
+		)
 	  "-"
 	  (list "Voc. & Constr. Utilities"
 		["Findvoc" mizar-findvoc t]
@@ -1226,7 +1410,6 @@ functions:
 		["Constr" mizar-constr t])
 ;		["Scconstr" mizar-scconstr t])	  
 	  '("Irrelevant Utilities"
-	    ["Use revf" toggle-use-revf :style toggle :selected mizar-use-revf  :active t]
 	    ["Irrelevant Theorems" mizar-irrths t]
 	    ["Irrelevant Inferences" mizar-relinfer t]
 	    ["Trivial Proofs" mizar-trivdemo t]
@@ -1236,17 +1419,31 @@ functions:
 	    ["Irrelevant Vocabularies" mizar-irrvoc t]
 	    ["Inaccessible Items" mizar-inacc t])
 	  '("Other Utilities"
-	    ["Miz2Prel" (mizar-it "miz2prel") t]
-	    ["Miz2Abs" (mizar-it "miz2abs") t]
+	    ["Miz2Prel" (mizar-it "miz2prel" t) (eq mizar-emacs 'gnuemacs)]
+	    ["Miz2Abs" (mizar-it "miz2abs" t) (eq mizar-emacs 'gnuemacs)]
 	    ["Ratproof" (mizar-it "ratproof") t])
 	  "-"
 	  ["Comment region" comment-region t]
-	  ["Uncomment region" (comment-region (region-beginning) (region-end) -1) t]
+	  ["Uncomment region" (comment-region (region-beginning)
+					      (region-end) -1) t]
+	  '("Proof checking"
+	    ["proof -> @proof on region" mizar-hide-proofs t]
+	    ["@proof -> proof on region" (mizar-hide-proofs (region-beginning)
+							   (region-end) t) t]
+	    ["proof -> @proof on buffer" (mizar-hide-proofs (point-min)
+							   (point-max)) t]
+	    ["@proof -> proof on buffer" (mizar-hide-proofs (point-min)
+							   (point-max) t) t]
+	    )
 	  "-"
 	  '("Indent"
 	    ["Line" mizar-indent-line t]
 	    ["Region" indent-region t]
 	    ["Buffer" mizar-indent-buffer t])
+	  '("Indent width"
+	    ["1" (mizar-set-indent-width 1) :style radio :selected (= mizar-indent-width 1) :active t]
+	    ["2" (mizar-set-indent-width 2) :style radio :selected (= mizar-indent-width 2) :active t]
+	    ["3" (mizar-set-indent-width 3) :style radio :selected (= mizar-indent-width 3) :active t])
 	  '("Fontify"
 	    ["Buffer" font-lock-fontify-buffer t])
 	  )
@@ -1256,9 +1453,11 @@ functions:
 
 
 (defvar mizar-emacs 
-  (if (string-match "XEmacs\\|Lucid" emacs-version)
+  (if (string-match "XEmacs\\|Lucid" (emacs-version))
       'xemacs
-    'gnuemacs)
+    (if (string-match "windows" (emacs-version))
+	'winemacs		      
+      'gnuemacs))
   "The variant of Emacs we're running.
 Valid values are 'gnuemacs and 'xemacs.")
 
@@ -1275,9 +1474,6 @@ Valid values are 'gnuemacs and 'xemacs.")
      (t
       (easy-menu-define mizar-menu-map (current-local-map) "" menu))
      )))
-
-
-
 
 
 (defun mizar-hs-forward-sexp (arg)
@@ -1314,7 +1510,5 @@ Valid values are 'gnuemacs and 'xemacs.")
 	                  (cons mizar-mode-hs-info hs-special-modes-alist))))
 (add-hook 'mizar-mode-hook 'mizar-menu)
 (add-hook 'mizar-mode-hook 'hs-minor-mode)
-
-; (visit-tags-table (substitute-in-file-name "$MIZFILES/abstr"))
 
 (provide 'mizar)
