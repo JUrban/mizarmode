@@ -1,33 +1,35 @@
-;; Sat Jun 1 2002 ... gnu winemacs supported now, imenu,speedbar and grep,
-;; many fixes, we use now quiet mode, implemented since Mizar 6.1.11
-;; Fri Jan 11 2002 ... mizar-launch-dir added, controlling from where
-;; mizf is run; use it e.g. if 'dict/' and 'text/' are in the same directory  
-;; Dec 20 2001 ... some changes by Freek Wiedijk and Dan Synek:
-;; undo and output fixed, standard compilation (C-c c) is now possible
-;; using the scripts mizfe and erpp.pl (put them where mizf is and make
-;; them executable)
-;; Dec 15 2001  
-;; some small additions and fixes: fixed and added some
-;; irrelevant utils, can be run with revf now; some other utils added;
-;; fixed "hereby" and font-lock; added abbrev-table support ... define your
-;; own abbreviations using the abbrev-mode; started attempts at xemacs
-;; compatibility, not done yet
-;; March 21 2001 ...hide/show minor mode added ... hiding proofs
-;;               quick-run added ...speeds up verifier execution by about 50%,
-;;                                  (caused by slow displays), toggle it in menu 
-;; March 9 2001  ... symbol browsing functions added, see 
-;; http://kti.ms.mff.cuni.cz/~urban/README_BROWSING.txt for detailed info on it, 
-;; the MIZTAGS are now obsolete
-;; August 31 2000 ... theorem and reservation summary added, MIZTAGS for schemes changed a litle
-;; April 18 2000 ... small adjustment to Mizar Version 6.0.07, miz1 and miz3 files no longer needed
-;; April 6 2000 ... some more features added
-;; April 3 2000, modified by Josef Urban (urban@kti.ms.mff.cuni.cz)
-;; for use with Mizar  Version 6.0.01 (Linux/FPC)
-;; some parts might also work with dos-emacs and dos mizar
+;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; to use it, put it where your .el files are, and add following to to your
-;; .emacs file ; see further instructions for the  "MIZTAGS" files
+;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
+;;
+;;; Commentary:
+;;
+;; Emacs mode for authoring Mizar (www.mizar.org) articles.
+;; Run C-h f mizar-mode for overview of commands.
+;; Complete info, html, pdf and ps documentation is
+;; downloadable from http://kti.ms.mff.cuni.cz/~urban/MizarModeDoc.tar.gz .
+;; Browse it at http://ktilinux.ms.mff.cuni.cz/~urban/MizarModeDoc/html .
 
+
+;;; History:
+;; 
+;; Started by Bob Beck, beck@cs.UAlberta.CA (beck@alberta) as 
+;; a mode for Unix version of Mizar-MSE.
+;;
+;; Since April 3 2000, rewritten and maintained by 
+;; Josef Urban (urban@kti.ms.mff.cuni.cz) for use with Mizar Version >= 6.
+;;
+;; Go to http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/mizar.el,
+;; to see complete revision history.
+;;
+
+
+;;; Usage
+;;
+;; If you obtained this with your Mizar distribution, just append
+;; the .emacs file enclosed there to your .emacs.
+;; Otherwise, the latest version of .emacs is downloadable from
+;; http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/.emacs .
 ;;;;;;;;;;;;;; start of .emacs ;;;;;;;;;;;;;;;;;;;;;
 
 ; (global-font-lock-mode t)
@@ -38,65 +40,17 @@
 
 ;;;;;;;;;;;;;; end of .emacs    ;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; functions: 
-;      syntax highlighting .. put "(global-font-lock-mode t)" into your
-;                             .emacs file to enable it
-;      basic indentation 
-;      C-c C-m or C-c RET.. runs Mizar on current .miz buffer, refreshes it
-;                           and goes to first error found
-;      C-c C-n ............ goes to next error and displays its explanation
-;                           in minibuffer
-;      C-c C-p ............ goes to previous error and displays its explanation
-;                           in minibuffer
-;      C-c C-e ............ deletes all error lines added by Mizar 
-;                           (lines starting with ::>)
-;      C-c C-c ............ comments selected region
-;      C-u C-c C-c ........ uncomments selected region
-;      M-C-\ .............. indents selected region
-;      TAB ................ indents line 
 
-;;; added in versions 1.1:
-;      Mizar menu
-;      M-. ................ shows theorem, definition or scheme with label LABEL, 
-;                           needs to run MIZTAGS (see further) in the directory $MIZFILES/abstr 
-;                           before start of the work
-;      C-c C-f ............ interface to findvoc
-;      C-c C-l ............ interface to listvoc
-;      C-c C-t ............ interface to thconstr ... 9.3. 2001: changed to run constr
-;      C-c C-s ............ interface to scconstr ... 9.3. 2001: defunct, replaced now by constr
-;      C-c C-h ............ runs irrths on current buffer, refreshes it 
-;                           and goes to first error found
-;      C-c C-i or C-c TAB.. runs relinfer on current buffer, refreshes it 
-;                           and goes to first error found 
-;      C-c C-y ............ runs relprem on current buffer, refreshes it 
-;                           and goes to first error found 
-;      C-c C-v ............ runs irrvoc on current buffer, refreshes it 
-;                           and goes to first error found 
-;      C-c C-a ............ runs inacc on current buffer, refreshes it 
-;                           and goes to first error found
 
-;;; added 31.8. 2000:
-;      C-c C-r ............ shows all reservations before current point
-;      C-c C-z ............ makes summary of theorems in current article
+;;; TODO: 
+;;
+;; better indentation,
 
-;;; added 9.3. 2001:
-;      C-c C-t ............ bound to constr now
-;      M-;     ............ runs mizar-symbol-def, see its doc.
-;      mouse-3 ............ also mizar-symbol-def
-;      M-.     ............ runs mizar-show-ref
-;   S-down-mouse-3  ............ mizar-symbol-def with no completion
-;   S-down-mouse-1  ............ mizar-show-ref with no completion
-;   S-down-mouse-2  ............ pops up menu of visited symbols to go to      
-; Added by Dan
-;      C-c C   ............ runs mizar as if it was an ordinary compile command
-
-;; to do: better indentation,
-;           find out why it hangs during C-c C-m when switching to another buffer,
 
           
 
-
-;;;;;;;;;;;;;;;;;;;; start of original info ;;;;;;;;;;;;;;;;;
+;;; Start of original info:
+;;
 ;; emacs lisp hack for mizar
 ;; Copyright (C) Bob Beck, Department of Computing Science
 ;; University of Alberta,  July 23 1990
@@ -123,21 +77,24 @@
 ;; be useful. It is provided with ABSOLUTELY NO WARRANTY, with no
 ;; responsibility being taken by either the author, Bob Beck, or the
 ;; University of Alberta Department of Computing Science for the use,
-;; usefulness, or consequences of its use. All terms of the GNU Emacs 
-;; General Public License apply. 
+;; usefulness, or consequences of its use. All terms of the GNU Emacs
+;; General Public License apply.
 
 
-;; Please report any bugs or useful improvements/modifications to 
+;; Please report any bugs or useful improvements/modifications to
 ;; Bob Beck, beck@cs.UAlberta.CA (beck@alberta)
 
-(defvar mizar-emacs 
+
+
+;;; Code:
+(defvar mizar-emacs
   (if (featurep 'xemacs)
       'xemacs
     (if (featurep 'dos-w32)
-	'winemacs		      
+	'winemacs
       'gnuemacs))
   "The variant of Emacs we're running.
-Valid values are 'gnuemacs,'xemacs and 'winemacs.")
+Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
 
 (eval-when-compile
   (require 'compile)
@@ -157,7 +114,7 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
 (require 'term)
 (require 'imenu)
 (if (eq mizar-emacs 'xemacs)
-    (require 'speedbar) ;; no NOERROR in xemacs 
+    (require 'speedbar) ;; no NOERROR in xemacs
   (require 'speedbar nil t)) ;;noerror if not present
 
 
@@ -175,15 +132,18 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
 ; ;; this shows all comment lines when hiding proofs
       (custom-set-default 'hs-hide-comments-when-hiding-all nil)
 ; ;; this prevents the default value, which is hs-hide-initial-comment-block
-      (custom-set-default 'hs-minor-mode-hook nil)) 
-  (custom-set-variables 
+      (custom-set-default 'hs-minor-mode-hook nil))
+  (custom-set-variables
    '(tags-add-tables nil)
    '(hs-hide-comments-when-hiding-all nil)
-   '(hs-minor-mode-hook nil))) 
+   '(hs-minor-mode-hook nil)))
 
-(defvar mizar-indent-width 2 "Indent for Mizar articles")
+(defvar mizar-indent-width 2 
+"*Indentation width for Mizar articles.
+Customizable from Mizar Mode menu.")
 
 (defun mizar-set-indent-width (to)
+"Set indent width to TO."
 (interactive)
 (setq mizar-indent-width to))
 
@@ -236,7 +196,8 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
   (define-key mizar-mode-map  "\C-c\C-p" 'mizar-previous-error)
   (define-key mizar-mode-map "\C-c\C-e" 'mizar-strip-errors)
   (define-key mizar-mode-map "\C-c\C-d" 'mizar-hide-proofs)
-  (define-key mizar-mode-map "\C-c\C-g" 'mizar-grep-abs)
+  (define-key mizar-mode-map "\C-cg" 'mizar-grep-abs)
+  (define-key mizar-mode-map "\C-c\C-g" 'mizar-grep-full)
   (define-key mizar-mode-map "\C-c\C-c" 'comment-region)
   (define-key mizar-mode-map "\C-c\C-f" 'mizar-findvoc)
   (define-key mizar-mode-map "\C-c\C-l" 'mizar-listvoc)
@@ -261,11 +222,12 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
 	(define-key mizar-mode-map [button3]     'mizar-mouse-symbol-def)
 	(define-key mizar-mode-map [(shift button3)]     'mizar-mouse-direct-symbol-def)
 	(define-key mizar-mode-map [(shift button1)]     'mizar-mouse-direct-show-ref)
-	(define-key mizar-mode-map [(shift button2)]     'mouse-find-tag-history))
+;	(define-key mizar-mode-map [(shift button2)]     'mouse-find-tag-history)
+	)
     (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
     (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
     (define-key mizar-mode-map [(shift down-mouse-1)]     'mizar-mouse-direct-show-ref)
-    (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history)
+;    (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history)
 ;    (define-key mizar-mode-map [double-mouse-1]     'mizar-mouse-ref-constrs)
 )
   (define-key mizar-mode-map "\M-."     'mizar-show-ref)
@@ -273,11 +235,11 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
   (mizar-mode-commands mizar-mode-map))
 
 (defvar mizar-tag-ending ";"
-"end of the proper tag name in mizsymbtags and mizreftags,
-used for exact completion")
+"End of the proper tag name in mizsymbtags and mizreftags.
+Used for exact completion.")
 
 (defun miz-complete ()
-"used for exact tag completion" 
+"Used for exact tag completion."
 (interactive )
 (if (active-minibuffer-window)
     (progn
@@ -299,7 +261,7 @@ used for exact completion")
   l1)
 
 (defun file-size (fname)
-"size of a file"
+"Size of a file FNAME."
 (elt (file-attributes fname) 7))
 
 ;; returns sublist satisfying test
@@ -313,7 +275,7 @@ used for exact completion")
     (reverse l2)))
 
 (defun remove-from (pos l1)
-"destructively deletes members from pos on"
+"Destructively deletes members from POS on in L1."
 (let* ((l2  l1)
        (end (nthcdr (- pos 1) l2)))
   (if (consp end)
@@ -322,11 +284,9 @@ used for exact completion")
 
 ;;;;;;;;;;;;  indentation (pretty poor) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun mizar-indent-line (&optional whole-exp)
-  "Indent current line as Mizar code.
-With argument, indent any additional lines of the same clause
-rigidly along with this one (not yet)."
-  (interactive "p")
+(defun mizar-indent-line ()
+  "Indent current line as Mizar code."
+  (interactive)
   (let ((indent (mizar-indent-level))
 	(pos (- (point-max) (point))) beg)
     (beginning-of-line)
@@ -404,7 +364,7 @@ rigidly along with this one (not yet)."
 
 
 (defun mizar-indent-buffer ()
-  "Indent the entire mizar buffer"
+  "Indent the entire mizar buffer."
   (interactive )
   ( indent-region (point-min) (point-max) nil))
 
@@ -426,7 +386,7 @@ rigidly along with this one (not yet)."
 ;; ref-completion,should be improved for definitions
 (defvar mizar-ref-char-regexp "[A-Za-z0-9:'_]")
 (defun mizar-ref-complete ()
-"Complete the current reference useing dabbrevs from current buffer"
+"Complete the current reference useing dabbrevs from current buffer."
 (interactive)
 (let ((old-check dabbrev-check-other-buffers)
       (old-regexp dabbrev-abbrev-char-regexp)
@@ -439,7 +399,7 @@ rigidly along with this one (not yet)."
 	      dabbrev-abbrev-char-regexp mizar-ref-char-regexp
 	      dabbrev-case-fold-search nil)
 ;	      dabbrev-abbrev-skip-leading-regexp ".* *")
-;;	(fset 'dabbrev--abbrev-at-point 
+;;	(fset 'dabbrev--abbrev-at-point
 ;;	      (symbol-function 'mizar-abbrev-at-point))
 	(dabbrev-completion))
     (setq dabbrev-check-other-buffers old-check
@@ -454,14 +414,17 @@ rigidly along with this one (not yet)."
 (defvar mizar-abstr (substitute-in-file-name "$MIZFILES/abstr"))
 (defvar mizar-mml (substitute-in-file-name "$MIZFILES/mml"))
 (defvar mizar-grep-case-sensitive t
-"tells if grepping is case sensitive or not")
+"*Tells if MML grepping is case sensitive or not.")
 
 (defun mizar-toggle-grep-case-sens ()
+"Toggle the case sensitivity of MML grepping."
 (interactive)
 (setq mizar-grep-case-sensitive (not mizar-grep-case-sensitive)))
 
 (defun mizar-grep-abs (exp)
-"Runs grep on abstracts"
+"Grep MML abstracts for regexp EXP.
+Variable `mizar-grep-case-sensitive' controls case sensitivity.
+The results are shown and clickable in the Compilation buffer. "
   (interactive "sregexp: ")
   (let ((old default-directory))
     (unwind-protect
@@ -474,7 +437,9 @@ rigidly along with this one (not yet)."
     )))
 
 (defun mizar-grep-full (exp)
-"Runs grep on full articles"
+"Greps full MML articles for regexp EXP.
+Variable `mizar-grep-case-sensitive' controls case sensitivity.
+The results are shown and clickable in the Compilation buffer. "
   (interactive "sregexp: ")
   (let ((old default-directory))
     (unwind-protect
@@ -492,14 +457,14 @@ rigidly along with this one (not yet)."
 (cond ((intern-soft "trim-words") (list (intern "trim-words")))
       ((intern-soft  "speedbar-trim-words-tag-hierarchy")
        (list (intern "speedbar-trim-words-tag-hierarchy"))))
-"Hack ensuring proper trimming across various speedbar versions"
+"Hack ensuring proper trimming across various speedbar versions."
 )
 
 (defvar mizar-sb-in-abstracts t
-  "Tells if we use speedbar for abstracts too")
+  "Tells if we use speedbar for abstracts too.")
 
 (defun mizar-setup-imenu-sb ()
-"Speedbar and imenu setup for mizar mode"
+"Speedbar and imenu setup for mizar mode."
 (progn
   (setq imenu-case-fold-search nil)
   (setq imenu-generic-expression mizar-imenu-expr)
@@ -517,7 +482,7 @@ rigidly along with this one (not yet)."
 	      )))))
 
 
-;; I want the tags in other window, probably some local machinery 
+;; I want the tags in other window, probably some local machinery
 ;; should be applied instead of a redefinition here
 (defun speedbar-tag-find (text token indent)
   "For the tag TEXT in a file TOKEN, goto that position.
@@ -541,14 +506,14 @@ INDENT is the current indentation level."
 
 (put 'mizar-mode 'find-tag-default-function 'mizar-ref-at-point)
 
-(defvar mizsymbtags 
-  (substitute-in-file-name "$MIZFILES/abstr/symbtags") 
-  "Symbol tags file created with stag.pl")
-(defvar mizreftags 
-  (substitute-in-file-name "$MIZFILES/abstr/reftags") 
-  "References tags file created with stag.pl")
+(defvar mizsymbtags
+  (substitute-in-file-name "$MIZFILES/abstr/symbtags")
+  "Symbol tags file created with stag.pl (now in Mizar distro).")
+(defvar mizreftags
+  (substitute-in-file-name "$MIZFILES/abstr/reftags")
+  "References tags file created with stag.pl (now in Mizar distro).")
 
-;; nasty to redefine these two, but working; I could not get the local vars machinery right  
+;; nasty to redefine these two, but working; I could not get the local vars machinery right
 (defun etags-goto-tag-location (tag-info)
   (let ((startpos (cdr (cdr tag-info)))
 	(line (car (cdr tag-info)))
@@ -556,7 +521,7 @@ INDENT is the current indentation level."
 	;; Direct file tag.
 	(cond (line (goto-line line))
 	      (startpos (goto-char startpos))
-	      (t (error "etags.el BUG: bogus direct file tag")))
+	      (t (error "BUG in etags.el: bogus direct file tag")))
       (and (eq selective-display t)
 	 (looking-at "\^m")
 	 (forward-char 1))
@@ -586,31 +551,32 @@ INDENT is the current indentation level."
       spec)))
 
 (defvar in-mizar-mouse-symbol-def nil
-  "used for mizar-mouse-symbol-def")
+  "Used for `mizar-mouse-symbol-def'.")
 
 (defun mizar-mouse-symbol-def ()
-  "mouse-3 is bound to this function, runs mizar-symbol-def
-and the second mouse-3 shows the symbols completion"
+  "\\<mizar-mode-map>\\[mizar-mouse-symbol-def] is bound to this function.
+Runs mizar-symbol-def and the second mouse-3
+shows the symbol's completions."
   (interactive)
   (if in-mizar-mouse-symbol-def
       (progn (setq in-mizar-mouse-symbol-def nil)
-	     (if (active-minibuffer-window)	 
+	     (if (active-minibuffer-window)
 		 (miz-complete)))
     (mouse-set-point last-input-event)
     (setq in-mizar-mouse-symbol-def t)
-    (mizar-symbol-def)) 
+    (mizar-symbol-def))
   )
 
 (defun mizar-mouse-direct-symbol-def ()
-  "S-mouse-3 is bound to this function, 
-goes directly to the best match of symbol under point"
+  "\\<mizar-mode-map>\\[mizar-mouse-direct-symbol-def] is bound to this function.
+Goes directly to the best match of the symbol under the mouse click."
   (interactive)
   (mouse-set-point last-input-event)
   (mizar-symbol-def  t))
 
 (defun mizar-mouse-direct-show-ref ()
-  "S-mouse-1 is bound to this function, 
-goes directly to the reference under point"
+  "\\<mizar-mode-map>\\[mizar-mouse-direct-show-ref] is bound to this function.
+Goes directly to the reference under the mouse click."
   (interactive)
   (mouse-set-point last-input-event)
   (mizar-show-ref  t))
@@ -619,15 +585,20 @@ goes directly to the reference under point"
   (if (file-readable-p name)
       (visit-tags-table name)
     (error "No tags file %s, run the script stag.pl" name)
-    nil)) 
+    nil))
 
-(defun mizar-symbol-def  (&optional nocompletion tag nootherw) 
-  "Finds the definition of a symbol with completion,
-if in *.abs buffer shows it it current window, otherwise,
-i.e. in *.miz buffer, shows it in other window.
-In Completion buffer, aside from its normal key bindings,
-';' is bound to show all exact matches. If invoked by right-click,
-second right-click does this too."
+(defun mizar-symbol-def  (&optional nocompletion tag nootherw)
+"Find the definition of a symbol at point with completion using file symbtags.
+If in *.abs buffer, show its definition in current window, otherwise,
+i.e. in *.miz buffer, show it in other window.
+In the *Completions* buffer, aside from its normal key bindings,
+';' is bound to show all exact matches.
+If invoked by right-click (`mizar-mouse-symbol-def'),
+second right-click does this too.
+NOCOMPLETION goes to the first hit instead.
+If TAG is given, search for it instead.
+NOOTHERW finds in current window.
+File symbtags is included in the Mizar distribution."
   (interactive)
   (if (visit-tags-or-die mizsymbtags)
       (let ((abs (or nootherw (buffer-abstract-p (current-buffer)))))
@@ -639,8 +610,13 @@ second right-click does this too."
 	    (call-interactively 'find-tag-other-window))))))
   
 
-(defun mizar-show-ref (&optional nocompletion) 
-  "Finds the reference with completion in other window" 
+(defun mizar-show-ref (&optional nocompletion)
+  "Find the library reference with completion using file reftags.
+Show it in its abstract in other window.
+Non-nil NOCOMPLETION goes to the first hit without completing.
+Library references are theorems, definitions and schemes imported
+from other Mizar articles.
+File reftags is included in the Mizar distribution."
   (interactive)
   (if (visit-tags-or-die mizreftags)
       (if nocompletion
@@ -649,7 +625,7 @@ second right-click does this too."
 
 
 (defun symbol-apropos ()
-  "Display list of all symbols REGEXP matches."
+  "Displays list of all MML symbols that match a regexp."
   (interactive)
   (if (visit-tags-or-die mizsymbtags)
       (call-interactively 'tags-apropos)))
@@ -657,13 +633,13 @@ second right-click does this too."
 
 
 (defun mouse-find-tag-history ()
-"popup menu with last 20 visited tags and go to selection,
-works properly only for symbols (not references)"
+"Popup menu with last 20 visited tags and go to selection.
+Works properly only for symbols (not references)."
   (interactive)
   (if (visit-tags-or-die mizsymbtags)
       (let* ((allowed (unique (delete nil (copy-alist find-tag-history)) ))
 	     (double (mapcar '(lambda (x) (cons x x)) (remove-from 20 allowed)))
-	     (backadded (cons (cons "Go to previous" t) double)) 
+	     (backadded (cons (cons "Go to previous" t) double))
 	     (menu (list "Visited symbols" (cons "Tags" backadded)))
 	     (tag (x-popup-menu t menu)))
 	(if (eq tag t) (pop-tag-mark)
@@ -674,35 +650,37 @@ works properly only for symbols (not references)"
 
 
 (defun buffer-abstract-p (x)
-"Non nil if buffer is mizar abstract"
+"Non nil if buffer X is mizar abstract."
 (let ((name  (buffer-file-name x)))
   (and (stringp name)
        (string-match "\.abs$" name))))
 
 (defun mizar-current-abstracts ()
-"Returns list of buffers of mizar abstracts"
+"Return list of buffers of mizar abstracts."
 (let ((l (buffer-list)) (l1 ()))
-  (while l (if (buffer-abstract-p (car l)) 
+  (while l (if (buffer-abstract-p (car l))
 	       (setq l1 (cons (car l) l1)))
 	 (setq l (cdr l)))
   l1))
 
 (defun mizar-close-all-abstracts ()
-"Closes all abstracts, useful when too much browsing done
-and you want to get to your editing buffers"
+"Close all Mizar abstracts.
+Useful when you did too much browsing and want to get back to your
+editing buffers."
 (interactive)
 (let* ((l (mizar-current-abstracts)) (i (length l)))
   (mapcar '(lambda (x) (kill-buffer x)) l)
   (message "%d abstracts closed" i)))
 
 (defun mizar-close-some-abstracts ()
-"Choose the abstracts you want to close"
+"Choose the abstracts you want to close."
 (interactive)
 (kill-some-buffers  (mizar-current-abstracts)))
 
 (defun mizar-bury-all-abstracts ()
-"Bury all abstracts, useful when too much browsing done
-and you want to get to your editing buffers"
+"Bury (put at the end of buffer list) all Mizar abstracts.
+Useful when you did too much browsing and want to get back to your
+editing buffers."
 (interactive)
 (let* ((l (mizar-current-abstracts)) (i (length l)))
   (mapcar '(lambda (x) (bury-buffer x)) l)
@@ -712,9 +690,10 @@ and you want to get to your editing buffers"
 ;;;;;;;;;;;;;;;;;; end of tags handling ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun mizar-move-to-column (col &optional force)
-"Mizar replacement for move-to-column, not to mess mizar buffers with
-tabs"
-(if force 
+"Mizar replacement for `move-to-column'.
+Avoids tabs in mizar buffers.
+Goto column COL, if FORCE, then insert spaces if short."
+(if force
     (let ((new (move-to-column col)))
       (if (< new col)
 	  (insert-char 32 (- col new)))) ; 32 is space...cannot use tabs
@@ -725,29 +704,29 @@ tabs"
 
 
 (defvar mizfiles
-(substitute-in-file-name "$MIZFILES/")) 
+(substitute-in-file-name "$MIZFILES/"))
 
 ;; fixed for xemacs leaving "" in the end
 (defun buff-to-numtable ()
 (let ((l (delete "" (split-string (buffer-string) "\n"))))
-  (mapcar '(lambda (x) 
+  (mapcar '(lambda (x)
 	     (mapcar 'string-to-number (split-string x)))
 	  l)
   ))
 
 (defun mizar-get-errors (aname)
-"Returns an unsorted table of errors on aname or nil."
+"Return an unsorted table of errors on ANAME or nil."
 (save-excursion
-  (let ((errors (concat aname ".err"))) 
+  (let ((errors (concat aname ".err")))
     (if (file-readable-p errors)
 	(with-temp-buffer           ; sort columns, then lines
-	  (insert-file-contents errors) 
+	  (insert-file-contents errors)
 	  (buff-to-numtable)
 	  )
-      )))) 
+      ))))
 
 (defun sort-for-errflag (l)
-"Greater lines first, then by column"
+"Sort with L, greater lines first, then by column."
 (let ((l (copy-alist l)))
   (sort l '(lambda (x y) (or (> (car x) (car y))
 			     (and (= (car x) (car y))
@@ -757,25 +736,26 @@ tabs"
 
 
 (defun mizar-error-flag (aname &optional table)
-"Insert error flags into main mizar buffer (like errflag).
-If mizar-use-momm is nonnil, puts the 'pos property into *4 errors too."
+"Insert error flags into main mizar buffer for ANAME (like errflag).
+If `mizar-use-momm' is non-nil, puts the 'pos property into *4 errors too.
+If TABLE is not given, get it with `mizar-get-errors'."
 (interactive "s")
-(let (lline 
+(let (lline
       (atab (sort-for-errflag (or table (mizar-get-errors aname))))
-      (props (list 'mouse-face 'highlight 
+      (props (list 'mouse-face 'highlight
 		   local-map-kword mizar-momm-err-map)))
   (if atab
-      (save-excursion	  
+      (save-excursion
 	(setq lline (goto-line (caar atab)))
 	(if (or (and (eq mizar-emacs 'xemacs) (not lline))
 		(and (not (eq mizar-emacs 'xemacs)) (< 0 lline)))
 	    (error "Main buffer and the error file do not agree, run verifier!"))
 	(if (< 0 (forward-line))
 	    (insert "\n"))
-	(let ((cline (caar atab)) srec sline scol snr 
+	(let ((cline (caar atab)) srec sline scol snr
 	      (currerrln "::>") (cpos 3))
-	  (while atab 
-	    (setq srec (car atab) sline (car srec) 
+	  (while atab
+	    (setq srec (car atab) sline (car srec)
 		  scol (- (cadr srec) 1)         ; 0 based in emacs
 		  snr (caddr srec) atab (cdr atab))
 	    (if (> cline sline)		; start new line ... go back
@@ -789,7 +769,7 @@ If mizar-use-momm is nonnil, puts the 'pos property into *4 errors too."
 		   (snrl (length snrstr)))
 	      (if (and mizar-use-momm (eq snr 4))  ; add momm stuff
 		  (progn
-		    (add-text-properties 0 1 props snrstr) 
+		    (add-text-properties 0 1 props snrstr)
 		    (put-text-property 0 1 'pos (list sline (cadr srec))
 				       snrstr)))
 	      (if (> scol cpos)              ; enough space
@@ -807,10 +787,10 @@ If mizar-use-momm is nonnil, puts the 'pos property into *4 errors too."
 
 
 (defvar mizar-err-msgs (substitute-in-file-name "$MIZFILES/mizar.msg")
-  "File with explanations of Mizar error messages")
+  "File with explanations of Mizar error messages.")
 (defun mizar-getmsgs (errors &optional cformat)
-"Gets sorted errors, returns string of messages, if cformat,
-returns list of numbered messages for mizar-compile"
+"Return string of error messages for ERRORS.
+If CFORMAT, return list of numbered messages for `mizar-compile'."
 (save-excursion
   (let ((buf (find-file-noselect  mizar-err-msgs))
 	(msgs (if cformat nil ""))
@@ -827,7 +807,7 @@ returns list of numbered messages for mizar-compile"
 	      (forward-line 1)
 	      (setq p (point))
 	      (end-of-line)
-	      (setq msg (buffer-substring p (point)))	      
+	      (setq msg (buffer-substring p (point)))
 	      (setq res (concat res  msg "\n")))
 	  (setq res (concat res  "  ?" "\n"))
 	  (goto-char (point-min)))
@@ -842,7 +822,8 @@ returns list of numbered messages for mizar-compile"
   (sort (unique (mapcar 'third (or table (mizar-get-errors aname)))) '<))
   
 (defun mizar-addfmsg (aname &optional table)
-"Insert error explanations into main mizar buffer (like addfmsg)."
+"Insert error explanations into mizar buffer for ANAME (like addfmsg).
+See `mizar-err-codes' for the maning of TABLE."
 (interactive "s")
 (save-excursion
   (goto-char (point-max))
@@ -851,9 +832,9 @@ returns list of numbered messages for mizar-compile"
 
 
 (defun mizar-do-errors (aname)
-"add err-flags and errmsgs using aname.err in current buffer"
+"Add err-flags and errmsgs using ANAME.err in current buffer."
 (save-excursion
-  (let ((errors (concat aname ".err"))) 
+  (let ((errors (concat aname ".err")))
     (if (and (file-readable-p errors)
 	     (< 0 (file-size errors)))
 	(let ((table (mizar-get-errors aname)))
@@ -861,8 +842,8 @@ returns list of numbered messages for mizar-compile"
 	  (mizar-addfmsg aname table))))))
   
 (defun mizar-comp-addmsgs (atab expl)
-"Replace errcodes in atab by  explanations from expl, atab is
-reversed"
+"Replace errcodes in ATAB by  explanations from EXPL.
+ATAB is reversed."
 (let ((msgs "")
       (atab atab))
   (while atab
@@ -871,17 +852,17 @@ reversed"
 	   (ercode (third currecord)))
       (while (not (= ercode (caar l1)))
 	(setq l1 (cdr l1)))
-      (setq msgs (concat aname ".miz:" (number-to-string (car currecord)) ":" 
-			 (number-to-string (cadr currecord)) ":" 
+      (setq msgs (concat aname ".miz:" (number-to-string (car currecord)) ":"
+			 (number-to-string (cadr currecord)) ":"
 			 (cadar l1) msgs)))
     (setq atab (cdr atab)))
   msgs))
 
 
 (defun mizar-compile-errors (aname)
-"Return string of errors and explanations in compile-like format,
-nil if no errors"
-  (let ((errors (concat aname ".err"))) 
+"Return string of errors and explanations for ANAME in compile-like format.
+Nil if no errors."
+  (let ((errors (concat aname ".err")))
     (if (and (file-readable-p errors)
 	     (< 0 (file-size errors)))
 	(let* ((table (mizar-get-errors aname))
@@ -894,8 +875,8 @@ nil if no errors"
 
 ;;;;;;;;;;;;;;;;; scanning ;;;;;;;;;;;;;;;;;;;;;
 
-(defvar mizar-symbols-regexp "" "string for fontification of symbols")
-(defvar dct-table-date -1 "date of the dct file")
+(defvar mizar-symbols-regexp "" "String for fontification of symbols.")
+(defvar dct-table-date -1 "Date of the dct file.")
 
 (make-variable-buffer-local 'mizar-symbols-regexp)
 (make-variable-buffer-local 'dct-table-date)
@@ -913,15 +894,15 @@ nil if no errors"
 
 
 (defun mizar-get-dct (aname)
-"Returns the symbols regexp for an article"
+"Return the symbols regexp for an article ANAME."
 (save-excursion
-  (let ((dct (concat aname ".dct"))) 
+  (let ((dct (concat aname ".dct")))
     (if (file-readable-p dct)
 	(let ((dctdate (cadr (nth 5 (file-attributes dct)))))
 	  (if (/= dct-table-date dctdate)
 	      (let (tab)
 		(with-temp-buffer           ; sort columns, then lines
-		  (insert-file-contents dct) 
+		  (insert-file-contents dct)
 		  (setq tab (buff-to-symblist)))
 		(setq dct-table-date dctdate
 		      mizar-symbols-regexp (regexp-opt tab))))))
@@ -932,19 +913,19 @@ nil if no errors"
 ; analyzer (or having interactive verifier), we now have only clusters
 ; after accommodation
 
-; cluster-table stuff commented now, ver. 6.2. resigned on 
+; cluster-table stuff commented now, ver. 6.2. resigned on
 ; collecting; leaving it here since two years from now we will
 ; be collecting again :-)
 
 ; (defvar cluster-table nil "table of clusters for the article")
-(defvar eclusters nil "table of existential clusters for the article")
-(defvar fclusters nil "table of functor clusters for the article")
-(defvar cclusters nil "table of conditional clusters for the article")
+(defvar eclusters nil "Table of existential clusters for the article.")
+(defvar fclusters nil "Table of functor clusters for the article.")
+(defvar cclusters nil "Table of conditional clusters for the article.")
 
-; (defvar cluster-table-date -1 
+; (defvar cluster-table-date -1
 ; "now as constr-table-date, but should be updated more often")
-(defvar ecl-table-date -1 
-"now as constr-table-date, but should be updated more often")
+(defvar ecl-table-date -1
+"Now as constr-table-date, but should be updated more often.")
 
 ; (make-variable-buffer-local 'cluster-table)
 (make-variable-buffer-local 'eclusters)
@@ -960,7 +941,7 @@ nil if no errors"
 ;     (let ((cludate (cadr (nth 5 (file-attributes cluname)))))
 ;       (if (or reload (/= cluster-table-date cludate))
 ; 	  (let (tab)
-; 	    (with-temp-buffer 
+; 	    (with-temp-buffer
 ; 	      (insert-file-contents cluname)
 ; 	      (setq tab
 ; 		    (vconcat '("")
@@ -969,9 +950,10 @@ nil if no errors"
 ; 		  cluster-table-date cludate))))))
 
 
-(defun fix-pre-type (str) 
-" change G for type to L, this is now based on a shaky assumption
-  that any _real_ G (functor) has at least one field"
+(defun fix-pre-type (str)
+"Change G for type to L in STR.
+This is now based on a shaky assumption
+that any _real_ G (functor) has at least one field."
   (let ((start 0) (res (copy-sequence str)))
     (while  (setq start (string-match "G\\([0-9]+ [;WV]\\)" res start))
       (aset res start 76)
@@ -1005,8 +987,8 @@ nil if no errors"
 ; 	   (cl (concat (aref table clnr) ":"))
 ; 	   (result (replace-match cl t t str)))
 ;       (if (string-match "C\\([0-9]+\\)[ \t]*$" result)
-; 	  (let* ((clnr2 (string-to-number 
-; 			 (substring result (match-beginning 1) 
+; 	  (let* ((clnr2 (string-to-number
+; 			 (substring result (match-beginning 1)
 ; 				    (match-end 1))))
 ; 		 (cl2 (concat ":" (aref table clnr2) )))
 ; 	    (replace-match cl2 t t result))
@@ -1014,21 +996,22 @@ nil if no errors"
 
 
 (defun parse-clusters (aname &optional reload)
-" parse the eclusters, fcluster and cclusters tables  from the file
-/usually .ecl file/; cluster-table must be loaded"
+"Parse the eclusters, fcluster and cclusters tables  for ANAME.
+Usually from .ecl file.  Cluster-table must be loaded.
+RELOAD does this unconditionally."
 (let ((ecldate (cadr (nth 5 (file-attributes (concat aname ".ecl"))))))
   (if (or reload (/= ecl-table-date ecldate))
       (let (ex func cond)  ; (table cluster-table))
-	(with-temp-buffer 
+	(with-temp-buffer
 	  (insert-file-contents (concat aname ".ecl"))
 	  (let ((all (split-string (buffer-string) "[\n]")))
 	    (while (eq (aref (car all) 0) 143) ; char 143 is exist code
 	      (setq ex (cons (car all) ex))
 	      (setq all (cdr all)))
-	    (while (eq (aref (car all) 0) 102) ; char 102 is 'f' 
+	    (while (eq (aref (car all) 0) 102) ; char 102 is 'f'
 	      (setq func (cons (car all) func))
 	      (setq all (cdr all)))
-	    (while (eq (aref (car all) 0) 45) ; char 45 is '-' 
+	    (while (eq (aref (car all) 0) 45) ; char 45 is '-'
 	      (setq cond (cons (car all) cond))
 	      (setq all (cdr all)))))
 	(setq eclusters (vconcat (nreverse ex))
@@ -1038,20 +1021,22 @@ nil if no errors"
 	))))
 
 (defun print-vec1 (vec &optional translate)
-"print vector of strings into string, used only for clusters"
+"Print vector of strings VEC into string.
+Used only for clusters.  Calls `frmrepr' if TRANSLATE."
 (let ((res "")
       (l (length vec))
       (i 0))
   (while (< i l)
-    (setq res (concat res "\n" 
+    (setq res (concat res "\n"
 		      (if translate (frmrepr (aref vec i)) (aref vec i))))
     (setq i (+ 1 i)))
   res))
   
   
 (defun show-clusters (&optional translate)
-"show the cluster tables in buffer *Clusters*
-  Previous contents of that buffer are killed first." 
+"Show the cluster tables in buffer *Clusters*.
+Previous contents of that buffer are killed first.
+TRANSLATE causes `frmrepr' to be called."
   (interactive)
   ;; This puts a description of bindings in a buffer called *Help*.
   (let ((result (concat (print-vec1 eclusters translate) "\n"
@@ -1062,7 +1047,7 @@ nil if no errors"
       (save-excursion
 	(set-buffer standard-output)
 	(erase-buffer)
-	(insert result))      
+	(insert result))
       (goto-char (point-min)))))
 
 ; should be tested for 6.2.!
@@ -1070,7 +1055,7 @@ nil if no errors"
 (interactive)
 (save-excursion
 (let ((name (or fname
-		(substring (buffer-file-name) 0 
+		(substring (buffer-file-name) 0
 			   (string-match "\\.miz$"
 					 (buffer-file-name))))))
 ;  (parse-cluster-table name reload)
@@ -1081,9 +1066,8 @@ nil if no errors"
 
 ;;;;;;;;;;;;;;; translation for MML Query ;;;;;;;;;;;;;;;;;;;;;;
 ;; should be improved but mostly works
-(defvar mizar-do-expl nil 
-"tells to put constructor format of 'by' items as properties after
-verifier run; experimental so default is nil")
+(defvar mizar-do-expl nil
+"*Put constructor format of 'by' items as properties after verifier run.")
 (defvar constrstring "KRVMLGU")
 (defvar cstrlen (length constrstring))
 ; (defvar constructors '("K" "R" "V" "M" "L" "G" "U"))
@@ -1091,9 +1075,9 @@ verifier run; experimental so default is nil")
 (defvar cstrnames [])
 (defvar cstrnrs [])
 (defvar impnr 0)
-(defvar constr-table-date -1 
-"set to last accommodation date, after creating the table,
- to keep tables up-to-date")
+(defvar constr-table-date -1
+"Set to last accommodation date, after creating the table.
+Used to keep tables up-to-date.")
 
 (make-variable-buffer-local 'cstrnames)
 (make-variable-buffer-local 'cstrnrs)
@@ -1113,13 +1097,13 @@ verifier run; experimental so default is nil")
   (vconcat (mapcar 'string-to-int (split-string numvect))))
 
 (defun get-sgl-table (aname)
-  "two vectors created from the .sgl file"
+  "Two vectors created from the .sgl file for ANAME."
   (let ((sglname (concat aname ".sgl")))
     (or (file-readable-p sglname)
 	(error "File unreadable: %s" sglname))
     (let ((sgldate (cadr (nth 5 (file-attributes sglname)))))
       (if (/= constr-table-date sgldate)
-	  (let* ((decl (with-temp-buffer 
+	  (let* ((decl (with-temp-buffer
 			 (insert-file-contents sglname)
 			 (split-string (buffer-string) "[\n]")))
 		 (count (string-to-int (car decl)))
@@ -1138,7 +1122,7 @@ verifier run; experimental so default is nil")
 	    )))))
 
 (defun idxrepr (idx nr)
-"does the work for tokenrepr, idx is index of constrkind"
+"Does the work for tokenrepr, IDX is index of constrkind."
   (let ((artnr 0))
     (while (and (< artnr impnr)
 		(< (aref (aref cstrnrs artnr) idx) nr))
@@ -1146,14 +1130,14 @@ verifier run; experimental so default is nil")
     (if (or (< artnr impnr)
 	    (<= nr (aref (aref cstrnrs artnr) idx)))
 	(setq artnr (- artnr 1)))
-    (concat (aref cstrnames artnr) ":" 
+    (concat (aref cstrnames artnr) ":"
 	    (aref ckinds idx) "."
 	    (int-to-string (- nr (aref (aref cstrnrs artnr) idx))))
     ))
 
 (defun tokenrepr (kind nr)
-"return absolute name of a lexem if possible (using the global tables
-cstrnames and cstrnrs"
+"Return absolute name of a lexem KIND, NR, if possible.
+Uses the global tables `cstrnames' and `cstrnrs'."
   (let ((idx (cstr-idx kind))
 	(artnr 0))
     (if idx (idxrepr idx nr)
@@ -1161,8 +1145,9 @@ cstrnames and cstrnrs"
       )))
 
 (defun frmrepr (frm &optional cstronly)
-"absolute repr of a formula, if cstronly, only list of constructors,
-the clusters inside frm must already be expanded here"
+"Absolute repr of a formula FRM.
+If CSTRONLY, only list of constructors,
+The clusters inside FRM must already be expanded here."
   (let* ((frm1 frm) (res (if cstronly nil ""))
 	(cur 0) (end (or (position 39 frm1) (length frm1)))) ;
     (while (< cur end)
@@ -1170,7 +1155,7 @@ the clusters inside frm must already be expanded here"
 	     (nonv (= tok 87))   ; W
 	     (idx (if nonv (cstr-idx 86) ; V
 		    (cstr-idx tok))))
-	(if idx 
+	(if idx
 	    (let* ((cur1 (+ cur 1))
 		   (nr1 "") (cont t) n1)
 	      (while (and cont (< cur1 end)) ;number
@@ -1181,8 +1166,8 @@ the clusters inside frm must already be expanded here"
 		  (setq cont nil)))
 	      (setq tok (idxrepr idx (string-to-int nr1))
 		    cur cur1)
-	      (setq res 
-		    (if cstronly (nconc res (list tok))		      
+	      (setq res
+		    (if cstronly (nconc res (list tok))
 		      (concat res (if nonv "non " "") tok))))
 	  (setq cur (+ 1 cur))
 	  (if (not cstronly)
@@ -1193,28 +1178,28 @@ the clusters inside frm must already be expanded here"
 (frmrepr (fix-pre-type frm) cstronly))
 
 (defun mizar-getbys (aname)
-  "Gets consructor repr of bys form the .pre file"
+  "Get consructor repr of bys from the .pre file for ANAME."
   (let ((prename (concat aname ".pre")))
     (or (file-readable-p prename)
 	(error "File unreadable: %s" prename))
     (let (res)
-      (with-temp-buffer 
+      (with-temp-buffer
 	(insert-file-contents prename)
 	(goto-char (point-min))
-	(while (re-search-forward 
-		"e[0-9]+ [0-9]+ [0-9]+ \\(.*\\)['][^;]*; *\\([0-9]+\\) \\([0-9]+\\)" 
+	(while (re-search-forward
+		"e[0-9]+ [0-9]+ [0-9]+ \\(.*\\)['][^;]*; *\\([0-9]+\\) \\([0-9]+\\)"
 		(point-max) t)
 	  (let ((line (match-string 2))
 		(col (match-string 3))
 		(frm (match-string 1)))
-	    (setq res (cons (list (string-to-int line) 
+	    (setq res (cons (list (string-to-int line)
 				  (string-to-int col) frm) res)))))
       (nreverse res))))
       
 
-(defvar byextent 1 "size of the underlined region")
-(defvar mizar-underline-expls nil 
-"if t, the clickable explanation spots in mizar buffer are underlined")
+(defvar byextent 1 "Size of the underlined region.")
+(defvar mizar-underline-expls nil
+"*If t, the clickable explanation spots in mizar buffer are underlined.")
 
 (defvar mizar-expl-map
   (let ((map (make-sparse-keymap))
@@ -1223,15 +1208,16 @@ the clusters inside frm must already be expanded here"
     (set-keymap-parent map mizar-mode-map)
     (define-key map button_kword 'mizar-show-constrs-other-window)
     map)
-"keymap used at explanation points")
+"Keymap used at explanation points.")
 
 (defconst local-map-kword
   (if (eq mizar-emacs 'xemacs) 'keymap 'local-map)
-  "Xemacs vs. Emacs local-map")
+  "Xemacs vs.  Emacs local-map.")
 
 (defun mizar-put-bys (aname)
-"puts the constr. repr. of bys as text properties into the 
-mizar buffer, underlines and mouse-highlites the places"
+"Put the constructor representation of bys as text properties
+into the mizar buffer ANAME.
+Underlines and mouse-highlites the places."
 (save-excursion
 ; check at least for the .pre file, not to exit with error below
 (if (not (file-readable-p (concat aname ".pre")))
@@ -1244,7 +1230,7 @@ mizar buffer, underlines and mouse-highlites the places"
 	props)
     (setq after-change-functions nil)
     (setq props (list 'mouse-face 'highlight local-map-kword map))
-    (if mizar-underline-expls 
+    (if mizar-underline-expls
 	(setq props (append props '(face underline))))
     (while bys
       (let* ((rec (car bys))
@@ -1258,41 +1244,50 @@ mizar buffer, underlines and mouse-highlites the places"
 	(move-to-column col)
 	(setq beg (point)
 	      end (min eol (+ byextent beg)))
-	(add-text-properties beg end props) 
-	(put-text-property beg end 'expl frm)	
+	(add-text-properties beg end props)
+	(put-text-property beg end 'expl frm)
 	(setq bys (cdr bys))))
     (setq after-change-functions oldhook)
     nil))))
 	
 (defvar mizar-expl-kind 'sorted
-"possible values are now 'raw, 'expanded, 'translate, 'constructors, 'sorted")
+"*Variable controlling the display of constructor representation of formulas.
+Possible values are now 
+'raw for the internal Mizar representation,
+'expanded for expansion of clusters,
+'translate for expanded formula in absolute notation,
+'constructors for list of constructors in absolute notation,
+'sorted for sorted list of constructors in absolute notation.")
 
 (defvar cstrregexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
-"Description of the constr format we use, see idxrepr")
+"Description of the constr format we use, see idxrepr.")
 
-(defvar mizar-cstr-map 
+(defvar mizar-cstr-map
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-m" 'mizar-kbd-ask-query)
     (define-key map "\M-." 'mizar-kbd-cstr-tag)
     (define-key map "\C-c\C-c" 'mizar-ask-advisor)
     (if (eq mizar-emacs 'xemacs)
-	(progn 
+	(progn
 	  (define-key map [button2] 'mizar-mouse-ask-query)
-	  (define-key map [button3] 'mizar-mouse-cstr-tag))      
+	  (define-key map [button3] 'mizar-mouse-cstr-tag))
       (define-key map [mouse-2] 'mizar-mouse-ask-query)
       (define-key map [mouse-3] 'mizar-mouse-cstr-tag))
     map)
-"Keymap used in the buffer *Constructors list* for viewing constructor 
-meanings via symbtags or sending constructor queries to MML Query. 
-Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
+"Keymap in the buffer *Constructors list*.
+Used for viewing constructor meanings via symbtags or sending
+constructor queries to MML Query.
+Commands:
+\\{mizar-cstr-map}
+")
 
 (defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/")
 (defvar megrez-url "http://megrez.mizar.org/cgi-bin/")
 (defvar query-url megrez-url)
-(defvar query-text-output nil 
-"if nonnil, text output is required from MML Query")
-(defvar mizar-query-browser nil 
-"browser for Query, we allow 'w3 or default")
+(defvar query-text-output nil
+"If non-nil, text output is required from MML Query.")
+(defvar mizar-query-browser nil
+"*Browser for MML Query, we allow 'w3 or default.")
 
 ; Xemacs vs. Emacs
 (if (not (fboundp 'event-window))
@@ -1306,12 +1301,12 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
     (browse-url query)))
 
 (defun mizar-ask-meaning-query (cstr)
-"Send a constructor query to MML Query"
+"Send a constructor query CSTR to MML Query."
 (interactive "s")
 (mizar-ask-query (concat query-url "emacs_search?entry=" cstr)))
 
 (defun mizar-cstr-at-point (pos &optional agg2str)
-"Get the constructor around pos, if agg2str, replace aggr by struct"
+"Get the constructor around POS, if AGG2STR, replace aggr by struct."
 (save-excursion
   (goto-char pos)
   (skip-chars-backward ":.a-zA-Z_0-9")
@@ -1322,6 +1317,7 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
 	  res)))))
 
 (defun mizar-mouse-ask-query (event)
+"Ask MML Query about the constructor we clicked on."
   (interactive "e")
   (select-window (event-window event))
   (let ((cstr (mizar-cstr-at-point (event-point event))))
@@ -1329,18 +1325,21 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
       (message "No constructor at point"))))
 
 (defun mizar-kbd-ask-query (pos)
+"Ask MML Query about the constructor at position POS."
   (interactive "d")
   (let ((cstr (mizar-cstr-at-point pos)))
     (if cstr (mizar-ask-meaning-query cstr)
       (message "No constructor at point"))))
 
 (defun mizar-kbd-cstr-tag (pos)
+"Find the definition of the constructor at position POS."
   (interactive "d")
   (let ((cstr (mizar-cstr-at-point pos t)))
-    (if cstr (mizar-symbol-def t cstr t) 
+    (if cstr (mizar-symbol-def t cstr t)
       (message "No constructor at point"))))
 
 (defun mizar-mouse-cstr-tag (event)
+"Find the definition of the constructor we clicked on."
   (interactive "e")
   (select-window (event-window event))
   (let ((cstr (mizar-cstr-at-point (event-point event) t)))
@@ -1356,12 +1355,11 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
     (add-text-properties (match-beginning 0) (match-end 0) props)))))
 
 (defun mizar-intern-constrs-other-window (res)
-"displays the cstr in buffer *Constructors list* in other window
- and highlights"
+"Display the constructors RES in buffer *Constructors list* in other window and highlight."
 (let ((cbuf (get-buffer-create "*Constructors list*")))
   (set-buffer cbuf)
   (erase-buffer)
-  (insert res)    
+  (insert res)
   (mizar-highlight-constrs)
   (use-local-map mizar-cstr-map)
   (goto-char (point-min))
@@ -1370,13 +1368,16 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
 
 
 (defun mizar-show-constrs-other-window (event)
-  "show constr of the inference you click on."
+  "Show constructors of the inference you click on.
+The constructors are translated according to the variable 
+`mizar-expl-kind', and shown in the buffer *Constructors list*.
+The variable `mizar-do-expl' should be non-nil."
   (interactive "e")
   (select-window (event-window event))
   (save-excursion
     (let ((frm (get-text-property (event-point event) 'expl)))
       (if frm
-	  (let ((res 
+	  (let ((res
 		 (cond ((eq mizar-expl-kind 'raw) frm)
 		       ((eq mizar-expl-kind 'expanded) (fix-pre-type frm))
 		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm))
@@ -1389,16 +1390,21 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
 	    (mizar-intern-constrs-other-window res))))))
 
 (defvar advisor-url "http://lipa.ms.mff.cuni.cz/cgi-bin/mycgi1.cgi")
-(defvar advisor-limit "30")
+(defvar advisor-limit 30
+"*The number of hits you want Mizar proof Advisor to send you.")
 (defvar advisor-output "*Proof Advice*")
 
 (defun mizar-ask-advisor ()
-  "Send the contents of the Constr. Explanations buffer to Mizar Proof Advisor"
+  "Send the contents of the *Constr Explanations* buffer to Mizar Proof Advisor.
+Resulting advice is shown in the buffer *Proof Advice*, where normal tag-browsing
+keyboard bindings can be used to view the suggested references.
+"
   (interactive)
-  (let* ((query (concat advisor-url "?Text=1\\&Limit=" advisor-limit
+  (let* ((query (concat advisor-url "?Text=1\\&Limit=" 
+			(number-to-string advisor-limit)
 			"\\&Formula="
-			(query-handle-chars-cgi 
-			 (buffer-substring-no-properties 
+			(query-handle-chars-cgi
+			 (buffer-substring-no-properties
 			  (point-min) (point-max)))))
 	 (command (concat "wget -q -O - " query)))
     (shell-command command advisor-output)
@@ -1418,7 +1424,7 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
 
 
 ;; Code for access to the squery ring
-;; mostly stolen from vc 
+;; mostly stolen from vc
 ;; (these history funcs should be done generically in some emacs library)
 (defconst query-maximum-squery-ring-size 128
   "Maximum number of saved comments in the comment ring.")
@@ -1433,9 +1439,12 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
     (define-key map "\M-s" 'query-squery-search-forward)
     (define-key map "\C-c\C-c" 'query-send-entry)
     map)
-"Keymap used in the *MML Query Input* buffer.
-Currently used are:  M-n, M-p, M-r, M-s (work on saved queries) and
-C-c C-c (sends query to MML Query)"
+"Keymap in the *MML Query Input* buffer.
+Used for sending queries to MML Query server and browsing and searching
+previous queries.
+Commands:
+\\{query-entry-map}
+"
 )
 
 (defun query-entry-mode ()
@@ -1451,9 +1460,8 @@ saved queries.  These can be recalled as follows:
 \\[query-squery-search-reverse]	search backward for regexp in the squery ring
 \\[query-squery-search-forward]	search backward for regexp in the squery ring
 
-Entry to the query-entry submode calls the value of text-mode-hook, then
-the value of query-entry-mode-hook.
-"
+Entry to the query-entry submode calls the value of `text-mode-hook', then
+the value of query-entry-mode-hook."
   (interactive)
   (set-syntax-table text-mode-syntax-table)
   (use-local-map query-entry-map)
@@ -1467,7 +1475,7 @@ the value of query-entry-mode-hook.
 )
 
 (defun query-start-entry ()
-"Starts a new query in buffer *MML Query input*"
+"Start a new query in buffer *MML Query input*."
   (interactive)
   (let ((buf  (or (get-buffer "*MML Query input*")
 		  (get-buffer-create "*MML Query input*"))))
@@ -1484,7 +1492,7 @@ the value of query-entry-mode-hook.
       (and (< nr 58) (< 47 nr))))
 
 (defun query-handle-chars-cgi (str)
-"replace nonalfanumeric chars by %code"
+"Replace nonalfanumeric chars in STR by %code."
 (let ((slist (string-to-list str))
       (space (nreverse (string-to-list (format "%%%x" 32))))
       res codel)
@@ -1493,7 +1501,7 @@ the value of query-entry-mode-hook.
   (while slist
     (let ((i (car slist)))
       (cond ((alfanump i)
-	     (setq res (cons i res)))   
+	     (setq res (cons i res)))
 	    ((member i '(32 10 9 13))        ; "[ \n\t\r]"
 	     (setq res (append space res)))
 	    (t
@@ -1504,7 +1512,7 @@ the value of query-entry-mode-hook.
 
 
 
-(defun query-send-entry (&optional nocomment)
+(defun query-send-entry ()
   "Send the contents of the current buffer to MML Query."
   (interactive)
   (ring-insert query-squery-ring (buffer-string))
@@ -1515,7 +1523,8 @@ the value of query-entry-mode-hook.
   (mizar-ask-query query)))
 
 (defun query-previous-squery (arg)
-  "Cycle backwards through query-squery history."
+  "Cycle backwards through query-squery history.
+With a numeric prefix ARG, go back ARG queries."
   (interactive "*p")
   (let ((len (ring-length query-squery-ring)))
     (cond ((<= len 0)
@@ -1536,12 +1545,13 @@ the value of query-entry-mode-hook.
 	   (insert (ring-ref query-squery-ring query-squery-ring-index))))))
 
 (defun query-next-squery (arg)
-  "Cycle forwards through comment history."
+  "Cycle forwards through comment history.
+With a numeric prefix ARG, go forward ARG queries."
   (interactive "*p")
   (query-previous-squery (- arg)))
 
 (defun query-squery-search-reverse (str)
-  "Searches backwards through squery history for substring match."
+  "Search backwards through squery history for substring match of STR."
   (interactive "sPrevious query matching (regexp): ")
   (if (string= str "")
       (setq str query-last-squery-match)
@@ -1557,7 +1567,7 @@ the value of query-entry-mode-hook.
 	  (t (error "Not found")))))
 
 (defun query-squery-search-forward (str)
-  "Searches forwards through squery history for substring match."
+  "Search forwards through squery history for substring match of STR."
   (interactive "sNext query matching (regexp): ")
   (if (string= str "")
       (setq str query-last-squery-match)
@@ -1579,52 +1589,53 @@ the value of query-entry-mode-hook.
 ;; ported the Constr. Explanations to Mizar 6.2. here, but MoMM 0.2
 ;; is still based on Mizar 6.1, so incase you have Mizar 6.2, MoMM
 ;; will not work. I hope to port MoMM to Mizar 6.2. shortly. If you
-;; want to use it in the meantime, use Mizar 6.1. and previous 
+;; want to use it in the meantime, use Mizar 6.1. and previous
 ;; version of mizar.el .
 
-(defvar mizar-use-momm nil 
-"If t, errors *4 are clickable, trying to get MoMM's hints.")
+(defvar mizar-use-momm nil
+"*If t, errors *4 are clickable, trying to get MoMM's hints.
+MoMM should be installed for this.")
 
 
 (defvar mizar-momm-compressed t
-"If t, the distribution files (except from the typ directory)
-are gzipped to save space") 
+"*If t, the distribution files (except from the typ directory)
+are gzipped to save space")
 
 (defvar mizar-momm-max-start-time 20
 "How long we wait for the MoMM process to start to exist;
 loading can take longer, we just need the process")
 
 (defvar mizar-momm-load-tptp t
-"If t, the simple justification clause bases are loaded into MoMM too")
+"*If t, the simple justification clause bases are loaded into MoMM too.")
 
 (defconst mizar-fname-regexp  "[A-Za-z0-9_]+"
-"Allowed characters for mizar filenames")
+"Allowed characters for mizar filenames.")
 
-(defvar mizar-momm-dir (substitute-in-file-name 
+(defvar mizar-momm-dir (substitute-in-file-name
 		       "$MIZFILES/MoMM/")
-"Directory with MoMM")
+"*Directory containing the MoMM distribution.")
 (defvar mizar-mommths (concat mizar-momm-dir "ths/")
-  "Directory with articles' .ths files")
+  "Directory with articles' .ths files.")
 (defvar mizar-mommtyp (concat mizar-momm-dir "typ/")
-  "Directory with articles' .typ files")
-(defvar mizar-mommtptp (concat mizar-momm-dir "tptp/") 
-  "Directory with articles' .tptp files")
-(defvar mizar-mommall-tt (concat mizar-momm-dir "all.typ") 
-  "Complete type table to be loaded into MoMM")
-(defvar mizar-mommall-db (concat mizar-momm-dir "all.ths") 
-  "The MoMM database to load, .tb and .cb will be appended to get
+  "Directory with articles' .typ files.")
+(defvar mizar-mommtptp (concat mizar-momm-dir "tptp/")
+  "Directory with articles' .tptp files.")
+(defvar mizar-mommall-tt (concat mizar-momm-dir "all.typ")
+  "Complete type table to be loaded into MoMM.")
+(defvar mizar-mommall-db (concat mizar-momm-dir "all.ths")
+  "The MoMM database to load.
+The .tb and .cb extensions will be appended to get
 the termbank and clausebank.")
 (defvar mizar-momm-binary (concat mizar-momm-dir "MoMM")
-  "Path to the MoMM binary")
+  "Path to the MoMM binary.")
 (defvar mizar-momm-verifier (concat mizar-momm-dir "tptpver")
-  "The verifier used for creating tptp problems to be sent to MoMM
-from unsuccessful simple justifications")
+  "The verifier used for creating tptp problems.
+They can be later sent to MoMM from unsuccessful simple justifications")
 (defvar mizar-momm-exporter (concat mizar-momm-dir "tptpexp")
-  "The exporter used for creating tptp problems form articles, 
-to be loaded into MoMM on  startup")
+  "The exporter used for creating tptp problems form articles.
+To be loaded into MoMM on  startup.")
 (defvar mizar-relcprem (concat mizar-momm-dir "relcprem")
-  "The detector of irrelevant local constants, necessary for 
-MoMM exporter")
+  "*The detector of irrelevant local constants, necessary for MoMM exporter.")
 
 (defvar mizar-momm-rant "Please process clauses now, I beg you, great shining CSSCPA, wonder of the world, most beautiful program ever written.
 "
@@ -1632,18 +1643,18 @@ MoMM exporter")
 
 (defvar mizar-momm-finished (concat mizar-momm-rant " state: "
 				    mizar-momm-rant)
-  "The sequence to send at the end of innitial data, 
-to get the 'loaded' response from MoMM.")
+  "The sequence to send at the end of innitial data.
+Used to get the 'loaded' response from MoMM.")
 
-(defvar mizar-momm-accept-output t 
-"Used to suppress output during MoMM loading")
+(defvar mizar-momm-accept-output t
+"Used to suppress output during MoMM loading.")
 
 (defvar mizar-momm-verbosity 'translate
-"Possible values are now 'raw, 'translate")
+"Possible values are now 'raw, 'translate.")
 
 
 (defun mizar-toggle-momm ()
-"Check that MoMM is installed first"
+"Check that MoMM is installed first."
 (interactive)
 (if (and (not mizar-use-momm)
 	 (not (file-executable-p mizar-momm-verifier)))
@@ -1661,7 +1672,7 @@ to get the 'loaded' response from MoMM.")
 
 
 (defconst directivenbr 8
-"Tells how many kinds of directive there are (in .evl), see env_han.pas"
+"Tells how many kinds of directive there are (in .evl), see env_han.pas."
 )
 ; Following is order of directives in .evl, see env_han.pas
 (defconst voc-dir-order 0)
@@ -1673,40 +1684,40 @@ to get the 'loaded' response from MoMM.")
 (defconst con-dir-order 6)
 (defconst req-dir-order 7)
 
-(defvar evl-table nil "The table of environment directives")
-(defvar evl-table-date -1 
-"Set to last accommodation date, after creating the table,
- to keep tables up-to-date")
+(defvar evl-table nil "The table of environment directives.")
+(defvar evl-table-date -1
+"Set to last accommodation date, after creating the table.
+Used to keep tables up-to-date.")
 
 (make-variable-buffer-local 'evl-table)
 (make-variable-buffer-local 'evl-table-date)
 
 
 (defun get-directive (directives start count )
-"Directives is a  list created from .evl, get count of them
-beginning at the start position"
+"DIRECTIVES is a  list created from .evl.
+Get COUNT of them beginning at the START position."
   (let ((counter 0) (result ()))
     (while (< counter count)
       (setq result (append result (list (elt directives (+ start (* 2 counter))))))
-      (setq counter (+ counter 1)))  
+      (setq counter (+ counter 1)))
     result))
 
 
 (defun get-evl (aname)
-"Returns a directivenbr-long list of directives for the article
-created from its .evl file"
+"Return a `directivenbr'-long list of directives for the article ANAME.
+Created from its .evl file."
 (let ((evlname (concat aname ".evl")))
   (or (file-readable-p evlname)
 	(error "File unreadable: %s, run accomodator first" evlname))
   (let ((evldate (cadr (nth 5 (file-attributes evlname)))))
     (if (/= evl-table-date evldate)
-	(let ((decl (with-temp-buffer 
+	(let ((decl (with-temp-buffer
 		      (insert-file-contents evlname)
 		      (split-string (buffer-string) "[\n]")))
 	      (d ()) (i 0) (start 0) (count 0))
 	  (while  (< i directivenbr)
 	    (setq count (string-to-number (elt decl start)))
-	    (setq d (append d (list (get-directive 
+	    (setq d (append d (list (get-directive
 				     decl (+ start 1) count))))
 	    (setq start (+ start 1 (* 2 count)))
 	    (setq i (+ 1 i)))
@@ -1715,11 +1726,11 @@ created from its .evl file"
     evl-table)))
 
 (defun get-theorem-dir (aname)
-"Return list of theorem directives"
+"Return list of theorem directives for ANAME."
   (elt (get-evl aname) the-dir-order))
 
 (defun get-all-dirs (aname)
-"Return list of all names occuring in some directive"
+"Return list of all names occuring in some directive for ANAME."
 (let ((d (get-evl aname))
       res (i 0))
   (while  (< i directivenbr)
@@ -1728,14 +1739,14 @@ created from its .evl file"
   (unique res)))
 
 (defun get-all-dirs-rec (aname)
-"Return list of all names occuring in some directive, 
-plus transitive hull of constructors"
+"Return list of all names occuring in some directive for ANAME,
+plus transitive hull of constructors."
 (get-sgl-table aname)
 (unique (append cstrnames (get-all-dirs aname))))
 
 (defun mizar-get-momm-input (aname pos)
-"Search file aname.tptp for problems generated for given pos, 
-return list of them"
+"Search file ANAME.tptp for problems generated for given POS.
+Return list of them."
 (let* ((problems (concat aname ".tptp"))
        (linestr (number-to-string (car pos)))
        (colstr (number-to-string (cadr pos)))
@@ -1754,7 +1765,8 @@ return list of them"
   (nreverse res)))
 
 (defun mizar-ask-momm (event)
-  "Ask MoMM for hints on an error."
+  "Ask MoMM for hints on an error at click EVENT.
+The results are put into the buffer *MoMM's Hints*."
   (interactive "e")
   (select-window (event-window event))
   (save-excursion
@@ -1762,12 +1774,12 @@ return list of them"
 	  (pos (get-text-property (event-point event) 'pos)))
       (if (not mommpr) (error "Start MoMM first!"))
       (if (not pos) (error "No semantic error here, perhaps you did not run tptpver?"))
-      (let ((in (mizar-get-momm-input 
-		 (file-name-sans-extension 
+      (let ((in (mizar-get-momm-input
+		 (file-name-sans-extension
 		  (file-name-nondirectory (buffer-file-name)))
 		 pos))
 	    (cbuf (get-buffer-create "*MoMM's Hints*")))
-	(if (not in) 
+	(if (not in)
 	    (error "No data for MoMM found, use the right verifier!"))
 	(set-buffer cbuf)
 	(erase-buffer)
@@ -1784,19 +1796,19 @@ return list of them"
 
 
 (defun mizar-momm-hints-filter (res)
-"Puts the hints in buffer *MoMM's Hints* if mizar-momm-accept-output
-is nonil  (used to get rid of the output while MoMM loading)"
+"Put the hints RES in buffer *MoMM's Hints* if `mizar-momm-accept-output'nonil.
+Used to get rid of the output while MoMM loading."
 (if (not mizar-momm-accept-output)
     (let ((l (length res)) (i 0))
-      (while (< i l)  
+      (while (< i l)
 	(if (eq (aref res i) 35)      ; 35 = # - now serves as loaded-info
 	    (setq mizar-momm-accept-output t
 		  i l)
-	  (setq i (+ 1 i))))))	  
+	  (setq i (+ 1 i))))))
 (if mizar-momm-accept-output
     (let ((cbuf (get-buffer-create "*MoMM's Hints*")))
       (set-buffer cbuf)
-      (cond 
+      (cond
        ((string-match "^# CSSCPAState" res)  ; now serves as loaded-info
 	(insert "MoMM loaded
 ")
@@ -1839,19 +1851,17 @@ is nonil  (used to get rid of the output while MoMM loading)"
 (mizar-momm-hints-filter str))
 
 (defun mizar-run-momm1 (typetables tlist &optional tb raw filter)
-"Start momm  interactively in background. 
-Tlist is the list of files to load, tb is optional termbank.
-If multiple typetables, hey have to be appended into temporary file.
-If raw is nonnil, process-filter filter is used if given, otherwise none.
-Input: (process-send-string (dfg-for-article aticle))
-       (ask-spass-prover formula timelimit references) "
+"Start momm  interactively in background.
+If multiple TYPETABLES, they have to be appended into temporary file here.
+TLIST is the list of files to load, TB is optional termbank.
+If RAW is non-nil, process filter FILTER is used if given, otherwise none."
 (interactive)
 (if (get-process "MoMM") (kill-process "MoMM"))
 (if (get-buffer "*MoMM*") (kill-buffer "*MoMM*"))
 (sit-for 1)
-(let* ((tt (cond 
+(let* ((tt (cond
 	    ((cdr typetables)     ; have to create tmp
-	     (let ((t (make-temp-name 
+	     (let ((t (make-temp-name
 		       (concat default-directory "tmptt")))
 		 (t1 typetables))
 	       (with-temp-file t
@@ -1863,17 +1873,17 @@ Input: (process-send-string (dfg-for-article aticle))
 	    (t nil)))
        (args tlist) compr (i 0))
   (if mizar-momm-compressed
-      (while args 
+      (while args
 	(if (equal (file-name-extension (car args)) "gz")
 	    (setq compr (cons (car args) compr)
 		  tlist (delete (car args) tlist)))
 	(setq args (cdr args))))
   (setq mizar-momm-accept-output nil)
   (cond
-   (compr       
-    (setq compr (concat "(gzip -dc " 
+   (compr
+    (setq compr (concat "(gzip -dc "
 			(mapconcat 'identity compr " ")
-			"; cat)| ")	  
+			"; cat)| ")
 	  args (concat compr mizar-momm-binary " -s "
 		       (if tt (concat " -y " tt " ") "")
 		       (if tb (concat " -b " tb " ") "")
@@ -1888,7 +1898,7 @@ Input: (process-send-string (dfg-for-article aticle))
 ;  (apply 'make-comint args)
     (apply 'start-process args)))
 
-  (while (and (not (get-process "MoMM")) 
+  (while (and (not (get-process "MoMM"))
 	      (< i mizar-momm-max-start-time))
     (sit-for 1)
     (setq i (+ 1 i)))
@@ -1896,37 +1906,39 @@ Input: (process-send-string (dfg-for-article aticle))
       (error "MoMM not started, try increasing mizar-momm-max-start-time"))
   (if raw
       (set-process-filter (get-process "MoMM") filter)
-    (set-process-filter (get-process "MoMM") 
+    (set-process-filter (get-process "MoMM")
 			'mizar-momm-process-filter))
-  (process-send-string (get-process "MoMM") 
+  (process-send-string (get-process "MoMM")
 		       mizar-momm-finished)
-  (if (cdr typetables) 
+  (if (cdr typetables)
       (message "Temporary typetable %s created" tt))
   (message "Loading MoMM data...")
 ))
 
 (defun verify-file-readable (f)
-  (or (file-readable-p f) 
+  (or (file-readable-p f)
       (error "File %s not readable" f)))
 
 (defun mizar-momm-get-default-files (aname &optional thsdirs tptp)
-"Get default files for running MoMM for article aname, pair
-(not found, absolute names) is returned"
+"Get default files for running MoMM for article ANAME.
+Pair (not found, absolute names) is returned.
+If THSDIRS is given, use instead of default.
+TPTP tells to use tptp files too."
 (let* ((args (if thsdirs (copy-alist (get-theorem-dir aname))
 	       (get-all-dirs-rec aname)))
        res no f f1)
   (while args
-    (setq f (concat mizar-mommths 
-		    (downcase (car args)) 
+    (setq f (concat mizar-mommths
+		    (downcase (car args))
 		    (if mizar-momm-compressed ".ths.cb.gz" ".ths.cb"))
-	  f1 (concat mizar-mommtptp 
-		     (downcase (car args)) 
-		     (if mizar-momm-compressed ".tptp.cb.gz" 
+	  f1 (concat mizar-mommtptp
+		     (downcase (car args))
+		     (if mizar-momm-compressed ".tptp.cb.gz"
 		       ".tptp.cb")))
     (if (file-readable-p f) (setq res (cons f res))
       (setq no (cons f no)))
-    (if tptp 
-	(if (file-readable-p f1) 
+    (if tptp
+	(if (file-readable-p f1)
 	    (setq res (cons f1 res))
 	  (setq no (cons f1 no))))
     (setq args (cdr args)))
@@ -1934,23 +1946,23 @@ Input: (process-send-string (dfg-for-article aticle))
 ))
 
 (defun mizar-run-momm ()
-"Get type, clause and termbank files for running MoMM and run
-it with the default process filter. Verify that the argument
+"Get type, clause and termbank files for running MoMM and run it.
+Default process filter is used.  Verify that the default argument
 files exist first."
 (interactive)
-(let* ((aname (file-name-sans-extension 
+(let* ((aname (file-name-sans-extension
 	       (file-name-nondirectory (buffer-file-name))))
-       (args (cadr (mizar-momm-get-default-files aname nil 
+       (args (cadr (mizar-momm-get-default-files aname nil
 						 mizar-momm-load-tptp)))
        tt tb)
   (setq args (mapconcat 'identity args " "))
-  (setq tts (split-string 
+  (setq tts (split-string
 	    (read-string  "Typetable(s): " mizar-mommall-tt)
 	    "[, \f\t\n\r\v]+")
-	args (split-string 
+	args (split-string
 	      (read-string  "Clause file(s): " args)
 	      "[, \f\t\n\r\v]+")
-	tb  (let ((s (read-string  
+	tb  (let ((s (read-string
 		      "Termbank (Default: none): ")))
 		(if (string-equal "" s) nil s)))
 ;  (mapcar 'verify-file-readable tts)
@@ -1961,47 +1973,50 @@ files exist first."
 
 
 (defun mizar-run-momm-default (&optional aname thsdirs tptp)
-"Run MoMM, loading theorems from all its directive filenames,
-if thsdirs, use the theorem directive only. Complete typetable 
-is loaded, which makes later on demand loading with 
-mizar-momm-add-files possible."
+"Run MoMM for article ANAME.
+Load theorems from all its directive filenames.
+If THSDIRS is non-nil, use the theorem directive only.
+Complete typetable is loaded, which makes later on demand
+loading with `mizar-momm-add-files' possible.
+Use TPTP to load the tptp files (non-theorem information) too."
 (interactive)
 (let* ((aname (or aname
-		  (file-name-sans-extension 
+		  (file-name-sans-extension
 		   (file-name-nondirectory (buffer-file-name)))))
        (res (mizar-momm-get-default-files aname thsdirs tptp)))
   (mizar-run-momm1 (list mizar-mommall-tt) (cadr res))))
 
 
 (defun mizar-run-momm-full ()
-"Fast load MoMM with the full theorems db, this takes now 
-about 200M (improved to about 120M in MoMM 0.2)"
+"Fast load MoMM with the full theorems db.
+This takes about 120M in MoMM 0.2."
 (interactive)
-(mizar-run-momm1 (list mizar-mommall-tt) 
+(mizar-run-momm1 (list mizar-mommall-tt)
 		 (list (concat mizar-mommall-db ".cb"))
 		 (concat mizar-mommall-db ".tb")))
 
 (defun mizar-momm-get-file (f dir ext)
-"Find the momm file, possibly with extension and in dir"
-(cond 
+"Find the momm file F, possibly in DIR and with extension EXT."
+(cond
  ((file-readable-p f) f)
  ((file-readable-p (concat f ext)) (concat f ext))
  ((file-readable-p (concat f ext ".cb")) (concat f ext ".cb"))
- ((and mizar-momm-compressed 
+ ((and mizar-momm-compressed
        (file-readable-p (concat f ext ".cb.gz")))
   (concat f ext ".cb.gz"))
  ((file-readable-p (concat dir f)) (concat dir f))
  ((file-readable-p (concat dir f ext)) (concat dir f ext))
  ((file-readable-p (concat dir f ext ".cb")) (concat dir f ext ".cb"))
- ((and mizar-momm-compressed 
+ ((and mizar-momm-compressed
        (file-readable-p (concat dir f ext ".cb.gz")))
   (concat dir f ext ".cb.gz"))
  (t nil)))
 
 (defun mizar-momm-add-files (tlist &optional tptp)
-"Add .ths files from tlist into running MOMM, the type-table
-must be loaded on start (e.g. by running MoMM with all.typ).
-If tptp, load tptp files too. Current directory is searched first,
+"Add ths files from TLIST into running MoMM.
+The type-table must be loaded on start,
+e.g. by running MoMM with all.typ.
+If TPTP, load tptp files too.  Current directory is searched first,
 then the MoMM db."
 (interactive "sarticles: ")
 (let ((mommpr (get-process "MoMM"))
@@ -2013,12 +2028,12 @@ then the MoMM db."
   (setq mizar-momm-accept-output nil)
   (while tlist
     (let ((f (mizar-momm-get-file (car tlist) mizar-mommths ".ths"))
-	  (f1 (if tptp 
-		  (mizar-momm-get-file  (car tlist) 
-					mizar-mommtptp ".tptp"))))       
+	  (f1 (if tptp
+		  (mizar-momm-get-file  (car tlist)
+					mizar-mommtptp ".tptp"))))
       (if f
-	  (with-temp-buffer 
-	    (if (and mizar-momm-compressed 
+	  (with-temp-buffer
+	    (if (and mizar-momm-compressed
 		     (equal (file-name-extension f) "gz"))
 		(let ((excode (call-process "gzip" f t nil "-dc"))
 		   (if (or (stringpp excode) (/= 0 excode))
@@ -2027,8 +2042,8 @@ then the MoMM db."
 	    (process-send-string mommpr (buffer-string))
 	    (setq i (+ 1 i))))
       (if (and f1 (not (equal f f1)))
-	  (with-temp-buffer 
-	    (if (and mizar-momm-compressed 
+	  (with-temp-buffer
+	    (if (and mizar-momm-compressed
 		     (equal (file-name-extension f1) "gz"))
 		(let ((excode (call-process "gzip" f1 t nil "-dc"))
 		   (if (or (stringpp excode) (/= 0 excode))
@@ -2052,7 +2067,7 @@ then the MoMM db."
 	  (list article line col)))))
       
 (defun mizar-momm-find-pos ()
-  "Finds the position at point in other window" 
+  "Find the position at point in other window."
 (interactive)
 (let ((pos (mizar-pos-at-point)))
   (if pos
@@ -2083,10 +2098,11 @@ then the MoMM db."
       "")))
 
 (defun mizar-twiki-comment-error (&optional errstr)
+"Add a comment to the Mizar Twiki description of an error message."
 (interactive)
-(let ((errstr 
-       (or errstr 
-	   (read-string  (concat "ErrorCode to comment on: (Default: " 
+(let ((errstr
+       (or errstr
+	   (read-string  (concat "ErrorCode to comment on: (Default: "
 				 (mizar-error-at-point) "): " )
 			 nil nil      (mizar-error-at-point)))))
   (browse-url (concat mizar-twiki-url "ErrorNo" errstr))))
@@ -2095,8 +2111,8 @@ then the MoMM db."
 (defun mizar-th-abbrevs (&optional aname)
 (interactive)
 (let ((aname (or aname
-		(file-name-nondirectory 
-		 (file-name-sans-extension 
+		(file-name-nondirectory
+		 (file-name-sans-extension
 		  (buffer-file-name))))))
   (setq aname (upcase aname))
 (save-excursion
@@ -2110,9 +2126,9 @@ then the MoMM db."
     (setq comm (search-forward comment-start pos0 t))
     (if comm  (beginning-of-line 2)  ;; inside comment, skip
       (setq thnr (+ thnr 1))
-      (goto-char pos1)               ;; label  or not 
+      (goto-char pos1)               ;; label  or not
       (if (looking-at "\\([a-zA-Z0-9_']+\\):")
-	  (define-abbrev mizar-mode-abbrev-table 
+	  (define-abbrev mizar-mode-abbrev-table
 	    (downcase (match-string 1))
 	    (concat aname ":" (number-to-string thnr))))
 ;	  (setq pairs (cons (cons (match-string 1) thnr) pairs)))))
@@ -2121,8 +2137,8 @@ then the MoMM db."
 (defun mizar-defs-abbrevs (&optional aname)
 (interactive)
 (let ((aname (or aname
-		(file-name-nondirectory 
-		 (file-name-sans-extension 
+		(file-name-nondirectory
+		 (file-name-sans-extension
 		  (buffer-file-name))))))
   (setq aname (upcase aname))
 (save-excursion
@@ -2136,18 +2152,18 @@ then the MoMM db."
     (setq comm (search-forward comment-start pos0 t))
     (if comm  (beginning-of-line 2)  ;; inside comment, skip
       (setq defnr (+ defnr 1))
-      (goto-char pos0)               ;; label  or not 
-      (define-abbrev mizar-mode-abbrev-table 
+      (goto-char pos0)               ;; label  or not
+      (define-abbrev mizar-mode-abbrev-table
 	(downcase defname)
 	(concat aname ":def " (number-to-string defnr))))
   )))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;; viewing constructor explanation of imported theorems and defs
-(defvar theorem-table nil "table of theorems for the article")
-(defvar theorem-directives nil "list of then directives parsed from thl")
-(defvar theorem-table-date -1 
-"as constr-table-date")
+(defvar theorem-table nil "Table of theorems for the article.")
+(defvar theorem-directives nil "List of then directives parsed from thl.")
+(defvar theorem-table-date -1
+"As constr-table-date.")
 
 (make-variable-buffer-local 'theorem-table)
 (make-variable-buffer-local 'theorem-table-date)
@@ -2155,11 +2171,12 @@ then the MoMM db."
 
 
 (defun parse-theorems (aname &optional reload)
-"loads theorem-table and theorem-directives from .thl and .eth files"
+"Load theorem-table and theorem-directives for ANAME.
+Files .thl and .eth are used, RELOAD does it unconditionally."
 (let ((thldate (cadr (nth 5 (file-attributes (concat aname ".thl"))))))
   (if (or reload (/= theorem-table-date thldate))
       (let (directives table)
-      (with-temp-buffer 
+      (with-temp-buffer
 	(insert-file-contents (concat aname ".thl"))
 	(let* ((all (split-string (buffer-string) "[\n]"))
 	       (count (string-to-number (car all)))
@@ -2195,13 +2212,13 @@ then the MoMM db."
 		   (tnr 0) (dnr 0))
 	      (setq all (cdr all))
 	      (while (< tnr tcount)
-		(aset thvec tnr (car all)) 
+		(aset thvec tnr (car all))
 		(setq tnr (+ 1 tnr)
 		      all (cddr all)))
 	      (setq dcount (string-to-number (car all)))
 	      (setq all (cdr all))
 	      (while (< dnr dcount)
-		(aset dfvec dnr (car all)) 
+		(aset dfvec dnr (car all))
 		(setq dnr (+ 1 dnr)
 		      all (cddr all))))
 	    (setq i (+ i 1)
@@ -2213,9 +2230,9 @@ then the MoMM db."
   theorem-table))
 
 (defun mizar-ref-constrs (article nr &optional def table)
-  "constrs of the reference, if no table, use the buffer-local theorem-table"
-  (let* ((aname (file-name-nondirectory 
-		(file-name-sans-extension 
+  "Constrs of the reference, if no table, use the buffer-local theorem-table."
+  (let* ((aname (file-name-nondirectory
+		(file-name-sans-extension
 		 (buffer-file-name))))
 	 (ltable (or table (parse-theorems aname)))
 	 (symb (intern-soft article ltable))
@@ -2238,20 +2255,23 @@ then the MoMM db."
 	  (t ""))))
 
 (defun mizar-show-ref-constrs (&optional ref)
+"Get the constructors for reference REF (possibly reading from minibuffer).
+Show them in the buffer *Constructors List*."
 (interactive)
-(let ((ref1 (or ref (read-string  
-		     (concat "Constructor explanation for: (" 
+(let ((ref1 (or ref (read-string
+		     (concat "Constructor explanation for: ("
 			     (mizar-ref-at-point) "): ")
 		     nil nil      (mizar-ref-at-point)))))
   (if (string-match "\\([a-z_0-9]+\\):\\(def\\)? *\\([0-9]+\\)" ref1)
-      (mizar-intern-constrs-other-window 
-       (mizar-ref-constrs (match-string 1 ref1) 
-			  (string-to-number (match-string 3 ref1)) 
+      (mizar-intern-constrs-other-window
+       (mizar-ref-constrs (match-string 1 ref1)
+			  (string-to-number (match-string 3 ref1))
 			  (match-string 2 ref1)))
     (error "Bad reference %s" ref1))
   ref1))
 
 (defun mizar-mouse-ref-constrs (event)
+"Show the constructors for reference at mouse EVENT."
   (interactive "e")
   (select-window (event-window event))
   (goto-char (event-point event))
@@ -2263,30 +2283,37 @@ then the MoMM db."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defconst mizar-error-regexp "\\(\\*\\|::>,\\)\\([0-9]+\\)" "regexp used to locate error messages in a mizar text")
+(defconst mizar-error-regexp "\\(\\*\\|::>,\\)\\([0-9]+\\)" "Regexp used to locate error messages in a mizar text.")
 
-(defvar mizar-region-count 0  "number of regions on mizar-region-stack")
+(defvar mizar-region-count 0  "Number of regions on mizar-region-stack.")
 
-(defvar mizar-mode-map nil "keymap used by mizar mode..")
+(defvar mizar-mode-map nil "Keymap used by mizar mode..")
 
-(defvar mizar-quick-run t "speeds up verifier by not displaying its intermediate output")
+(defvar mizar-quick-run t 
+"*Speeds up verifier by not displaying its intermediate output.
+Can be toggled from the menu, however the nil value is no
+longer supported and may be deprecated (e.g. on Windows).")
 
-(defvar mizar-quick-run-temp-ext ".out" "extension of the temp file for quick run")
+(defvar mizar-quick-run-temp-ext ".out" "Extension of the temp file for quick run.")
 
-(defvar mizar-use-revf nil "tells if the script revf is used for running mizar irrelevant utilities")
-
-(defvar mizar-launch-dir nil 
-"If non-nil, mizf and other scripts are called from here")
+(defvar mizar-launch-dir nil
+"*If non-nil, verifier and other programs are called from here.
+Can be set from menu.
+Set this to parent directory, if you use
+private vocanulary file residing in ../dict/ , 
+otherwise Mizar *will not* find it.")
 
 (defvar mizar-show-output 10
-"possible values: none,4,10,all; determines the size of the 
-output window ")
+"*Possible values: none, 4, 10, all.
+Determines the size of the output window after processing. 
+Can be set from menu")
 
 (defvar mizar-goto-error "next"
-"what error to move to after processing, possible values are
-none,first,next,previous")
+"*What error to move to after processing.
+Possible values are none, first, next, previous.
+Can be set from menu")
 
-(defvar mizar-imenu-expr 
+(defvar mizar-imenu-expr
 '(
   ("Structures" "[ \n\r]\\(struct\\b.*\\)" 1)
   ("Modes" "[ \n\r]\\(mode\\b.*\\)" 1)
@@ -2298,38 +2325,39 @@ none,first,next,previous")
   ("Named Defs" "[ \n\r]\\(:[a-zA-Z0-9_']+:\\)[ \n\r]" 1)
   ("Named Theorems" "^[ ]*theorem[ \n\r]+\\([a-zA-Z0-9_']+:\\)[ \n\r]" 1)
 )
-"Mizar imenu expression")
+"Mizar imenu expression.")
 
 
 (defun toggle-quick-run ()
+"Toggle the usage of quick-run for verifier, default is on."
 (interactive)
 (setq mizar-quick-run (not mizar-quick-run)))
 
 (defun mizar-toggle-show-output (what)
+"Set the size of the *mizar-output* window to WHAT.
+See the documentation for the variable `mizar-show-output'."
 (interactive)
 (setq mizar-show-output what))
 
 (defun mizar-toggle-goto-error (where)
+"Set the error movement behavior after verifying to WHERE.
+See the documentation for the variable `mizar-goto-error'."
 (interactive)
 (setq mizar-goto-error where))
 
-(defun toggle-use-revf ()
-(interactive)
-(if (or mizar-use-revf (executable-find "revf"))
-    (setq mizar-use-revf (not mizar-use-revf))
-  (error "The revf script not found or not executable!")))
-
-
 (defun mizar-set-launch-dir ()
+"Set the directory, where the verifier is launched.
+This must be set to parent directory, if you use
+private vocanulary file residing in ../dict/ ."
 (interactive)
 (let ((ld (or mizar-launch-dir "none"))
       pdefault default dir)
   (if mizar-launch-dir
       (setq pdefault "none" default "")
-    (setq pdefault  (file-name-directory (directory-file-name 
+    (setq pdefault  (file-name-directory (directory-file-name
                        (file-name-directory (buffer-file-name))))
 	  default pdefault))
-  (setq dir (read-string  (concat "current launch dir: " ld 
+  (setq dir (read-string  (concat "current launch dir: " ld
 				  ", set to (Default: "
 				  pdefault "): " )
 			  nil nil  default))
@@ -2347,7 +2375,9 @@ none,first,next,previous")
 
 (defun make-theorem-summary ()
   "Make a summary of theorems in the buffer *Theorem-Summary*.
-  Previous contents of that buffer are killed first."
+Previous contents of that buffer are killed first.
+The command `hs-hide-all', accessible from the Hide/Show menu, 
+can be used instead, to make a summary of an article."
   (interactive)
   (message "Making theorem summary...")
   ;; This puts a description of bindings in a buffer called *Help*.
@@ -2358,7 +2388,7 @@ none,first,next,previous")
 	(set-buffer standard-output)
 	(mizar-mode)
 	(erase-buffer)
-	(insert result))      
+	(insert result))
       (goto-char (point-min))))
   (message "Making theorem summary...done"))
 
@@ -2377,12 +2407,12 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 (if (or force (not mizar-quick-run))
     (let ((buff (get-buffer "*mizar-output*"))
 	  (dir (or mizar-launch-dir default-directory)))
-      (if (and  buff 
-		(not (member '(major-mode . term-mode) 
+      (if (and  buff
+		(not (member '(major-mode . term-mode)
 			     (buffer-local-variables buff))))
 	  (progn (kill-buffer buff) (setq buff nil)))
       (if (not buff)
-	  (save-window-excursion 
+	  (save-window-excursion
 	    (ansi-term "bash")
 	    (rename-buffer "*mizar-output*")))
       (display-buffer "*mizar-output*")
@@ -2393,7 +2423,11 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 
 
 (defun mizar-compile (&optional util)
-"compile a mizar file in the traditional way"
+"Run verifier (`mizar-it') in a compilation-like way.
+This means that the errors are shown and clickable in buffer 
+*Compilation*, instead of being put into the editing buffer in
+the traditional Mizar way.
+If UTIL is given, call it instead of the Mizar verifier."
   (interactive)
   (mizar-it util nil t))
 
@@ -2407,19 +2441,19 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 
 
 (defun mizar-handle-output  ()
-"Display processing output according to mizar-show-output"
+"Display processing output according to `mizar-show-output'."
 (cond ((equal "none" mizar-show-output)
        (delete-other-windows))
       ((integerp mizar-show-output)
        (save-selected-window
 ; get-buffer-window seems buggy in winemacs
-;		   (select-window (get-buffer-window 
+;		   (select-window (get-buffer-window
 	 (pop-to-buffer
 	  (get-buffer "*mizar-output*"))
 	 (goto-char (point-max))
 	 (delete-blank-lines)
 	 (let ((new-height
-		(min mizar-show-output 
+		(min mizar-show-output
 		     (count-lines (point-min) (point-max)))))
 ; no sense winemacs behaves strange anyway
 ;	   (if (fboundp 'set-window-text-height)
@@ -2436,7 +2470,7 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	  (get-buffer "*mizar-output*"))))))
 
 (defun mizar-show-errors ()
-  "Post processing error explanation"
+  "Post processing error explanation."
   (let ((pos (point)))
     (cond ((equal "first" mizar-goto-error)
 	   (goto-char (point-min))
@@ -2448,15 +2482,17 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	   (mizar-previous-error))
 	  (t pos))))
 
-(defvar makeenv "makeenv" "Program used for creating the aticle envionment")
+(defvar makeenv "makeenv" "Program used for creating the aticle envionment.")
 
 (defun mizar-it (&optional util noqr compil)
-  "Run mizar on the text in the current .miz buffer;
-if util given, runs it instead of verifier, if mizar-use-momm,
-run tptpver instead; if noqr, does not 
-use quick run, if compil, emulate compilation-like behavior"
+"Run mizar verifier on the text in the current .miz buffer.
+Show the result in buffer *mizar-output*.
+If UTIL is given, run it instead of verifier.
+If `mizar-use-momm', run tptpver instead.
+If NOQR, does not use quick run.
+If COMPIL, emulate compilation-like behavior for error messages."
   (interactive)
-  (let ((util (or util (if mizar-use-momm mizar-momm-verifier 
+  (let ((util (or util (if mizar-use-momm mizar-momm-verifier
 			 "verifier"))))
     (if (eq mizar-emacs 'winemacs)
 	(progn
@@ -2466,14 +2502,14 @@ use quick run, if compil, emulate compilation-like behavior"
 	   (message "Not in .miz file!!"))
 	  ((not (executable-find util))
 	   (message (concat util " not found or not executable!!")))
-	  (t 
+	  (t
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
 		  (old-dir (file-name-directory name)))
 	     (if mizar-launch-dir (cd mizar-launch-dir))
 	     (mizar-strip-errors)
 	     (save-buffer)
-	     (cond 
+	     (cond
 	      ((and compil (not noqr))
 	       (if (get-buffer "*compilation*") ; to have launch-dir
 		    (kill-buffer "*compilation*"))
@@ -2494,7 +2530,7 @@ use quick run, if compil, emulate compilation-like behavior"
 		    (kill-buffer "*mizar-output*"))
 		(let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil name)))
 		  (if (and (numberp excode) (= 0 excode))
-		      (shell-command (concat util " -q " name) 	
+		      (shell-command (concat util " -q " name)
 				     "*mizar-output*")
 		    (display-buffer "*mizar-output*")))
 		(message " ... done")))
@@ -2504,16 +2540,16 @@ use quick run, if compil, emulate compilation-like behavior"
 		   (progn
 		     (mizar-new-term-output noqr)
 		     (term-exec "*mizar-output*" util util nil (list name))
-		     (while  (term-check-proc "*mizar-output*") 
+		     (while  (term-check-proc "*mizar-output*")
 		       (sit-for 1)))))))
 	     (if old-dir (setq default-directory old-dir))
-	     (if mizar-do-expl 
+	     (if mizar-do-expl
 		 (save-excursion
-		   (remove-text-properties (point-min) (point-max) 
+		   (remove-text-properties (point-min) (point-max)
 					   '(mouse-face nil expl nil local-map nil))
 		   (mizar-put-bys fname)))
 	     (if (and compil (not noqr))
-		 (save-excursion 
+		 (save-excursion
 		   (set-buffer "*compilation*")
 		   (insert (mizar-compile-errors name))
 		   (compilation-mode)
@@ -2525,50 +2561,58 @@ use quick run, if compil, emulate compilation-like behavior"
 	     )))))
 
 
-(defun mizar-irrths ()  
+(defun mizar-irrths ()
+"Call Irrelevant Theorems & Schemes Detector on the article."
   (interactive)
 (mizar-it "irrths"))
 
-(defun mizar-irrvoc ()  
+(defun mizar-irrvoc ()
+"Call Irrelevant vocabulary Detector on the article."
   (interactive)
 (mizar-it "irrvoc"))
 
-(defun mizar-inacc ()  
+(defun mizar-inacc ()
+"Call Inaccessible Items Detector on the article."
   (interactive)
 (mizar-it "inacc"))
 
-(defun mizar-relinfer ()  
+(defun mizar-relinfer ()
+"Call Irrelevant Inferences Detector on the article."
   (interactive)
 (mizar-it "relinfer"))
 
-(defun mizar-relprem ()  
+(defun mizar-relprem ()
+"Call Irrelevant Premises Detector on the article."
   (interactive)
 (mizar-it "relprem"))
 
-(defun mizar-reliters ()  
+(defun mizar-reliters ()
+"Call Irrelevant Iterative Steps Detector on the article."
   (interactive)
 (mizar-it "reliters"))
 
-(defun mizar-trivdemo ()  
+(defun mizar-trivdemo ()
+"Call Trivial Proofs Detector on the article."
   (interactive)
 (mizar-it "trivdemo"))
 
-(defun mizar-chklab ()  
+(defun mizar-chklab ()
+"Call Irrelevant Label Detector on the article."
   (interactive)
 (mizar-it "chklab"))
 
 
 
 
-(defun mizar-findvoc (&optional whole-exp)
-  "find vocabulary for a symbol"
-  (interactive "p")
-  (shell-command (concat "findvoc "  
+(defun mizar-findvoc ()
+  "Find vocabulary for a symbol."
+  (interactive)
+  (shell-command (concat "findvoc "
 			 (read-string  (concat "findvoc [-iswGKLMORUV] SearchString (Default: " (current-word) "): " )
 				       nil nil      (current-word))
 			 )))
 
-;;;;;;;;;;;; not done yet, seems quite complicated if we have e.g. 
+;;;;;;;;;;;; not done yet, seems quite complicated if we have e.g.
 ;;;;;;;;;;;; reserve A for set reserve F for Function of A,B
 ; (defun mizar-show-type (&optional whole-exp)
 ;   "show last type reserved for a variable"
@@ -2584,9 +2628,11 @@ use quick run, if compil, emulate compilation-like behavior"
 
 
 (defun make-reserve-summary ()
-  "Make a summary of type reservations before current point in the 
-  buffer *Reservation-Summary*.
-  Previous contents of that buffer are killed first."
+  "Make a summary of all type reservations before current point in the article.
+Display it in the buffer *Reservation-Summary* in other window.
+Previous contents of that buffer are killed first.
+Useful for finding out the exact meaning of variables used in
+some Mizar theorem or definition."
   (interactive)
   (message "Making reservation summary...")
   ;; This puts a description of bindings in a buffer called *Help*.
@@ -2597,7 +2643,7 @@ use quick run, if compil, emulate compilation-like behavior"
 	(set-buffer standard-output)
 	(mizar-mode)
 	(erase-buffer)
-	(insert result))      
+	(insert result))
       (goto-char (point-min))))
   (message "Making reservations summary...done"))
 
@@ -2605,36 +2651,20 @@ use quick run, if compil, emulate compilation-like behavior"
 
 			 
 
-(defun mizar-listvoc (&optional whole-exp)
-  "list vocabularies"
-  (interactive "p")
-  (shell-command (concat "listvoc "  
+(defun mizar-listvoc ()
+  "List vocabularies."
+  (interactive)
+  (shell-command (concat "listvoc "
 			 (read-string  (concat "listvoc  VocNames (Default: " (current-word) "): " )
 				       nil nil      (current-word))
 			 )))
 
-(defun mizar-thconstr (&optional whole-exp)
-  "Theorems Constructors"
-  (interactive "p")
-  (shell-command (concat "thconstr "  
-			 (read-string  (concat "thconstr [-f FileName] Article:ThNumber (Default: " (mizar-ref-at-point) "): " )
-				       nil nil      (mizar-ref-at-point))
-			 )))
-
-
-(defun mizar-scconstr (&optional whole-exp)
-  "Schemes Constructors"
-  (interactive "p")
-  (shell-command (concat "scconstr "  
-			 (read-string  (concat "scconstr [-f FileName] Article:ScNumber (Default: " (mizar-ref-at-point) "): " )
-				       nil nil      (mizar-ref-at-point))
-			 )))
-
-
-(defun mizar-constr (&optional whole-exp)
-  "Required Constructors Directives"
-  (interactive "p")
-  (shell-command (concat "constr "  
+(defun mizar-constr ()
+"Show required constructors directives.
+Directives needed for Mizar theorems, definitions, 
+schemes or complete articles can be queried."
+  (interactive)
+  (shell-command (concat "constr "
 			 (read-string  (concat "constr [-f FileName] Article:[def|sch|...] Number (Default: " (mizar-ref-at-point) "): " )
 				       nil nil      (mizar-ref-at-point))
 			 )))
@@ -2642,21 +2672,21 @@ use quick run, if compil, emulate compilation-like behavior"
 (defvar mizar-error-start "^::>")
 
 (defun mizar-end-error (result pos oldpos)
-  "Common end for mizar-next-error and mizar-previous-error"
+  "Common end for mizar-next-error and mizar-previous-error."
   (if result
       (let ((find (concat "^::>[ \t]*\\(" result ":.*\\)[ \t]*$")))
 	(goto-char (point-max))
 	(re-search-backward find (point-min) t)
 	(message (match-string 1))
 	(goto-char pos))
-    (goto-char oldpos) 
+    (goto-char oldpos)
     (ding)
     (message "No more errors!!")
     nil ))
 
 (defun mizar-next-error ()
-  "Go to the next error in a mizar text, return nil if not found
-if found end on the first number of the error"
+"Go to the next error in a mizar text, return nil if not found.
+Show the error explanation in the minibuffer."
   (interactive)
   (let ((oldpos (point))
 	(inerrl nil) ;; tells if we strat from an error line
@@ -2673,7 +2703,7 @@ if found end on the first number of the error"
 	  (skip-chars-forward "\t ,*")  ;; now next error or eoln
 	  (if (looking-at "[0-9]+")
 	    (setq pos (point) result (match-string 0)))))
-    (if (and (not result)   
+    (if (and (not result)
 	     (re-search-forward mizar-error-start (point-max) t))
 	(progn
 	  (skip-chars-forward "\t ,*")
@@ -2682,8 +2712,8 @@ if found end on the first number of the error"
     (mizar-end-error result pos oldpos)))
 
 (defun mizar-previous-error ()
-  "Go to the previous error in a mizar text, return nil if not found
-if found end on the first number of the error"
+"Go to the previous error in a mizar text, return nil if not found.
+Show the error explanation in the minibuffer."
   (interactive)
   (let ((oldpos (point))
 	(inerrl nil) ;; tells if we strat from an error line
@@ -2702,7 +2732,7 @@ if found end on the first number of the error"
 	  (if (looking-at "[0-9]+") ; another on ths line
 	      (setq pos (point) result (match-string 0))
 	    (beginning-of-line))))  ; nothing else here
-    (if (and (not result)   
+    (if (and (not result)
 	     (re-search-backward mizar-error-start (point-min) t))
 	(progn
 	  (end-of-line)
@@ -2712,7 +2742,8 @@ if found end on the first number of the error"
     (mizar-end-error result pos oldpos)))
     
 (defun mizar-strip-errors ()
-  "Delete all lines beginning with ::> (i.e. error lines)"
+  "Delete all error lines added by Mizar.
+These are lines beginning with ::>."
   (interactive)
   (save-excursion
     (goto-char (point-min))
@@ -2721,8 +2752,8 @@ if found end on the first number of the error"
     ))
 
 (defun mizar-hide-proofs (&optional beg end reverse)
-  "Put @ before all proof keywords to disable checking, with prefix 
-   unhide;"
+  "Put @@ before all proof keywords between BEG and END to disable checking.
+With prefix (REVERSE non-nil) unhide."
   (interactive "r\nP")
   (save-excursion
     (let ((beg (or beg (point-min)))
@@ -2738,8 +2769,10 @@ if found end on the first number of the error"
     )))
 
 (defun mizar-move-then (&optional beg end reverse)
-  "Put @ before all proof keywords to disable checking, with prefix 
-   unhide;"
+"Change the placement of the 'then' keyword between BEG and END.
+With prefix (REVERSE non-nil) move from the end of lines to beginnings,
+otherwise from beginnings of lines to ends.
+This is a flamewar-resolving hack."
   (interactive "r\nP")
   (save-excursion
     (let ((beg (or beg (point-min)))
@@ -2750,14 +2783,14 @@ if found end on the first number of the error"
 	(while (re-search-forward "; *\n\\( *\\)then " end t)
 	  (replace-match "; then\n\\1 " nil nil))
       (while (re-search-forward "; *then *[\n]\\( *\\)" end  t)
-	(replace-match ";\n\\1then " nil nil)))      
+	(replace-match ";\n\\1then " nil nil)))
     (message "... Done")
     )))
 
 
 
 (defun make-theorems-string ()
-  "Make string of all theorems"
+  "Make string of all theorems."
   (interactive)
   (save-excursion
     (goto-char (point-min))
@@ -2767,15 +2800,15 @@ if found end on the first number of the error"
 	 (re-search-forward "^ *\\(theorem[^s]\\)" (point-max) t)
 	 (setq pos (match-beginning 1))
 	 (re-search-forward " *\\([;]\\|by\\|proof\\)" (point-max) t))
-      (progn 
+      (progn
 	(setq result1 (buffer-substring-no-properties pos (match-beginning 0)))
-	 (if  (string-match "\n$" result1) 
+	 (if  (string-match "\n$" result1)
 	     (setq result (concat result result1 "\n" ))
 	   (setq result (concat result result1 "\n\n" )))))
     result))
 
 (defun make-reservations-string ()
-  "Make string of all reservations before point"
+  "Make string of all reservations before point."
   (interactive)
   (save-excursion
     (setq maxp (point))
@@ -2786,9 +2819,9 @@ if found end on the first number of the error"
 	 (re-search-forward "^[ \t]*\\(reserve\\)" maxp t)
 	 (setq pos (match-beginning 1))
 	 (re-search-forward ";" maxp t))
-      (progn 
+      (progn
 	(setq result1 (buffer-substring-no-properties pos (match-end 0)))
-	 (if  (string-match "\n$" result1) 
+	 (if  (string-match "\n$" result1)
 	     (setq result result1 )
 	   (setq result (concat result result1 "\n" )))))
     result))
@@ -2803,12 +2836,12 @@ if found end on the first number of the error"
 
 
 ;; Font lock
-(defvar mizar-symbol-color nil "The color for the optional symbol fontification, white is suggested for the light-bg, nil (default) means no symbol fontification is done")
+(defvar mizar-symbol-color nil "The color for the optional symbol fontification, white is suggested for the light-bg, nil (default) means no symbol fontification is done.")
 
 
 (defun mizar-font-lock-keywords ()
   "Set up font lock keywords for the current Mizar system."
-  (if window-system 
+  (if window-system
       (progn
 	(require 'font-lock)
 	(if (boundp 'font-lock-background-mode)
@@ -2851,7 +2884,7 @@ if found end on the first number of the error"
 ;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
 )))))
 ;; mizar-symbol-color fontification
-	  (if mizar-symbol-color 
+	  (if mizar-symbol-color
 	      (setq faces (cons (list 'mizar-symbol-face mizar-symbol-color nil nil nil nil) faces)))
 
 	  (while faces
@@ -2895,12 +2928,12 @@ if found end on the first number of the error"
 	      (extra '("&"  0  'mizar-builtin-face))
 	      (keywords			; directives (queries)
 	       (list
-		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>" 
+		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>"
 		;;		1 'mizar-builtin-face
 		1 font-lock-variable-name-face))
-	      (syms 
+	      (syms
 	       (if mizar-symbol-color
-		   (list (mizar-get-dct (file-name-sans-extension (buffer-file-name))) 
+		   (list (mizar-get-dct (file-name-sans-extension (buffer-file-name)))
 			 0 'mizar-symbol-face)))
 	       )
 	  ;; Make font lock list
@@ -2931,49 +2964,17 @@ if found end on the first number of the error"
 
 
 (defun mizar-mode ()
-  " Major mode for editing mizar texts 
-functions: 
-      syntax highlighting .. put (global-font-lock-mode t) into your
-                             .emacs file to enable it
-      basic indentation 
-      C-c C-m ............ runs Mizar on current .miz buffer, refreshes it
-                           and goes to first error found, needs file miz1 in path
-      C-c C-n ............ goes to next error and displays its explanation
-                           in minibuffer
-      C-c C-p ............ goes to previous error and displays its explanation
-                           in minibuffer
-      C-c C-e ............ deletes all error lines added by Mizar 
-                           (lines starting with ::>)
-      C-c C-c ............ comments selected region
-      C-u C-c C-c ........ uncomments selected region
-      M-C-\\ .............. indents selected region
-      TAB ................ indents line   
-      C-c C-f ............ interface to findvoc
-      C-c C-l ............ interface to listvoc
-      C-c C-t ............ interface to constr 
-      C-c C-s ............ interface to scconstr ...obsolete now by constr
-      C-c C-h ............ runs irrths on current buffer, refreshes it 
-                            and goes to first error found, needs file miz3 in path 
-      C-c C-i or C-c TAB.. runs relinfer on current buffer, refreshes it 
-                            and goes to first error found, needs file miz3 in path 
-      C-c C-y ............ runs relprem on current buffer, refreshes it 
-                            and goes to first error found, needs file miz3 in path 
-      C-c C-v ............ runs irrvoc on current buffer, refreshes it 
-                            and goes to first error found, needs file miz3 in path 
-      C-c C-a ............ runs inacc on current buffer, refreshes it 
-                            and goes to first error found, needs file miz3 in path 
-      C-c C-r ............ shows all reservations before current point
-      C-c C-z ............ makes summary of theorems in current article 
-      M-;     ............ runs mizar-symbol-def, see its doc.
-      mouse-3 ............ also mizar-symbol-def
-      M-. ................ shows theorem, definition or scheme with label LABEL, 
-                           needs to run stags.pl  in the directory $MIZFILES/abstr 
-                           before start of the work
-      S-down-mouse-3  ............ mizar-symbol-def with no completion
-      S-down-mouse-1  ............ mizar-show-ref with no completion
-      S-down-mouse-2  ............ pops up menu of visited symbols to go to"      
+  "Major mode for editing Mizar articles and viewing Mizar abstracts.
 
+In addition to the following commands, there are special bindings
+for special buffers *Constructors list* and *MML Query Input*.
+See the documentation for variables `mizar-cstr-map' and `query-entry-map'
+for more.
 
+Commands:
+\\{mizar-mode-map}
+Entry to this mode calls the value of `mizar-mode-hook'
+if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
 					;  (set-syntax-table text-mode-syntax-table)
@@ -2989,10 +2990,13 @@ functions:
 ;  (define-key mizar-mode-map [(C-S-down-mouse-2)]   'hs-mouse-toggle-hiding)
 )
 
+(defvar html-help-url "http://ktilinux.ms.mff.cuni.cz/~urban/MizarModeDoc/html"
+"The html help for Mizar Mode resides here")
 
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
   '(list  "Mizar"
+	  ["Browse HTML Help" (browse-url html-help-url) t]
 	  ["Visited symbols" mouse-find-tag-history t]
 	  '("Goto errors"
 	    ["Next error"  mizar-next-error t]
@@ -3002,29 +3006,29 @@ functions:
 	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
 	  '("MoMM"
-	    ["Use MoMM (Not Mizar 6.2. yet!)" mizar-toggle-momm :style toggle 
+	    ["Use MoMM (Not Mizar 6.2. yet!)" mizar-toggle-momm :style toggle
 	     :selected mizar-use-momm  :active t]
-	    ["Load theorems only"  (setq mizar-momm-load-tptp 
-					 (not mizar-momm-load-tptp)) 
-	     :style toggle :selected (not mizar-momm-load-tptp)  
+	    ["Load theorems only"  (setq mizar-momm-load-tptp
+					 (not mizar-momm-load-tptp))
+	     :style toggle :selected (not mizar-momm-load-tptp)
 	     :active mizar-use-momm]
-	    ["Run MoMM for current article" 
+	    ["Run MoMM for current article"
 	     (mizar-run-momm-default nil nil mizar-momm-load-tptp)
 	     mizar-use-momm]
 	    ["Load additional files in MoMM" mizar-momm-add-files
 	     mizar-use-momm]
 	    ["Run MoMM with parameters" mizar-run-momm mizar-use-momm]
-	    ["Run MoMM with all.ths (200M!)" mizar-run-momm-full 
+	    ["Run MoMM with all.ths (200M!)" mizar-run-momm-full
 	     mizar-use-momm]
-	    ["MoMM export current article" 
-	     (progn 
+	    ["MoMM export current article"
+	     (progn
 	       (mizar-it mizar-relcprem)
 	       (mizar-it mizar-momm-exporter))
 	     mizar-use-momm]
 	    )
 	  '("Mizar TWiki"
 	    ["Browse Mizar Twiki" (browse-url mizar-twiki-url) t]
-	    ["Ask Mizar question" (browse-url mizar-twiki-questions) t]	
+	    ["Ask Mizar question" (browse-url mizar-twiki-questions) t]
 	    ["Suggest feature" (browse-url mizar-twiki-features) t]
 	    ["Comment Mizar error" mizar-twiki-comment-error t]
 	    ["Describe pitfall" (browse-url mizar-twiki-pitfalls) t]
@@ -3034,37 +3038,37 @@ functions:
 	    )
 	  '("MML Query"
 	    ["Query window" query-start-entry t]
-	    ("MML Query server" 
+	    ("MML Query server"
 	     ["Megrez" (setq query-url megrez-url) :style radio :selected (equal query-url megrez-url) :active t]
 	     ["Alioth" (setq query-url alioth-url) :style radio :selected (equal query-url alioth-url) :active t]
 	     )
-	    ("MML Query browser" 
+	    ("MML Query browser"
 	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active t]
 	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active t]
 	     )
 	    ["Show keybindings in *MML Query input*" (describe-variable 'query-entry-map) t]
 	    )
-	  '("Constr. Explanations" 
+	  '("Constr. Explanations"
 	    ("Verbosity"
 	    ["none" (mizar-toggle-cstr-expl 'none) :style radio :selected (not mizar-do-expl) :active t]
-	    ["sorted constructors list" (mizar-toggle-cstr-expl 'sorted) 
-	     :style radio :selected 
+	    ["sorted constructors list" (mizar-toggle-cstr-expl 'sorted)
+	     :style radio :selected
 	     (and mizar-do-expl (eq mizar-expl-kind 'sorted)) :active t]
-	    ["constructors list" (mizar-toggle-cstr-expl 'constructors) 
-	     :style radio :selected 
+	    ["constructors list" (mizar-toggle-cstr-expl 'constructors)
+	     :style radio :selected
 	     (and mizar-do-expl (eq mizar-expl-kind 'constructors)) :active t]
-	    ["translated formula" (mizar-toggle-cstr-expl 'translate) 
-	     :style radio :selected 
+	    ["translated formula" (mizar-toggle-cstr-expl 'translate)
+	     :style radio :selected
 	     (and mizar-do-expl (eq mizar-expl-kind 'translate)) :active t]
-	    ["expanded formula" (mizar-toggle-cstr-expl 'expanded) 
-	     :style radio :selected 
-	     (and mizar-do-expl (eq mizar-expl-kind 'expanded)) :active t]	
-	    ["raw formula" (mizar-toggle-cstr-expl 'raw) 
-	     :style radio :selected 
-	     (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]   
-	    )	    	    
-	    ["Underline explanation points" 
-	     (setq mizar-underline-expls 
+	    ["expanded formula" (mizar-toggle-cstr-expl 'expanded)
+	     :style radio :selected
+	     (and mizar-do-expl (eq mizar-expl-kind 'expanded)) :active t]
+	    ["raw formula" (mizar-toggle-cstr-expl 'raw)
+	     :style radio :selected
+	     (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]
+	    )
+	    ["Underline explanation points"
+	     (setq mizar-underline-expls
 		   (not mizar-underline-expls)) :style toggle :selected mizar-underline-expls  :active mizar-do-expl ]
 	    ["Show keybindings in *Constructors list*" (describe-variable 'mizar-cstr-map) :active mizar-do-expl]
 	    )
@@ -3074,7 +3078,7 @@ functions:
 	    ["Abstracts" mizar-grep-abs t]
 	    ["Full articles" mizar-grep-full t])
 	  ["Symbol apropos" symbol-apropos t]
-	  ["Bury all abstracts" mizar-bury-all-abstracts t]	  
+	  ["Bury all abstracts" mizar-bury-all-abstracts t]
 	  ["Close all abstracts" mizar-close-all-abstracts t]
 	  "-"
 	  ["View theorems" make-theorem-summary t]
@@ -3094,14 +3098,14 @@ functions:
 		["none" (mizar-toggle-goto-error "none") :style radio :selected (equal mizar-goto-error "none") :active t]
 		["first" (mizar-toggle-goto-error "first") :style radio :selected (equal mizar-goto-error "first") :active t]
 		["next" (mizar-toggle-goto-error "next") :style radio :selected (equal mizar-goto-error "next") :active t]
-		["previous" (mizar-toggle-goto-error "previous") :style radio :selected (equal mizar-goto-error "previous") :active t]		
-		)	  
+		["previous" (mizar-toggle-goto-error "previous") :style radio :selected (equal mizar-goto-error "previous") :active t]
+		)
 	  "-"
 	  (list "Voc. & Constr. Utilities"
 		["Findvoc" mizar-findvoc t]
-		["Listvoc" mizar-listvoc t]		   
+		["Listvoc" mizar-listvoc t]
 		["Constr" mizar-constr t])
-;		["Scconstr" mizar-scconstr t])	  
+;		["Scconstr" mizar-scconstr t])
 	  '("Irrelevant Utilities"
 	    ["Irrelevant Theorems" mizar-irrths t]
 	    ["Irrelevant Inferences" mizar-relinfer t]
@@ -3168,7 +3172,10 @@ functions:
 
 
 (defun mizar-hs-forward-sexp (arg)
-  "Function used by `hs-minor-mode' for `forward-sexp' in Java mode."
+  "Function used by function `hs-minor-mode' for `forward-sexp' in Mizar mode.
+Move forward across one balanced expression (sexp).
+With ARG, do it that many times.  Negative arg -N means
+move backward across N balanced expressions."
 (let ((both-regexps (concat "\\(" hs-block-start-regexp "\\)\\|\\("
 			      hs-block-end-regexp "\\)")
       ))
@@ -3180,7 +3187,7 @@ functions:
 	  (setq count 1)
 	  (while (> count 0)
 	    (re-search-forward both-regexps (point-max) t nil)
-	    (setq beg1  (match-beginning 0)) 
+	    (setq beg1  (match-beginning 0))
 	    (setq end1 (match-end 0))
 	    (setq result1 (buffer-substring-no-properties beg1 end1))
 	    (if (string-match hs-block-start-regexp result1)
@@ -3210,3 +3217,5 @@ functions:
     (speedbar 1))
 
 (provide 'mizar)
+
+;;; mizar.el ends here
