@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.59 $
+;; $Revision: 1.60 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -240,10 +240,17 @@ When `mizar-underline-expls' is non-nil, it is also underlined."
 :type 'string
 :group 'mizar)
 
-(defcustom advisor-url "http://lipa.ms.mff.cuni.cz/cgi-bin/mycgi1.cgi"
-"*URL for the Mizar Proof Advisor."
-:type 'string
-:group 'mizar)
+
+;; (defcustom advisor-url "http://lipa.ms.mff.cuni.cz/cgi-bin/mycgi1.cgi"
+;; "*URL for the Mizar Proof Advisor."
+;; :type 'string
+;; :group 'mizar)
+
+(defvar advisor-server "lipa.ms.mff.cuni.cz"
+"*Server for the Mizar Proof Advisor.")
+
+(defvar advisor-cgi "/cgi-bin/mycgi1.cgi"
+"Path to the advisor cgi script on `advisor-server'.")
 
 (defcustom advisor-limit 30
 "*The number of hits you want Mizar Proof Advisor to send you."
@@ -2046,6 +2053,36 @@ The variable `mizar-do-expl' should be non-nil."
 	    (goto-char (event-point event))
 	    (mizar-intern-constrs-other-window res))))))
 
+
+;; modified from Lisp:wikiarea.el by EdwardOConnor
+;; we should use url.el or http-get.el, when they make it into distros
+;; wget is good, but requires Window$ users to download it
+(defun mizar-get-http-file (bufname host request)
+  "Fetch http REQUEST from HOST, put result into buffer BUFNAME and return it.
+Previous contents of BUFNAME is deleted."
+  (if (get-buffer bufname) (kill-buffer bufname))
+  (let* ((proc (open-network-stream "GetHTTP" bufname host 80))
+         (buf (process-buffer proc)))
+    (process-send-string proc (concat "GET " request " HTTP/1.0\r\n\r\n"))
+    ;; Watch us spin and stop Emacs from doing anything else!
+    (while (equal (process-status proc) 'open)
+      (when (not (accept-process-output proc 180))
+        (delete-process proc)
+        (error "Network timeout!")))
+    (delete-process proc)
+
+    (with-current-buffer buf
+      (goto-char (point-min))
+      (if (looking-at "HTTP/[0-9.]+ \\([0-9]+\\) \\(.*\\)\r\n")
+          (progn
+            (forward-line 1)
+            (while (looking-at "^.+[:].+")
+              (forward-line 1))
+            (forward-line 1)
+            (delete-region (point-min) (point)))
+        (error "Unable to fetch %s from %s." request host)))
+    buf))
+
 (defvar advisor-output "*Proof Advice*")
 
 (defun mizar-ask-advisor ()
@@ -2054,20 +2091,18 @@ Resulting advice is shown in the buffer *Proof Advice*, where normal tag-browsin
 keyboard bindings can be used to view the suggested references.
 "
   (interactive)
-  (let* ((query (concat advisor-url "?Text=1\\&Limit=" 
-			(number-to-string advisor-limit)
-			"\\&Formula="
-			(query-handle-chars-cgi
-			 (buffer-substring-no-properties
-			  (point-min) (point-max)))))
-	 (command (concat "wget -q -O - " (shell-quote-argument query))))
-    (shell-command command advisor-output)
-    (let ((abuffer (get-buffer advisor-output)))
-      (if abuffer
-	  (progn (switch-to-buffer-other-window abuffer)
-		 (mizar-mode))
-	(message "No references advised")))
-    ))
+  (let* ((request (concat advisor-cgi "?Text=1\\&Limit=" 
+			  (number-to-string advisor-limit)
+			  "\\&Formula="
+			  (query-handle-chars-cgi
+			   (buffer-substring-no-properties
+			    (point-min) (point-max)))))
+	 (abuffer (mizar-get-http-file advisor-output advisor-server request)))
+    (if abuffer
+	(progn (switch-to-buffer-other-window abuffer)
+	       (mizar-mode))
+      (message "No references advised")))
+  )
 
 (defun mizar-toggle-cstr-expl (to)
   (cond ((eq to 'none) (setq  mizar-do-expl nil))
