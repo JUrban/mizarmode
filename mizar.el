@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.54 $
+;; $Revision: 1.55 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4173,8 +4173,12 @@ if that value is non-nil."
 	    ["Ratproof" (mizar-it "ratproof") t])
 	  "-"
 	  ["Comment region" comment-region t]
-	  ["Uncomment region" (comment-region (region-beginning)
-					      (region-end) -1) t]
+;; uncomment-region is not present in older Emacs
+	  ["Uncomment region" (if (fboundp 'uncomment-region) 
+				  (uncomment-region (region-beginning)
+						    (region-end))
+				(comment-region (region-beginning)
+						(region-end) '(4))) t]
 	  '("Proof checking"
 	    ["proof -> @proof on region" mizar-hide-proofs t]
 	    ["@proof -> proof on region" (mizar-hide-proofs (region-beginning)
