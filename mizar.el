@@ -1,3 +1,9 @@
+;; March 21 2001 ...hide/show minor mode added ... hiding proofs
+;;               quick-run added ...speeds up verifier execution by about 50%,
+;;                                  (caused by slow displays), toggle it in menu 
+;; March 9 2001  ... symbol browsing functions added, see 
+;; http://kti.ms.mff.cuni.cz/~urban/README_BROWSING.txt for detailed info on it, 
+;; the MIZTAGS are now obsolete
 ;; August 31 2000 ... theorem and reservation summary added, MIZTAGS for schemes changed a litle
 ;; April 18 2000 ... small adjustment to Mizar Version 6.0.07, miz1 and miz3 files no longer needed
 ;; April 6 2000 ... some more features added
@@ -42,8 +48,8 @@
 ;                           before start of the work
 ;      C-c C-f ............ interface to findvoc
 ;      C-c C-l ............ interface to listvoc
-;      C-c C-t ............ interface to thconstr
-;      C-c C-s ............ interface to scconstr
+;      C-c C-t ............ interface to thconstr ... 9.3. 2001: changed to run constr
+;      C-c C-s ............ interface to scconstr ... 9.3. 2001: defunct, replaced now by constr
 ;      C-c C-h ............ runs irrths on current buffer, refreshes it 
 ;                           and goes to firts error found
 ;      C-c C-i or C-c TAB.. runs relinfer on current buffer, refreshes it 
@@ -59,28 +65,18 @@
 ;      C-c C-r ............ shows all reservations before current point
 ;      C-c C-z ............ makes summary of theorems in current article
 
-
-
-
-       
-
-
-
-; this is file MIZTAGS, in fact, it is a single line, so you can simply run it in shell. 
-; It needs to be executed in the disrectory $MIZFILES/abstr
-
-;;;;;;;;; start of MIZTAGS file ;;;;;;;;;;;;;;;;;;;;;;;;;; 
-; etags --language=none --regex='/ *scheme[ \n]*\([^ {]*\)[ \n]*{/\1/' --regex='/.*:: \([^ \n:]+\):\([0-9]+\)/\1:\2/' --regex='/.*:: \([^ \n:]+\):def *\([0-9]+\)/\1:def \2/' *.abs
-;;;;;;;;; end of MIZTAGS file   ;;;;;;;;;;;;;;;;;;;;;;;;;; 
-
-
+;;; added 9.3. 2001:
+;      C-c C-t ............ bound to constr now
+;      M-;     ............ runs mizar-symbol-def, see its doc.
+;      mouse-3 ............ also mizar-symbol-def
+;      M-.     ............ runs mizar-show-ref
+;   S-down-mouse-3  ............ mizar-symbol-def with no completion
+;   S-down-mouse-1  ............ mizar-show-ref with no completion
+;   S-down-mouse-2  ............ pops up menu of visited symbols to go to      
 
 ;; to do: better indentation,
-;           show references using tags and M-. (in another buffer?) ... done in version 1.1.
 ;           find out why it hangs during C-c C-m when switching to another buffer,
-;           interface to other Mizar commands (findvoc, etc?) ......... done in version 1.1.
-;           menu ...................................................... done in version 1.1.
-;           ..... (whatever you like) 
+
           
 
 
@@ -128,12 +124,21 @@
 
 (require 'comint)
 (require 'easymenu)
-
+(require 'etags)
 
 
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
 (defvar mizar-mode-map nil)
+
+;; this gets rid of the "Keep current list of tag tables" message
+;; when working with two tag tables
+(custom-set-default 'tags-add-tables nil)
+
+;; this shows all comment lines when hiding proofs
+(custom-set-default 'hs-hide-comments-when-hiding-all nil)
+;; this prevents the default value, which is hs-hide-initial-comment-block
+(custom-set-default 'hs-minor-mode-hook nil) 
 
 (font-lock-mode)
 (defvar mizar-indent-width 3)
@@ -142,6 +147,9 @@
     ()
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?\" "_" table)
+    (modify-syntax-entry ?: ". 12" table)
+    (modify-syntax-entry ?\n ">   " table)
+    (modify-syntax-entry ?\^m ">   " table)
     (setq mizar-mode-syntax-table table)))
 
 (define-abbrev-table 'mizar-mode-abbrev-table ())
@@ -182,7 +190,7 @@
   (define-key mizar-mode-map "\C-c\C-c" 'comment-region)
   (define-key mizar-mode-map "\C-c\C-f" 'mizar-findvoc)
   (define-key mizar-mode-map "\C-c\C-l" 'mizar-listvoc)
-  (define-key mizar-mode-map "\C-c\C-t" 'mizar-thconstr)
+  (define-key mizar-mode-map "\C-c\C-t" 'mizar-constr)
   (define-key mizar-mode-map "\C-c\C-s" 'mizar-scconstr)
 
   (define-key mizar-mode-map "\C-c\C-h" 'mizar-irrths)
@@ -192,8 +200,59 @@
   (define-key mizar-mode-map "\C-c\C-a" 'mizar-inacc)
   (define-key mizar-mode-map "\C-c\C-z" 'make-theorem-summary)
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
-  (define-key mizar-mode-map "\M-." 'mizar-show-ref)
+  (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
+  (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
+  (define-key mizar-mode-map [(S-down-mouse-3)]     'mizar-mouse-direct-symbol-def)
+  (define-key mizar-mode-map [(S-down-mouse-1)]     'mizar-mouse-direct-show-ref)
+  (define-key mizar-mode-map [(S-down-mouse-2)]     'mouse-find-tag-history)
+  (define-key mizar-mode-map "\M-."     'mizar-show-ref)
   (mizar-mode-commands mizar-mode-map))
+
+(defvar mizar-tag-ending ";"
+"end of the proper tag name in mizsymbtags and mizreftags,
+used for exact completion")
+
+(defun miz-complete ()
+"used for exact tag completion" 
+(interactive )
+(if (active-minibuffer-window)
+    (progn
+      (set-buffer (window-buffer (active-minibuffer-window)))
+      (insert mizar-tag-ending)
+      (minibuffer-completion-help))))
+
+
+(define-key minibuffer-local-completion-map ";" 'miz-complete)
+
+
+;;;;;;;;;;;;;;;;;;;;; utilities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; destructive!
+(defun unique (l1)
+  (let ((l1 l1))
+  (while l1
+      (setq l1 (setcdr l1 (delete (car l1) (cdr l1))))))
+  l1)
+
+;; returns sublist satisfying test
+;; loop without recursion probably better than previous
+(defun test-list1 (test l1)
+  (let ((l2 ()))
+    (while l1
+      (if (funcall  test  (car l1))
+	  (setq l2 (cons (car l1) l2)))
+      (setq l1 (cdr l1)))
+    (reverse l2)))
+
+(defun remove-from (pos l1)
+"destructively deletes members from pos on"
+(let* ((l2  l1)
+       (end (nthcdr (- pos 1) l2)))
+  (if (consp end)
+      (setcdr  end nil))
+  l2))
+
+;;;;;;;;;;;;  indentation (pretty poor) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun mizar-indent-line (&optional whole-exp)
   "Indent current line as Mizar code.
@@ -281,7 +340,7 @@ rigidly along with this one (not yet)."
   (interactive )
   ( indent-region (point-min) (point-max) nil))
 
-
+;;;;;;;;;;;;;;;;  end of indentation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
@@ -300,20 +359,178 @@ rigidly along with this one (not yet)."
       (current-word))
     ))
 
+;;;;;;;;;;;;  tha tags handling starts here ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(put 'mizar-mode 'find-tag-default-function 'mizar-ref-at-point)
+
+(defvar mizsymbtags 
+  (substitute-in-file-name "$MIZFILES/abstr/SYMBTAGS") 
+  "Symbol tags file created with stag.pl")
+(defvar mizreftags 
+  (substitute-in-file-name "$MIZFILES/abstr/REFTAGS") 
+  "References tags file created with stag.pl")
+
+;; nasty to redefine these two, but working; I could not get the local vars machinery right  
+(defun etags-goto-tag-location (tag-info)
+  (let ((startpos (cdr (cdr tag-info)))
+	(line (car (cdr tag-info)))
+	offset found pat)
+	;; Direct file tag.
+	(cond (line (goto-line line))
+	      (startpos (goto-char startpos))
+	      (t (error "etags.el BUG: bogus direct file tag")))
+      (and (eq selective-display t)
+	 (looking-at "\^m")
+	 (forward-char 1))
+    (beginning-of-line)))
+
+(defun etags-tags-completion-table ()
+  (let ((table (make-vector 511 0)))
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward	"^\\([^\177\n]+\\)\177.*\n" nil t)
+	(intern	  (buffer-substring (match-beginning 1) (match-end 1))
+		table)))
+      table))
+
+;; redefined to put the default in minibuffer for quick browsing
+(defun find-tag-tag (string)
+  (let* ((default (funcall (or find-tag-default-function
+			       (get major-mode 'find-tag-default-function)
+			       'find-tag-default)))
+	 (spec (completing-read (if default
+				    (format "%s(default %s) " string default)
+				  string)
+				'tags-complete-tag
+				nil nil default nil default)))
+    (if (equal spec "")
+	(or default (error "There is no default tag"))
+      spec)))
+
+(defvar in-mizar-mouse-symbol-def nil
+  "used for mizar-mouse-symbol-def")
+
+(defun mizar-mouse-symbol-def ()
+  "mouse-3 is bound to this function, runs mizar-symbol-def
+and the second mouse-3 shows the symbols completion"
+  (interactive)
+  (if in-mizar-mouse-symbol-def
+      (progn (setq in-mizar-mouse-symbol-def nil)
+	     (if (active-minibuffer-window)	 
+		 (miz-complete)))
+    (mouse-set-point last-input-event)
+    (setq in-mizar-mouse-symbol-def t)
+    (mizar-symbol-def)) 
+  )
+
+(defun mizar-mouse-direct-symbol-def ()
+  "S-mouse-3 is bound to this function, 
+goes directly to the best match of symbol under point"
+  (interactive)
+  (mouse-set-point last-input-event)
+  (mizar-symbol-def  t))
+
+(defun mizar-mouse-direct-show-ref ()
+  "S-mouse-1 is bound to this function, 
+goes directly to the reference under point"
+  (interactive)
+  (mouse-set-point last-input-event)
+  (mizar-show-ref  t))
+
+(defun visit-tags-or-die (name)
+  (if (file-readable-p name)
+      (visit-tags-table name)
+    (error "No tags file %s, run the script stag.pl" name)
+    nil)) 
+
+(defun mizar-symbol-def  (&optional nocompletion) 
+  "Finds the definition of a symbol with completion,
+if in *.abs buffer shows it it current window, otherwise,
+i.e. in *.miz buffer, shows it in other window.
+In Completion buffer, aside from its normal key bindings,
+';' is bound to show all exact matches. If invoked by right-click,
+second right-click does this too."
+  (interactive)
+  (if (visit-tags-or-die mizsymbtags)
+      (let ((abs (buffer-abstract-p (current-buffer))))
+	(if nocompletion
+	    (if abs (find-tag  (mizar-ref-at-point))
+	      (find-tag-other-window  (mizar-ref-at-point)))
+	  (if abs (call-interactively 'find-tag)
+	    (call-interactively 'find-tag-other-window))))))
+  
+
+(defun mizar-show-ref (&optional nocompletion) 
+  "Finds the reference with completion in other window" 
+  (interactive)
+  (if (visit-tags-or-die mizreftags)
+      (if nocompletion
+	  (find-tag-other-window  (mizar-ref-at-point))
+	(call-interactively 'find-tag-other-window))))
+
+
+(defun symbol-apropos ()
+  "Display list of all symbols REGEXP matches."
+  (interactive)
+  (if (visit-tags-or-die mizsymbtags)
+      (call-interactively 'tags-apropos)))
+
+
+
+(defun mouse-find-tag-history ()
+"popup menu with last 20 visited tags and go to selection,
+works properly only for symbols (not references)"
+  (interactive)
+  (if (visit-tags-or-die mizsymbtags)
+      (let* ((allowed (unique (delete nil (copy-alist find-tag-history)) ))
+	     (double (mapcar '(lambda (x) (cons x x)) (remove-from 20 allowed)))
+	     (backadded (cons (cons "Go to previous" t) double)) 
+	     (menu (list "Visited symbols" (cons "Tags" backadded)))
+	     (tag (x-popup-menu t menu)))
+	(if (eq tag t) (pop-tag-mark)
+	  (if (stringp tag) (find-tag tag))))))
 
 
 
 
-(defun mizar-show-ref (&optional whole-exp)
-  "show theorem, definition or scheme with label LABEL"
-  (interactive "p")
-  (find-tag-other-window (read-string  (concat "Show reference (Default: " (mizar-ref-at-point) "): " )
-				       nil nil      (mizar-ref-at-point))))
+
+(defun buffer-abstract-p (x)
+"Non nil if buffer is mizar abstract"
+(let ((name  (buffer-file-name x)))
+  (and (stringp name)
+       (string-match "\.abs$" name))))
+
+(defun mizar-current-abstracts ()
+"Returns list of buffers of mizar abstracts"
+(let ((l (buffer-list)) (l1 ()))
+  (while l (if (buffer-abstract-p (car l)) 
+	       (setq l1 (cons (car l) l1)))
+	 (setq l (cdr l)))
+  l1))
+
+(defun mizar-close-all-abstracts ()
+"Closes all abstracts, useful when too much browsing done
+and you want to get to your editing buffers"
+(interactive)
+(let* ((l (mizar-current-abstracts)) (i (length l)))
+  (mapcar '(lambda (x) (kill-buffer x)) l)
+  (message "%d abstracts closed" i)))
+
+(defun mizar-close-some-abstracts ()
+"Choose the abstracts you want to close"
+(interactive)
+(kill-some-buffers  (mizar-current-abstracts)))
+
+(defun mizar-bury-all-abstracts ()
+"Bury all abstracts, useful when too much browsing done
+and you want to get to your editing buffers"
+(interactive)
+(let* ((l (mizar-current-abstracts)) (i (length l)))
+  (mapcar '(lambda (x) (bury-buffer x)) l)
+  (message "%d abstracts buried" i)))
 
 
-
-
-
+;;;;;;;;;;;;;;;;;; end of tags handling ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconst mizar-error-regexp "\\(\\*\\|::>,\\)\\([0-9]+\\)" "regexp used to locate error messages in a mizar text")
 
@@ -321,7 +538,11 @@ rigidly along with this one (not yet)."
 
 (defvar mizar-mode-map nil "keymap used by mizar mode..")
 
+(defvar mizar-quick-run t "speeds up verifier by not displaying its intermediate output")
 
+(defun toggle-quick-run ()
+(interactive)
+(setq mizar-quick-run (not mizar-quick-run)))
 
 (defun make-theorem-summary ()
   "Make a summary of theorems in the buffer *Theorem-Summary*.
@@ -340,9 +561,44 @@ rigidly along with this one (not yet)."
       (goto-char (point-min))))
   (message "Making theorem summary...done"))
 
+(defun display-mizar-results (file)
+"return string of mizar results"
+(let ((buf (find-file-noselect file t)))
+  (save-excursion
+  (set-buffer buf)
+  (goto-char (point-max))
+  (let* ((chstr   (mizar-search-output "Checker "))
+	 (endstr (buffer-substring-no-properties 
+		  (match-beginning 0) (point-max)))
+	 (anstr (mizar-search-output "Analyzer"))
+	 (pastr (mizar-search-output "Parser  ")))
+    (concat pastr "\n" anstr "\n" endstr "\n")))))
 
+(defun mizar-search-output (what)
+(re-search-backward (concat what ".*$") (point-min) t ) 
+(match-string 0))
 
+(defun mizar-new-term-output ()
+"prepare output buffer if it was destroyed by quick-run"
+(if (not mizar-quick-run)
+    (let ((buff (get-buffer "*mizar-output*")))
+      (if (and  buff 
+		(not (member '(major-mode . term-mode) 
+			     (buffer-local-variables buff))))
+	  (progn (kill-buffer buff) (setq buff nil)))
+      (if (not buff)
+	  (save-window-excursion 
+	    (ansi-term "bash")
+	    (rename-buffer "*mizar-output*")))
+      (display-buffer "*mizar-output*")
+      (end-of-buffer-other-window 0))))
 
+(defun idle-message (fname times period)
+  (let ((count 0)) 
+    (while (< count times)
+      (setq count (+ 1 count))
+      (sit-for period)
+      (message "Verifying %s... %c" fname (aref "/|\\-" (mod count 4))))))
 
 
 (defun mizar-it (&optional whole-exp)
@@ -353,25 +609,32 @@ rigidly along with this one (not yet)."
 	(t 
 	 (save-buffer)
 ;	 (setq buff (current-buffer))
-	 (setq mizarg (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))  ))
-	 (cond ((get-buffer "*mizar-output*") 
-		(display-buffer "*mizar-output*"))
-	       (t
-		(save-window-excursion 
-		  (ansi-term "bash")
-		  (rename-buffer "*mizar-output*"))
-		(display-buffer "*mizar-output*")))
+	 (let* ((name (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))  ))
+		(mizarg name)
+		(fname (file-name-nondirectory name)))
 	 (progn
+	     (if mizar-quick-run
+		 (save-excursion
+		   (setq mizarg (concat name ">" name ".out"))
+		   (message (concat "Verifying " fname " "))
+		   (shell-command  (concat "mizf " mizarg "&") "*mizar-output*" )
+		   (let ((mizpr (get-buffer-process "*mizar-output*"))
+			 (ctime (cadr (current-time))))
+		     (while  (eq (process-status mizpr) 'run)
+	 	       (sit-for 1)
+ 		       (message "Verifying %s... %d s" fname (- (cadr (current-time)) ctime))))
+		   (set-buffer "*mizar-output*")
+		   (insert (display-mizar-results (concat name ".out"))))
+	       (mizar-new-term-output)
 	   (term-exec "*mizar-output*" "run-mizar" "mizf" nil (list mizarg))
-	   (end-of-buffer-other-window 0)
 	   (while  (term-check-proc "*mizar-output*") 
-	     (sit-for 5))
+		 (sit-for 5)))
 	   (revert-buffer t t t)
 	   (setq pos (point)) 
 	   (goto-char (point-min))
 	   (mizar-next-error)
 	   (if (= (point) (point-min)) (goto-char pos) t)) 
-	 )))
+	   ))))
 
 
 
@@ -515,6 +778,14 @@ rigidly along with this one (not yet)."
 				       nil nil      (mizar-ref-at-point))
 			 )))
 
+
+(defun mizar-constr (&optional whole-exp)
+  "Required Constructors Directives"
+  (interactive "p")
+  (shell-command (concat "constr "  
+			 (read-string  (concat "constr [-f FileName] Article:[def|sch|...] Number (Default: " (mizar-ref-at-point) "): " )
+				       nil nil      (mizar-ref-at-point))
+			 )))
 
 
 (defun mizar-next-error ()
@@ -753,13 +1024,10 @@ functions:
       C-u C-c C-c ........ uncomments selected region
       M-C-\\ .............. indents selected region
       TAB ................ indents line   
-      M-. ................ shows theorem, definition or scheme with label LABEL, 
-                            needs to run MIZTAGS  in the directory $MIZFILES/abstr 
-                            before start of the work
       C-c C-f ............ interface to findvoc
       C-c C-l ............ interface to listvoc
-      C-c C-t ............ interface to thconstr
-      C-c C-s ............ interface to scconstr
+      C-c C-t ............ interface to constr 
+      C-c C-s ............ interface to scconstr ...obsolete now by constr
       C-c C-h ............ runs irrths on current buffer, refreshes it 
                             and goes to firts error found, needs file miz3 in path 
       C-c C-i or C-c TAB.. runs relinfer on current buffer, refreshes it 
@@ -771,7 +1039,15 @@ functions:
       C-c C-a ............ runs inacc on current buffer, refreshes it 
                             and goes to firts error found, needs file miz3 in path 
       C-c C-r ............ shows all reservations before current point
-      C-c C-z ............ makes summary of theorems in current article "
+      C-c C-z ............ makes summary of theorems in current article 
+      M-;     ............ runs mizar-symbol-def, see its doc.
+      mouse-3 ............ also mizar-symbol-def
+      M-. ................ shows theorem, definition or scheme with label LABEL, 
+                           needs to run stags.pl  in the directory $MIZFILES/abstr 
+                           before start of the work
+      S-down-mouse-3  ............ mizar-symbol-def with no completion
+      S-down-mouse-1  ............ mizar-show-ref with no completion
+      S-down-mouse-2  ............ pops up menu of visited symbols to go to"      
 
 
   (interactive)
@@ -786,23 +1062,33 @@ functions:
   (run-hooks  'mizar-mode-hook))
 
 
+
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
-  '(list  "Mizar" 	      
+  '(list  "Mizar"
+	  ["Visited symbols" mouse-find-tag-history t]
 	  '("Goto errors"
 	    ["Next error"  mizar-next-error t]
 	    ["Previous error" mizar-previous-error t]
 	    ["Remove error lines" mizar-strip-errors t])
+	  "-"
+	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
+	  ["Symbol apropos" symbol-apropos t]
+	  ["Bury all abstracts" mizar-bury-all-abstracts t]	  
+	  ["Close all abstracts" mizar-close-all-abstracts t]
+	  "-"
 	  ["View theorems" make-theorem-summary t]
 	  ["Reserv. before point" make-reserve-summary t]
+	  "-"
 	  ["Run Mizar" mizar-it t]
+	  ["Toggle quick-run" toggle-quick-run t]
 	  "-"
 	  (list "Voc. & Constr. Utilities"
 		["Findvoc" mizar-findvoc t]
 		["Listvoc" mizar-listvoc t]		   
-		["Thconstr" mizar-thconstr t]
-		["Scconstr" mizar-scconstr t])	  
+		["Constr" mizar-constr t])
+;		["Scconstr" mizar-scconstr t])	  
 	  '("Irrelevant Utilities"
 	    ["Irrelevant Theorems" mizar-irrths t]
 	    ["Irrelevant Inferences" mizar-relinfer t]
@@ -846,9 +1132,40 @@ Valid values are 'gnuemacs and 'xemacs.")
       (easy-menu-define mizar-menu-map (current-local-map) "" menu))
      )))
 
+(defun mizar-hs-forward-sexp (arg)
+  "Function used by `hs-minor-mode' for `forward-sexp' in Java mode."
+(let ((both-regexps (concat "\\(" hs-block-start-regexp "\\)\\|\\("
+			      hs-block-end-regexp "\\)")
+      ))
+  (if (< arg 0)
+      (backward-sexp 1)
+    (if (looking-at hs-block-start-regexp)
+	(progn
+	  (forward-sexp 1)
+	  (setq count 1)
+	  (while (> count 0)
+	    (re-search-forward both-regexps (point-max) t nil)
+	    (setq beg1  (match-beginning 0)) 
+	    (setq end1 (match-end 0))
+	    (setq result1 (buffer-substring-no-properties beg1 end1))
+	    (if (string-match hs-block-start-regexp result1)
+		(setq count (+  count 1))
+	      (setq count (- count 1))))
+	  (goto-char (match-end 0)))
+	  ))))
+
+(defun mizar-hs-adjust-block-beginning (pos)
+(save-excursion
+  (forward-word -1)
+  (point)))
 
 
+(let ((mizar-mode-hs-info '(mizar-mode ".*\\b\\(proof\\|now\\)[ \n\r]" "end;" "::+" mizar-hs-forward-sexp mizar-hs-adjust-block-beginning)))
+    (if (not (member mizar-mode-hs-info hs-special-modes-alist))
+            (setq hs-special-modes-alist
+	                  (cons mizar-mode-hs-info hs-special-modes-alist))))
 (add-hook 'mizar-mode-hook 'mizar-menu)
+(add-hook 'mizar-mode-hook 'hs-minor-mode)
 
 ; (visit-tags-table (substitute-in-file-name "$MIZFILES/abstr"))
 
