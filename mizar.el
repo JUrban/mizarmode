@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.97 $
+;; $Revision: 1.98 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -269,9 +269,9 @@ Possible values are now
 'sorted for sorted list of constructors in absolute notation.
 'constructors for list of constructors in absolute notation,
 'mmlquery behaves as 'sorted, but constructors are inserted
-          directly into the *mmlquery* input buffer.
-          The mmlquery interpreter has to be installed for this,
-          see `mmlquery-program-name'.
+directly into the *mmlquery* input buffer.
+The mmlquery interpreter has to be installed for this,
+see `mmlquery-program-name'.
 'translate for expanded formula in absolute notation,
 'raw for the internal Mizar representation,
 'expanded for expansion of clusters,
