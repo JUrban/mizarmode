@@ -438,7 +438,7 @@ from the article, however, e.g. the top-level simple justifications
 are still visible in the buffer.@*
 This kind of hiding has no effect on proof checking, the file
 is not modified by it. @xref{Proof checking}, for commands that
-disable proof checking of some patr of the article.
+disable proof checking of some part of the article.
 @end deffn
 
 @deffn Command hs-show-block
@@ -547,7 +547,8 @@ can be used for various operations.
 Before proof checking takes place, Mizar disambiguates this 
 overloading and replaces the user symbols with unique ``constructors''.
 
-Constructors are unambiguous and they express the semantics of Mizar
+Constructors are unambiguous and they are used to express the 
+semantics of Mizar
 formulas, so tools like MML Query, @xref{MML Query}, Mizar Proof Advisor,
 @xref{Mizar Proof Advisor}, or MoMM, @xref{MoMM}, often work with
 constructor representation.
@@ -670,9 +671,10 @@ This now also holds about using the scripts @code{miz2prel} and
 @end table
 
 @c TEXI DOCSTRING MAGIC: mizar-hide-proofs
-@deffn Command mizar-hide-proofs &optional beg end reverse
+@deffn Command mizar-hide-proofs &optional beg end remove
 Put @@ before all proof keywords between @var{beg} and @var{end} to disable checking.@*
-With prefix (@var{reverse} non-nil) unhide.
+With prefix (C-u, which sets @var{remove} non-nil) remove them 
+instead of adding, to enable proof checking again.
 @end deffn
 
 
@@ -897,7 +899,11 @@ you will write often in Mizar Mode - e.g. ``theorem'',
 ``correctness'', ``definition'', etc.
 
 Below are some found useful by author, you can copy them to your
-@file{.abbrev_defs} file. You can add more by running
+@file{.abbrev_defs} file. 
+The up-to-date version of an example @file{.abbrev_defs} file
+is downloadable from the Mizar Mode CVS at
+@uref{http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/}.
+You can add more abbreviations by running
 @kbd{C-x a l} (@code{add-mode-abbrev}).
 
 Finally, if you are too lazy to define your own abbreviations, 
@@ -955,7 +961,7 @@ Constructor explanations are used to access and query the semantic
 
 Constructor information can help a lot, if you are not sure, how
 Mizar resolves some overloaded symbols. Constructors are also
-more useful for searching, than the user symbols. 
+more useful for searching, than the text-level (vocabulary) symbols. 
 
 @menu
 * How Constructor explanations work::  
@@ -974,10 +980,11 @@ by Mizar during verification.
 This has some drawbacks:
 @itemize
 @item Mizar has to be run before the constructor info is available.
-@item We have to ensure synchronization of the edting buffer with
+@item We have to ensure synchronization of the editing buffer with
 the intermediate file containing the constructor information.
 @item When the ``@@proof'' keyword is used to prevent proof checking, 
-this information is not available for the nonchecked part of article.
+the constructor-level information is not available for the 
+nonchecked part of article.
 @end itemize
 
 We solve the second problem by attaching the constructor information
@@ -992,7 +999,7 @@ remains relevant even after most editing operations.
 
 
 Putting the constructor info into the editing buffer can slow 
-down the verifying, but for articles of average size
+down the verifying functions in Emacs, but for articles of average size
 the slowdown is not significant. Fot large articles, the
 ``@@proof'' construct, @xref{Proof checking}, can help to prevent
 using this feature at large. 
@@ -1032,6 +1039,8 @@ Possible values are now
 @code{'translate} for expanded formula in absolute notation,
 @code{'constructors} for list of constructors in absolute notation,
 @code{'sorted} for sorted list of constructors in absolute notation.
+The values @code{'raw} and @code{'expanded} are for debugging only, do
+not use them to get constructor explanatios.
 
 The default value is @code{sorted}.
 @end defopt
