@@ -13,6 +13,7 @@
 
 $prel=$ENV{MIZFILES}."/prel/";
 $all="KORVMGUL";                        # this is used for indexing
+$constrs="KRVMGUL"; # also indexing
 # this maps symbols from $all to syntax symbols; used for defh in defshash() 
 @symb=  ("func", "func", "pred", "attr", "mode", "struct", "sel", "struct");
 
@@ -31,6 +32,7 @@ print "reftags done\n";
 print "Reading in vocabulary information\n";
 getnames();
 print "Vocabulary information read\n";
+getccounts();
 
 # the main loop
 print "Creating symbol tags\n";
@@ -73,8 +75,43 @@ while ($file = shift) {
     close(IN);                                                         
 }
 
-print "symbtags  done\n";
+print "symbtags tags done\n";
 # end of main loop
+
+# read constrcounts into global hash %ccounts
+sub getccounts {
+    my $f,$f1;
+    undef %ccounts;
+
+    open(LAR,  $ENV{MIZFILES}."/mml.lar");
+    @fnames = ("hidden","tarski");    
+    while (<LAR>) { chop; push @fnames, $_;} # get article names
+    close(LAR);
+    while ($f = shift @fnames) {
+	$f1= $prel.substr($f,0,1)."/".$f.".dco";
+	$ccounts{uc($f)} = get1count($f1);
+    }
+# debug
+#    foreach $key (keys %ccounts) {$bla = $ccounts{$key}; print "$bla\n";  foreach $i (0 .. 6) { print "$bla->[$i]"; }}
+}
+
+sub get1count {
+    my $f1 = shift(@_);
+    my $arr = [0,0,0,0,0,0,0];
+
+    open(IN, $f1) or return $arr;
+    do { $_=<IN>;} until /\#/;
+    $_ = <IN>;
+    while(m/([KRVMGUL])([0-9]+)/g) {
+	$arr->[index($constrs,$1)] += $2;
+    }
+    close(IN);
+    return $arr;
+}
+
+
+
+
 
 # this reads the vocs form mml into the global hash %voch
 sub getnames {
@@ -119,10 +156,23 @@ sub correcthidden {
 # %defh...for each symbol "func "pred" "mode" ...contains list of symbols
 # create it from .dno file, special care for structs... we need constr too to
 # recognize its selectors
+# %defnrs keeps constr nrs for respective %defh members
 sub defshash {
+    my $i,$tr,$nrs,$lname;
     %defh = ( "func" => [], "pred" => [], "mode" => [], 
 	      "attr" => [], "sel" => [], "struct" => []);
-    do { $_=<IN>;} until /\#/;
+    %defnrs = ( "func" => [], "pred" => [], "mode" => [], 
+	      "attr" => [], "sel" => [], "struct" => []);
+    @bases = (0,0,0,0,0,0,0);                        #constr bases
+    $_=<IN>; 
+    while (!/\#/) {                                  # init bases
+	chop;
+	$lname = $_;
+	foreach $i (0 .. 6) { $bases[$i] += $ccounts{$_}->[$i]; }
+	$_=<IN>;
+    }
+# remove the last one
+    foreach $i (0 .. 6) { $bases[$i] -= $ccounts{$lname}->[$i]; }
     $hidden=0;                                       # if using HIDDEN, ban V1 (="strict") 
     undef(%selh);                                    # for each struct constr array of its sels  
     undef(%struct);                                  # constr structs names
@@ -138,13 +188,18 @@ sub defshash {
 	    if (defined($g)) { pushsel()};		   # push "U" into its struct array in %selh
 	    $p = index($all,$1);
 	    $f = $defh{$symb[$p]};	                   # array of the syntax symbol
+	    $nrs = $defnrs{$symb[$p]};
 	    $f->[1+$#{$f}] = $trans->[$p][$r-1];           # put the string there
-	    if ($s eq "G") {                               # need name of struct constr
-		<IN>; $_=<IN>;                             
-		m/^(G[0-9]+)/ or print "constr not found in $nfile: $_";
-		$struct{$1} = $f->[$#{$f}];                # keeps names of struc constrs
+	    $nrs->[1+$#{$nrs}] = 0;   # init;
+	    <IN>; $_=<IN>; 
+	    if (m/^([KRMVUG])([0-9]+)/)  {  # antonyms and strmodes  ignored
+		$tr = $2 - $bases[index($constrs,$1)];
+		if ($tr > 0) { $nrs->[$#{$nrs}] = $tr;} 
+		if ($s eq "G") {
+		    $1 eq "G" or print "constr not found in $nfile: $_";
+		    $struct{$1.$2} = $f->[$#{$f}];  # keeps names of struc constrs
+		}
 	    }
-		
 	}}
     return %defh;
 }
@@ -185,7 +240,8 @@ sub guesswhat {
 # shifts the array in $defh{$j} and does the tag printing
 sub shiftprint {
     $sname = shift @{$defh{$j}};
+    $cnr   = shift @{$defnrs{$j}};
     $ord = $bound{$j}-$#{$defh{$j}};
-    print OUT $sname.";".uc($fnoext).":$j:$ord$sname$.,$bytes\n";
+    print OUT $sname.";".uc($fnoext).":$j.$cnr:$ord$sname$.,$bytes\n";
 }
 
