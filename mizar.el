@@ -574,7 +574,7 @@ goes directly to the reference under point"
     (error "No tags file %s, run the script stag.pl" name)
     nil)) 
 
-(defun mizar-symbol-def  (&optional nocompletion) 
+(defun mizar-symbol-def  (&optional nocompletion tag nootherw) 
   "Finds the definition of a symbol with completion,
 if in *.abs buffer shows it it current window, otherwise,
 i.e. in *.miz buffer, shows it in other window.
@@ -583,10 +583,11 @@ In Completion buffer, aside from its normal key bindings,
 second right-click does this too."
   (interactive)
   (if (visit-tags-or-die mizsymbtags)
-      (let ((abs (buffer-abstract-p (current-buffer))))
+      (let ((abs (or nootherw (buffer-abstract-p (current-buffer)))))
 	(if nocompletion
-	    (if abs (find-tag  (mizar-ref-at-point))
-	      (find-tag-other-window  (mizar-ref-at-point)))
+	    (let ((tag (or tag (mizar-ref-at-point))))
+	      (if abs (find-tag  tag)
+		(find-tag-other-window tag)))
 	  (if abs (call-interactively 'find-tag)
 	    (call-interactively 'find-tag-other-window))))))
   
@@ -1023,7 +1024,7 @@ verifier run; experimental so default is nil")
 	    (<= nr (aref (aref cstrnrs artnr) idx)))
 	(setq artnr (- artnr 1)))
     (concat (aref cstrnames artnr) ":" 
-	    (aref ckinds idx) " "
+	    (aref ckinds idx) "."
 	    (int-to-string (- nr (aref (aref cstrnrs artnr) idx))))
     ))
 
@@ -1086,6 +1087,9 @@ the clusters inside frm must already be expanded here"
       
 
 (defvar byextent 1 "size of the underlined region")
+(defvar mizar-underline-expls nil 
+"if t, the clickable explanation spots in mizar buffer are underlined")
+
 (defun mizar-put-bys (aname)
 "puts the constr. repr. of bys as text properties into the 
 mizar buffer, underlines and mouse-highlites the places"
@@ -1094,9 +1098,13 @@ mizar buffer, underlines and mouse-highlites the places"
   (parse-cluster-table aname)
   (let ((bys (mizar-getbys aname))
 	(oldhook after-change-functions)
-	(map (make-sparse-keymap)))
+	(map (make-sparse-keymap))
+	props)
     (setq after-change-functions nil)
     (define-key map [mouse-2] 'mizar-show-constrs-other-window)
+    (setq props (list 'mouse-face 'highlight 'local-map map))
+    (if mizar-underline-expls 
+	(setq props (append props '(face underline))))
     (while bys
       (let* ((rec (car bys))
 	     (line (car rec))
@@ -1109,10 +1117,8 @@ mizar buffer, underlines and mouse-highlites the places"
 	(move-to-column col)
 	(setq beg (point)
 	      end (min eol (+ byextent beg)))
-	(add-text-properties beg end '(mouse-face highlight 
-						  face underline))
+	(add-text-properties beg end props) 
 	(put-text-property beg end 'expl frm)	
-	(put-text-property beg end 'local-map map)	
 	(setq bys (cdr bys))))
     (setq after-change-functions oldhook)
     nil)))
@@ -1120,9 +1126,83 @@ mizar buffer, underlines and mouse-highlites the places"
 (defvar mizar-expl-kind 'translate
 "possible values are now 'raw, 'expanded, 'translate, 'constructors")
 
+(defvar cstrregexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
+"Description of the constr format we use, see idxrepr")
+
+(defvar mizar-cstr-map 
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-m" 'mizar-kbd-ask-query)
+    (define-key map "\M-." 'mizar-kbd-cstr-tag)    
+    (define-key map [mouse-2] 'mizar-mouse-ask-query)
+    (define-key map [mouse-3] 'mizar-mouse-cstr-tag)    
+    map)
+"Keymap used in the buffer *Constructors list* for viewing constructor 
+meanings via symbtags or sending constructor queries to MML Query. 
+Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
+
+(defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/meaning.cgi")
+(defvar megrez-url "http://smegrez.cs.shinshu-u.ac.jp/cgi-bin/meaning.cgi")
+(defvar query-meaning-url megrez-url)
+(defvar mizar-query-browser nil 
+"browser for Query, we allow 'w3 or default")
+
+(defun mizar-ask-query (cstr)
+"Send a constructor query to MML Query"
+(interactive "s")
+(let ((query (concat query-meaning-url "?entry=" cstr)))
+  (if (eq mizar-query-browser 'w3)
+      (browse-url-w3 query)
+    (browse-url query))))
+
+(defun mizar-cstr-at-point (pos &optional agg2str)
+"Get the constructor around pos, if agg2str, replace aggr by struct"
+(save-excursion
+  (goto-char pos)
+  (skip-chars-backward ":.a-zA-Z_0-9")
+  (if (looking-at cstrregexp)
+      (let ((res (match-string 0)))
+	(if (and agg2str (equal "aggr" (match-string 2)))
+	    (concat (match-string 1) ":struct." (match-string 3))
+	  res)))))
+
+(defun mizar-mouse-ask-query (event)
+  (interactive "e")
+  (select-window (posn-window (event-end event)))
+  (let ((cstr (mizar-cstr-at-point (posn-point (event-end event)))))
+    (if cstr (mizar-ask-query cstr)
+      (message "No constructor at point"))))
+
+(defun mizar-kbd-ask-query (pos)
+  (interactive "d")
+  (let ((cstr (mizar-cstr-at-point pos)))
+    (if cstr (mizar-ask-query cstr)
+      (message "No constructor at point"))))
+
+(defun mizar-kbd-cstr-tag (pos)
+  (interactive "d")
+  (let ((cstr (mizar-cstr-at-point pos t)))
+    (if cstr (mizar-symbol-def t cstr t) 
+      (message "No constructor at point"))))
+
+(defun mizar-mouse-cstr-tag (event)
+  (interactive "e")
+  (select-window (posn-window (event-end event)))
+  (let ((cstr (mizar-cstr-at-point (posn-point (event-end event)) t)))
+    (if cstr (mizar-symbol-def t cstr t)
+      (message "No constructor at point"))))
+
+
+(defun mizar-highlight-constrs ()
+(save-excursion
+  (goto-char (point-min))
+  (let ((props (list 'mouse-face 'highlight 'face 'underline)))
+  (while (re-search-forward cstrregexp (point-max) t)
+    (add-text-properties (match-beginning 0) (match-end 0) props)))))
+
 (defun mizar-show-constrs-other-window (event)
   "show constr of the inference you click on."
   (interactive "e")
+  (select-window (posn-window (event-end event)))
   (save-excursion
     (let ((frm (get-text-property (posn-point (event-end event)) 'expl)))
       (if frm
@@ -1132,15 +1212,16 @@ mizar buffer, underlines and mouse-highlites the places"
 		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm cluster-table))
 		       ((eq mizar-expl-kind 'constructors)
 			(prin1-to-string (expfrmrepr frm cluster-table t)))
-		       (t ""))))	    
+		       (t "")))
+		(cbuf (get-buffer-create "*Constructors list*")))
 	    (goto-char (posn-point (event-end event)))
-	    (with-output-to-temp-buffer "*Constructors list*"
-	      (save-excursion
-		(set-buffer standard-output)
-		(erase-buffer)
-		(insert res)      
-		(goto-char (point-min)))))))))	
-
+	    (set-buffer cbuf)
+	    (erase-buffer)
+	    (insert res)    
+	    (mizar-highlight-constrs)
+	    (use-local-map mizar-cstr-map)
+	    (goto-char (point-min))
+	    (switch-to-buffer-other-window cbuf))))))
 
 (defun mizar-toggle-cstr-expl (to)
   (cond ((eq to 'none) (setq  mizar-do-expl nil))
@@ -1862,6 +1943,35 @@ functions:
 	  "-"
 	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
+	  '("Constr. Explanations" 
+	    ("Verbosity"
+	    ["none" (mizar-toggle-cstr-expl 'none) :style radio :selected (not mizar-do-expl) :active t]
+	    ["constructors list" (mizar-toggle-cstr-expl 'constructors) 
+	     :style radio :selected 
+	     (and mizar-do-expl (eq mizar-expl-kind 'constructors)) :active t]
+	    ["translated formula" (mizar-toggle-cstr-expl 'translate) 
+	     :style radio :selected 
+	     (and mizar-do-expl (eq mizar-expl-kind 'translate)) :active t]
+	    ["expanded formula" (mizar-toggle-cstr-expl 'expanded) 
+	     :style radio :selected 
+	     (and mizar-do-expl (eq mizar-expl-kind 'expanded)) :active t]	
+	    ["raw formula" (mizar-toggle-cstr-expl 'raw) 
+	     :style radio :selected 
+	     (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]   
+	    )
+	    ("MML Query server" :active mizar-do-expl
+	     ["Megrez" (setq query-meaning-url megrez-url) :style radio :selected (equal query-meaning-url megrez-url) :active t]
+	     ["Alioth" (setq query-meaning-url alioth-url) :style radio :selected (equal query-meaning-url alioth-url) :active t]
+	     )
+	    ("MML Query browser" :active mizar-do-expl
+	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active t]
+	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active t]
+	     )	    
+	    ["Underline explanation points" 
+	     (setq mizar-underline-expls 
+		   (not mizar-underline-expls)) :style toggle :selected mizar-underline-expls  :active mizar-do-expl ]
+	    ["Show keybindings in *Constructors list*" (describe-variable 'mizar-cstr-map) :active mizar-do-expl]
+	    )
 	  '("Grep"
 	    ["Case sensitive" mizar-toggle-grep-case-sens :style
 	     toggle :selected mizar-grep-case-sensitive :active t]
@@ -1889,22 +1999,7 @@ functions:
 		["first" (mizar-toggle-goto-error "first") :style radio :selected (equal mizar-goto-error "first") :active t]
 		["next" (mizar-toggle-goto-error "next") :style radio :selected (equal mizar-goto-error "next") :active t]
 		["previous" (mizar-toggle-goto-error "previous") :style radio :selected (equal mizar-goto-error "previous") :active t]		
-		)
-	  (list "Constr. Explanations"
-		["none" (mizar-toggle-cstr-expl 'none) :style radio :selected (not mizar-do-expl) :active t]
-		["constructors list" (mizar-toggle-cstr-expl 'constructors) 
-		 :style radio :selected 
-		 (and mizar-do-expl (eq mizar-expl-kind 'constructors)) :active t]
-		["translated formula" (mizar-toggle-cstr-expl 'translate) 
-		 :style radio :selected 
-		 (and mizar-do-expl (eq mizar-expl-kind 'translate)) :active t]
-		["expanded formula" (mizar-toggle-cstr-expl 'expanded) 
-		 :style radio :selected 
-		 (and mizar-do-expl (eq mizar-expl-kind 'expanded)) :active t]	
-		["raw formula" (mizar-toggle-cstr-expl 'raw) 
-		 :style radio :selected 
-		 (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]   
-		)
+		)	  
 	  "-"
 	  (list "Voc. & Constr. Utilities"
 		["Findvoc" mizar-findvoc t]
