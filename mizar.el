@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.102 $
+;; $Revision: 1.103 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4564,9 +4564,10 @@ Nil iff nothing is processed right now, serves also as a state variable.")
 "Simple precheck if verifier can be run on BUFFER."
 (string-match "[.]miz$" (buffer-file-name buffer)))
 
-(defun mizar-it-noqr (&optional util forceacc)
+(defun mizar-it-noqr (&optional options util forceacc)
 "Run mizar in terminal on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
+If OPTIONS are given, pass them to the verifier.
 If UTIL is given, run it instead of verifier.
 If `mizar-use-momm', run tptpver instead.
 If FORCEACC, run makeenv with the -a option."
@@ -4601,7 +4602,9 @@ If FORCEACC, run makeenv with the -a option."
 		   (if (and (numberp excode) (= 0 excode))
 		       (progn
 			 (mizar-new-term-output noqr)
-			 (term-exec "*mizar-output*" util util nil (list name))
+			 (term-exec "*mizar-output*" util util nil 
+				    (if options (list name options)
+				      (list name)))
 			 (let ((proc (get-buffer-process "*mizar-output*")))
 			   (setq mizar-noqr-data (cons filename proc))
 			   (set-process-sentinel proc 'mizar-noqr-sentinel))
@@ -4610,21 +4613,28 @@ If FORCEACC, run makeenv with the -a option."
 	       (if old-dir (setq default-directory old-dir)))
 	     )))))
 
-(defun mizar-it (&optional util noqr compil silent forceacc)
+(defun mizar-it (&optional util noqr compil silent forceacc options)
 "Run mizar verifier on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
+In interactive use, a prefix argument directs this command
+to read verifier options from the minibuffer.
+
+If OPTIONS are given, pass them to the verifier.
 If UTIL is given, run it instead of verifier.
 If `mizar-use-momm', run tptpver instead.
 If NOQR, does not use quick run.
 If COMPIL, emulate compilation-like behavior for error messages.
 If SILENT, just run UTIL without messaging and errorflagging.
 If FORCEACC, run makeenv with the -a option."
-  (interactive)
+  (interactive (if current-prefix-arg
+		   (list nil nil nil nil nil 
+			 (read-string "Verifier options: "))))
   (if (or noqr (not mizar-quick-run)) 
-      (mizar-it-noqr util forceacc)
+      (mizar-it-noqr options util forceacc)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier
 			 mizar-verifier)))
-	(makeenv makeenv))
+	(makeenv makeenv)
+	(options (or options "")))
     (if (eq mizar-emacs 'winemacs)
 	(progn
 	  (setq util (concat mizfiles util)
@@ -4674,7 +4684,7 @@ If FORCEACC, run makeenv with the -a option."
 		       (if (and (numberp excode) (= 0 excode))
 			   (shell-command (concat 
 					   util (if mizar-allow-long-lines " -q -l " 
-						  " -q ")
+						  " -q ") options " "
 					   (shell-quote-argument name))
 					  mizout)
 			 (display-buffer mizout)))
