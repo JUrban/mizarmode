@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.85 $
+;; $Revision: 1.86 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -594,6 +594,36 @@ Used for exact completion.")
   (if (consp end)
       (setcdr  end nil))
   l2))
+
+
+;; reporting stuff stolen from delphi.el
+(defvar mizar-progress-last-reported-point nil
+  "The last point at which progress was reported.")
+
+(defun mizar-progress-start ()
+  ;; Initializes progress reporting.
+  (setq mizar-progress-last-reported-point nil))
+
+(defun mizar-progress-done (&rest msgs)
+  ;; Finalizes progress reporting.
+  (setq mizar-progress-last-reported-point nil)
+  (if (null msgs)
+      (message "")
+    (apply #'message msgs)))
+
+(defun mizar-step-progress (p desc step-size)
+  ;; If enough distance has elapsed since the last reported point, 
+  ;; then report the current progress to the user.
+  (cond ((null mizar-progress-last-reported-point)
+         ;; This is the first progress step.
+         (setq mizar-progress-last-reported-point p))
+
+        (;(and mizar-verbose
+	 (>= (abs (- p mizar-progress-last-reported-point)) step-size)
+         ;; Report the percentage complete.
+         (setq mizar-progress-last-reported-point p)
+         (message "%s %s ... %d%%"
+                  desc (buffer-name) (/ (* 100 p) (point-max))))))
 
 ;;;;;;;;;;;;  indentation (pretty poor) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -3032,6 +3062,9 @@ the range of text to assign text property SYMBOL with value VALUE "
 (let ((query param))
   (list start end 'query query)))
 
+(defconst mmlquery-parsing-progress-step 2048
+"Number of chars to process before the next parsing progress report.")
+
 (defun mmlquery-next-annotation ()
   "Find and return next text/mmlquery annotation.
 Any \"<<\" strings encountered are converted to \"<\".
@@ -3052,6 +3085,8 @@ Return value is \(begin end name positive-p), or nil if none was found."
 	     (name (downcase (buffer-substring 
 			      (match-beginning 2) (match-end 2))))
 	     (pos (not (match-beginning 1))))
+	(mizar-step-progress beg "Parsing" 
+			     mmlquery-parsing-progress-step)
 	(list beg end name pos))))
 
 
@@ -3069,8 +3104,10 @@ Return value is \(begin end name positive-p), or nil if none was found."
       (goto-char from)
       (mmlquery-remove-header)
       ;; Translate annotations
+      (mizar-progress-start)
       (format-deannotate-region from (point-max) mmlquery-translations
 				'mmlquery-next-annotation)
+      (mizar-progress-done)
       (point-max))))
 
 
@@ -3143,13 +3180,13 @@ If PUSH, push positions onto the mmlquery-history."
        (oldpos (point)))
 ;; Load the article if not yet
     (unless defpos
-      (message "Loading abstract %s ..." aname)
+      (message "Parsing abstract %s ..." aname)
       (find-file-noselect afile)
       (setq defpos (get anch 'mmlquery-definition)))
     (unless defpos (error "No mmlquery definition for resource %S" anch))
 ;; The abstract may have been killed
     (unless (get-file-buffer afile)
-      (message "Loading abstract %s ..." aname))
+      (message "Parsing abstract %s ..." aname))
     (find-file afile)
     (goto-char defpos)
     (if push
