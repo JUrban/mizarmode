@@ -15,6 +15,7 @@ err_recovery.pl [options] filename
    --cpulimit=<arg>,		-c<arg>
    --startpos=<arg>,		-s<arg>
    --maxoutbytes=<arg>,         -b<arg>
+   --verifier=<arg>,		-v<arg>
    --help,                  	-h
    --man
 
@@ -45,6 +46,10 @@ Maximal length of output printed from one test,
 default is 2000. Used to keep the log file reasonably
 small when performing large number of tests giving
 long error output like access violations.
+
+=item B<<< --verifier=<arg>, -v<arg> >>>
+
+The verifier to run. Default is "verifier".
 
 =item B<<< --help, -h >>>
 
@@ -78,6 +83,7 @@ my $MIX_AMOUNT		= 10;
 my $CPU_LIMIT		= 7;
 my $START_POS		= 1200;
 my $MAX_OUTPUT_BYTES    = 2000;
+my $VERIFIER		= "verifier";
 
 ## Name of the original Mizar article to be peppered - $ARGV[0]
 my $MIZ_NAME;
@@ -272,13 +278,13 @@ sub Test_Run
     my ($orig, $newfiles, $cpu) = @_;
     my ($res, $file);
     my $hidden_orig = $orig."000";
-    `accom $orig; verifier -q -l $orig`;
+    `accom $orig; $VERIFIER -q -l $orig`;
     system("mv $orig $hidden_orig");
     foreach $file (@$newfiles)
     {
 	print "Processing: $file\n";
 	system("mv $file $orig");
-	$res = `ulimit -t$cpu; verifier -q $orig 2>&1`;
+	$res = `ulimit -t$cpu; $VERIFIER -q $orig 2>&1`;
 	system("mv $orig $file");
 	print (substr($res,0,$MAX_OUTPUT_BYTES), "\n");
     }
@@ -295,6 +301,7 @@ GetOptions('number|n=i'		=> \$ARTICLE_NUMBER,
 	   'cpulimit|c=i'    	=> \$CPU_LIMIT,
 	   'startpos|s=i'   	=> \$START_POS,
 	   'maxoutbytes|b=i'    => \$MAX_OUTPUT_BYTES,
+	   'verifier|v=s'    	=> \$VERIFIER,
 	   'help|h'          	=> \$help,
 	   'man'             	=> \$man)
     or pod2usage(2);
