@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.92 $
+;; $Revision: 1.93 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2481,7 +2481,7 @@ Previous contents of BUFNAME is deleted."
 
     (with-current-buffer buf
       (goto-char (point-min))
-      (if (looking-at "HTTP/[0-9.]+ \\([0-9]+\\) \\(.*\\)\r\n")
+      (if (looking-at "HTTP/[0-9.]+ \\([0-9]+\\) \\(.*\\)")
           (progn
             (forward-line 1)
             (while (looking-at "^.+[:].+")
