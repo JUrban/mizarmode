@@ -263,8 +263,11 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
     (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
     (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
     (define-key mizar-mode-map [(shift down-mouse-1)]     'mizar-mouse-direct-show-ref)
-    (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history))
+    (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history)
+;    (define-key mizar-mode-map [double-mouse-1]     'mizar-mouse-ref-constrs)
+)
   (define-key mizar-mode-map "\M-."     'mizar-show-ref)
+  (define-key mizar-mode-map "\C-c."     'mizar-show-ref-constrs)
   (mizar-mode-commands mizar-mode-map))
 
 (defvar mizar-tag-ending ";"
@@ -724,7 +727,6 @@ tabs"
 				  (< (cadr x) (cadr y)))))
 	)))
 
-
 (defun mizar-error-flag (aname &optional table)
 "Insert error flags into main mizar buffer (like errflag)."
 (interactive "s")
@@ -1156,8 +1158,8 @@ mizar buffer, underlines and mouse-highlites the places"
     (setq after-change-functions oldhook)
     nil)))
 	
-(defvar mizar-expl-kind 'translate
-"possible values are now 'raw, 'expanded, 'translate, 'constructors")
+(defvar mizar-expl-kind 'sorted
+"possible values are now 'raw, 'expanded, 'translate, 'constructors, 'sorted")
 
 (defvar cstrregexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
 "Description of the constr format we use, see idxrepr")
@@ -1246,6 +1248,20 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
   (while (re-search-forward cstrregexp (point-max) t)
     (add-text-properties (match-beginning 0) (match-end 0) props)))))
 
+(defun mizar-intern-constrs-other-window (res)
+"displays the cstr in buffer *Constructors list* in other window
+ and highlights"
+(let ((cbuf (get-buffer-create "*Constructors list*")))
+  (set-buffer cbuf)
+  (erase-buffer)
+  (insert res)    
+  (mizar-highlight-constrs)
+  (use-local-map mizar-cstr-map)
+  (goto-char (point-min))
+  (switch-to-buffer-other-window cbuf)))
+
+
+
 (defun mizar-show-constrs-other-window (event)
   "show constr of the inference you click on."
   (interactive "e")
@@ -1259,16 +1275,12 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm cluster-table))
 		       ((eq mizar-expl-kind 'constructors)
 			(prin1-to-string (expfrmrepr frm cluster-table t)))
-		       (t "")))
-		(cbuf (get-buffer-create "*Constructors list*")))
+		       ((eq mizar-expl-kind 'sorted)
+			(prin1-to-string (sort (unique (expfrmrepr frm cluster-table t)) 'string<)))
+		       (t ""))))
 	    (goto-char (event-point event))
-	    (set-buffer cbuf)
-	    (erase-buffer)
-	    (insert res)    
-	    (mizar-highlight-constrs)
-	    (use-local-map mizar-cstr-map)
-	    (goto-char (point-min))
-	    (switch-to-buffer-other-window cbuf))))))
+	    (mizar-intern-constrs-other-window res))))))
+
 
 (defun mizar-toggle-cstr-expl (to)
   (cond ((eq to 'none) (setq  mizar-do-expl nil))
@@ -1294,13 +1306,15 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
     (define-key map "\M-s" 'query-squery-search-forward)
     (define-key map "\C-c\C-c" 'query-send-entry)
     map)
-"Keymap used in the *MML Query Input* buffer"
+"Keymap used in the *MML Query Input* buffer.
+Currently used are:  M-n, M-p, M-r, M-s (work on saved queries) and
+C-c C-c (sends query to MML Query)"
 )
 
 (defun query-entry-mode ()
   "Minor mode for sending MML Queries.
 These bindings are added to the global keymap when you enter this mode:
-\\[query-send-entry]	send the query to MML Query, ending log message entry
+\\[query-send-entry]	send the query to MML Query
 
 Whenever you send a query, it is added to a ring of
 saved queries.  These can be recalled as follows:
@@ -1562,7 +1576,7 @@ the value of query-entry-mode-hook.
 	 (symb (intern-soft article ltable))
 	 (what (if def 'defs 'ths))
 	 arr res)
-    (if (not symb) (error "Article %s not in environment" article))
+    (if (not symb) (error "Article %s not in theorem directives" article))
     (setq arr (get symb what))
     (if (< (length arr) nr)
 	(error "Maximum for article %s is %d" article (length arr)))
@@ -1574,7 +1588,33 @@ the value of query-entry-mode-hook.
 	  ((eq mizar-expl-kind 'translate) (expfrmrepr res cluster-table))
 	  ((eq mizar-expl-kind 'constructors)
 	   (prin1-to-string (expfrmrepr res cluster-table t)))
+	  ((eq mizar-expl-kind 'sorted)
+	   (prin1-to-string (sort (unique (expfrmrepr res cluster-table t)) 'string<)))
 	  (t ""))))
+
+(defun mizar-show-ref-constrs (&optional ref)
+(interactive)
+(let ((ref1 (or ref (read-string  
+		     (concat "Constructor explanation for: (" 
+			     (mizar-ref-at-point) "): ")
+		     nil nil      (mizar-ref-at-point)))))
+  (if (string-match "\\([a-z_0-9]+\\):\\(def\\)? *\\([0-9]+\\)" ref1)
+      (mizar-intern-constrs-other-window 
+       (mizar-ref-constrs (match-string 1 ref1) 
+			  (string-to-number (match-string 3 ref1)) 
+			  (match-string 2 ref1)))
+    (error "Bad reference %s" ref1))
+  ref1))
+
+(defun mizar-mouse-ref-constrs (event)
+  (interactive "e")
+  (select-window (event-window event))
+  (goto-char (event-point event))
+  (mizar-show-ref-constrs (mizar-ref-at-point)))
+
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2284,9 +2324,24 @@ functions:
 	  "-"
 	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
+	  '("MML Query"
+	    ["Query window" query-start-entry t]
+	    ("MML Query server" 
+	     ["Megrez" (setq query-url megrez-url) :style radio :selected (equal query-url megrez-url) :active t]
+	     ["Alioth" (setq query-url alioth-url) :style radio :selected (equal query-url alioth-url) :active t]
+	     )
+	    ("MML Query browser" 
+	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active t]
+	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active t]
+	     )
+	    ["Show keybindings in *MML Query input*" (describe-variable 'query-entry-map) t]
+	    )
 	  '("Constr. Explanations" 
 	    ("Verbosity"
 	    ["none" (mizar-toggle-cstr-expl 'none) :style radio :selected (not mizar-do-expl) :active t]
+	    ["sorted constructors list" (mizar-toggle-cstr-expl 'sorted) 
+	     :style radio :selected 
+	     (and mizar-do-expl (eq mizar-expl-kind 'sorted)) :active t]
 	    ["constructors list" (mizar-toggle-cstr-expl 'constructors) 
 	     :style radio :selected 
 	     (and mizar-do-expl (eq mizar-expl-kind 'constructors)) :active t]
@@ -2299,15 +2354,7 @@ functions:
 	    ["raw formula" (mizar-toggle-cstr-expl 'raw) 
 	     :style radio :selected 
 	     (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]   
-	    )
-	    ("MML Query server" 
-	     ["Megrez" (setq query-url megrez-url) :style radio :selected (equal query-url megrez-url) :active mizar-do-expl]
-	     ["Alioth" (setq query-url alioth-url) :style radio :selected (equal query-url alioth-url) :active mizar-do-expl]
-	     )
-	    ("MML Query browser" 
-	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active mizar-do-expl]
-	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active mizar-do-expl]
-	     )	    
+	    )	    	    
 	    ["Underline explanation points" 
 	     (setq mizar-underline-expls 
 		   (not mizar-underline-expls)) :style toggle :selected mizar-underline-expls  :active mizar-do-expl ]
