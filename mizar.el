@@ -251,6 +251,7 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
   (define-key mizar-mode-map "\C-c\C-a" 'mizar-inacc)
   (define-key mizar-mode-map "\C-c\C-z" 'make-theorem-summary)
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
+  (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
   (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
   (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
@@ -662,6 +663,15 @@ and you want to get to your editing buffers"
 
 ;;;;;;;;;;;;;;;;;; end of tags handling ;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun mizar-move-to-column (col &optional force)
+"Mizar replacement for move-to-column, not to mess mizar buffers with
+tabs"
+(if force 
+    (let ((new (move-to-column col)))
+      (if (< new col)
+	  (insert-char 32 (- col new)))) ; 32 is space...cannot use tabs
+  (move-to-column col)))
+		    
 ;;;;;;;;;;;;;;;;;; errflag              ;;;;;;;;;;;;;;;;;;
 ;; error format in *.err: Line Column ErrNbr
 
@@ -720,7 +730,7 @@ and you want to get to your editing buffers"
 		  ))
 	    (if (> scol (current-column)) ; enough space
 		(progn
-		  (move-to-column scol t)
+		  (mizar-move-to-column scol t)
 		  (insert (concat "*" (number-to-string snr))))
 	      (insert (concat "," (number-to-string snr))) ; not enough space
 	      )))))))
@@ -910,6 +920,11 @@ none,first,next,previous")
 	(insert result))      
       (goto-char (point-min))))
   (message "Making theorem summary...done"))
+
+(defun mizar-occur-refs ()
+  (interactive)
+  (occur "[ \\n\\r]by[ \\n\\r].*:"))
+
 
 
 ;;;;;;;;;;;;;;;; Running Mizar ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
