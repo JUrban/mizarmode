@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.51 $
+;; $Revision: 1.52 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -3207,7 +3207,8 @@ If COMPIL, emulate compilation-like behavior for error messages."
 		    (kill-buffer "*mizar-output*"))
 		(let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil "-l" name)))
 		  (if (and (numberp excode) (= 0 excode))
-		      (shell-command (concat util " -q -l " name)
+		      (shell-command (concat util " -q -l " 
+					     (shell-quote-argument name))
 				     "*mizar-output*")
 		    (display-buffer "*mizar-output*")))
 		(message " ... done")))
