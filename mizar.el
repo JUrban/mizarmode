@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.76 $
+;; $Revision: 1.77 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -3940,6 +3940,7 @@ Show them in the buffer *Constructors List*."
 
 (defvar mizar-imenu-expr
 '(
+  ("Reservations" "[ \n\r]\\(reserve\\b.*\\)" 1)
   ("Structures" "[ \n\r]\\(struct\\b.*\\)" 1)
   ("Modes" "[ \n\r]\\(mode\\b.*\\)" 1)
   ("Attributes" "[ \n\r]\\(attr\\b.*\\)" 1)
@@ -4319,30 +4320,28 @@ If FORCEACC, run makeenv with the -a option."
 ; 	 (setq pos (match-beginning 0))
 ; 	 (re-search-forward (concat "[, \n]" var "[, \n]") " *\\([;]\\|by\\|proof\\)" (point-max) t))
 
-
 (defun make-reserve-summary ()
   "Make a summary of all type reservations before current point in the article.
-Display it in the buffer *Reservation-Summary* in other window.
+Display it in the `*Occur*' buffer, which uses the `occur-mode'.
 Previous contents of that buffer are killed first.
 Useful for finding out the exact meaning of variables used in
 some Mizar theorem or definition."
   (interactive)
-  (message "Making reservation summary...")
-  ;; This puts a description of bindings in a buffer called *Help*.
-  (setq result (make-reservations-string))
-  (with-output-to-temp-buffer "*Reservations-Summary*"
-    (save-excursion
-      (let ((cur-mode "mizar"))
-	(set-buffer standard-output)
-	(mizar-mode)
-	(erase-buffer)
-	(insert result))
-      (goto-char (point-min))))
-  (message "Making reservations summary...done"))
-
-
-
-			 
+  (let* ((old-face (if (boundp 'list-matching-lines-face)
+		       list-matching-lines-face)))
+    (if (get-buffer "*Occur*") (kill-buffer "*Occur*"))
+    (unwind-protect
+	(save-restriction
+	  (narrow-to-region (point-min) (point))
+	  ;; prevent occur from messing Mizar faces
+	  (if old-face
+	      (setq list-matching-lines-face nil))
+	  (occur "\\breserve\\b[^;]+;")
+	  (if (get-buffer "*Occur*")
+	      (message "Showing reservations before point")
+	    (message "No reservations before point")))
+      (if old-face
+	  (setq list-matching-lines-face old-face)))))
 
 (defun mizar-listvoc ()
   "List vocabulary."
@@ -4517,25 +4516,6 @@ This is a flamewar-resolving hack."
 	 (if  (string-match "\n$" result1)
 	     (setq result (concat result result1 "\n" ))
 	   (setq result (concat result result1 "\n\n" )))))
-    result))
-
-(defun make-reservations-string ()
-  "Make string of all reservations before point."
-  (interactive)
-  (save-excursion
-    (setq maxp (point))
-    (goto-char (point-min))
-    (setq result "")
-    (while
- 	(and
-	 (re-search-forward "^[ \t]*\\(reserve\\)" maxp t)
-	 (setq pos (match-beginning 1))
-	 (re-search-forward ";" maxp t))
-      (progn
-	(setq result1 (buffer-substring-no-properties pos (match-end 0)))
-	 (if  (string-match "\n$" result1)
-	     (setq result result1 )
-	   (setq result (concat result result1 "\n" )))))
     result))
 
 ;; Abbrevs
