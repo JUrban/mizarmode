@@ -1,0 +1,114 @@
+# Mizar syntax highlighting for the Midnight Commander
+# copy weher mc's .syntax files are - e.g. /usr/share/mc/syntax
+
+# Mizar (www.mizar.org)
+
+# Mizar main keywords
+context default 
+    keyword whole theorem     	cyan
+    keyword whole scheme      	cyan
+    keyword whole definition  	cyan
+    keyword whole registration	cyan
+    keyword whole notation    	cyan
+    keyword whole schemes     	cyan
+    keyword whole constructors	cyan
+    keyword whole definitions 	cyan
+    keyword whole theorems    	cyan
+    keyword whole vocabulary  	cyan
+    keyword whole clusters    	cyan
+    keyword whole signature   	cyan
+    keyword whole requirements	cyan
+
+# Mizar block keywords
+    keyword whole proof		brightcyan
+    keyword whole now		brightcyan
+    keyword whole end		brightcyan
+    keyword whole hereby	brightcyan
+    keyword whole case		brightcyan
+    keyword whole suppose	brightcyan
+
+# Mizar formula keywords
+    keyword whole for 		brightmagenta
+    keyword whole ex		brightmagenta
+    keyword whole not		brightmagenta
+    keyword whole &		brightmagenta
+    keyword whole or		brightmagenta
+    keyword whole implies	brightmagenta
+    keyword whole iff		brightmagenta
+    keyword whole st		brightmagenta
+    keyword whole holds		brightmagenta
+    keyword whole being		brightmagenta
+
+# Mizar skeleton keywords
+    keyword whole assume        yellow
+    keyword whole cases         yellow       
+    keyword whole given         yellow       
+    keyword whole hence         yellow       
+    keyword whole let           yellow       
+    keyword whole per           yellow       
+    keyword whole take          yellow       
+    keyword whole thus          yellow  
+
+# Mizar normal keywords
+    keyword whole and           yellow
+    keyword whole antonym       yellow       
+    keyword whole attr          yellow       
+    keyword whole as            yellow       
+    keyword whole be            yellow       
+    keyword whole begin         yellow       
+    keyword whole canceled      yellow       
+    keyword whole cluster       yellow       
+    keyword whole coherence     yellow       
+    keyword whole compatibility yellow       
+    keyword whole consider      yellow       
+    keyword whole consistency   yellow       
+    keyword whole contradiction yellow       
+    keyword whole correctness   yellow       
+    keyword whole def           yellow       
+    keyword whole deffunc       yellow       
+    keyword whole defpred       yellow       
+    keyword whole environ       yellow       
+    keyword whole equals        yellow       
+    keyword whole existence     yellow       
+    keyword whole func          yellow       
+    keyword whole if            yellow       
+    keyword whole irreflexivity yellow       
+    keyword whole it            yellow       
+    keyword whole means         yellow       
+    keyword whole mode          yellow       
+    keyword whole of            yellow       
+    keyword whole otherwise     yellow       
+    keyword whole over          yellow       
+    keyword whole pred          yellow       
+    keyword whole provided      yellow       
+    keyword whole qua           yellow       
+    keyword whole reconsider    yellow       
+    keyword whole redefine      yellow       
+    keyword whole reflexivity   yellow       
+    keyword whole reserve       yellow       
+    keyword whole struct        yellow       
+    keyword whole such          yellow       
+    keyword whole synonym       yellow       
+    keyword whole that          yellow       
+    keyword whole then          yellow       
+    keyword whole thesis        yellow       
+    keyword whole where         yellow       
+    keyword whole associativity yellow       
+    keyword whole commutativity yellow       
+    keyword whole connectedness yellow       
+    keyword whole irreflexivity yellow       
+    keyword whole reflexivity   yellow       
+    keyword whole symmetry      yellow       
+    keyword whole uniqueness    yellow       
+    keyword whole transitivity  yellow       
+    keyword whole idempotence   yellow       
+    keyword whole asymmetry     yellow       
+    keyword whole projectivity  yellow       
+    keyword whole involutiveness 	yellow
+
+# Mizar references
+    keyword by*;	brightgreen	
+    keyword by*\n	brightgreen	
+
+# Mizar comments
+context :: \n brightred
