@@ -16,6 +16,7 @@ err_recovery.pl [options] filename
    --startpos=<arg>,		-s<arg>
    --maxoutbytes=<arg>,         -b<arg>
    --verifier=<arg>,		-v<arg>
+   --accom=<arg>,		-a<arg>
    --help,                  	-h
    --man
 
@@ -51,6 +52,10 @@ long error output like access violations.
 
 The verifier to run. Default is "verifier".
 
+=item B<<< --accom=<arg>, -a<arg> >>>
+
+The accommodator to run. Default is "accom".
+
 =item B<<< --help, -h >>>
 
 Print a brief help message and exit.
@@ -84,6 +89,7 @@ my $CPU_LIMIT		= 7;
 my $START_POS		= 1200;
 my $MAX_OUTPUT_BYTES    = 2000;
 my $VERIFIER		= "verifier";
+my $ACCOM		= "accom";
 
 ## Name of the original Mizar article to be peppered - $ARGV[0]
 my $MIZ_NAME;
@@ -278,7 +284,7 @@ sub Test_Run
     my ($orig, $newfiles, $cpu) = @_;
     my ($res, $file);
     my $hidden_orig = $orig."000";
-    `accom $orig; $VERIFIER -q -l $orig`;
+    `$ACCOM $orig; $VERIFIER -q -l $orig`;
     system("mv $orig $hidden_orig");
     foreach $file (@$newfiles)
     {
@@ -302,6 +308,7 @@ GetOptions('number|n=i'		=> \$ARTICLE_NUMBER,
 	   'startpos|s=i'   	=> \$START_POS,
 	   'maxoutbytes|b=i'    => \$MAX_OUTPUT_BYTES,
 	   'verifier|v=s'    	=> \$VERIFIER,
+	   'accom|a=s'    	=> \$ACCOM,
 	   'help|h'          	=> \$help,
 	   'man'             	=> \$man)
     or pod2usage(2);
