@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.47 $
+;; $Revision: 1.48 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1987,7 +1987,7 @@ successor list to be forgotten.
 Each element of the history is a list
 (buffer file-name position), if buffer was killed and file-name exists, we re-open the file.")
 
-(defvar mmlquery-abstracts (substitute-in-file-name "$MIZFILES/gab")
+(defvar mmlquery-abstracts (substitute-in-file-name "$MIZFILES/gab/")
   "*Directory containing the mmlquery abstracts for browsing.")
 
       
