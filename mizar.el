@@ -1,3 +1,7 @@
+;; Dec 20 2001 ... some changes by Freek Wiedijk and Dan Synek:
+;; undo and output fixed, standard compilation (C-c c) is now possible
+;; using the scripts mizfe and erpp.pl (put them where mizf is and make
+;; them executable)
 ;; Dec 15 2001  
 ;; some small additions and fixes: fixed and added some
 ;; irrelevant utils, can be run with revf now; some other utils added;
@@ -79,6 +83,8 @@
 ;   S-down-mouse-3  ............ mizar-symbol-def with no completion
 ;   S-down-mouse-1  ............ mizar-show-ref with no completion
 ;   S-down-mouse-2  ............ pops up menu of visited symbols to go to      
+; Added by Dan
+;      C-c C   ............ runs mizar as if it was an ordinary compile command
 
 ;; to do: better indentation,
 ;           find out why it hangs during C-c C-m when switching to another buffer,
@@ -133,6 +139,7 @@
 (require 'etags)
 (require 'hideshow)
 (require 'executable)
+(require 'term)
 
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
@@ -201,6 +208,7 @@
     nil
   (setq mizar-mode-map (make-sparse-keymap))
   (define-key mizar-mode-map  "\C-c\C-m" 'mizar-it)
+  (define-key mizar-mode-map  "\C-cc" 'mizar-compile)
   (define-key mizar-mode-map  "\C-c\C-n" 'mizar-next-error)
   (define-key mizar-mode-map  "\C-c\C-p" 'mizar-previous-error)
   (define-key mizar-mode-map "\C-c\C-e" 'mizar-strip-errors)
@@ -600,12 +608,19 @@ and you want to get to your editing buffers"
   (set-buffer buf)
   (revert-buffer t t t)
   (goto-char (point-max))
-  (let* ((chstr   (mizar-search-output "Checker "))
-	 (endstr (buffer-substring-no-properties 
-		  (match-beginning 0) (point-max)))
-	 (anstr (mizar-search-output "Analyzer"))
-	 (pastr (mizar-search-output "Parser  ")))
-    (concat pastr "\n" anstr "\n" endstr "\n")))))
+  (if (re-search-backward "\rChecker[^\r\n]*$" (point-min) t)
+    (progn
+      (replace-match "")
+      (goto-char (point-max))
+      (mizar-search-output "Time")
+      (let* ((endstr (buffer-substring-no-properties 
+		      (match-beginning 0) (point-max)))
+	     (chstr (mizar-search-output "Checker "))
+	     (anstr (mizar-search-output "Analyzer"))
+	     (pastr (mizar-search-output "Parser  ")))
+	(revert-buffer t t t)
+	(concat pastr "\n" anstr "\n" chstr "\n" endstr "\n")))
+    (buffer-string)))))
 
 
 (defun mizar-search-output (what)
@@ -634,6 +649,12 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
       (setq count (+ 1 count))
       (sit-for period)
       (message "Verifying %s... %c" fname (aref "/|\\-" (mod count 4))))))
+
+
+(defun mizar-compile ()
+  "compile a mizar file in the traditional way"
+  (interactive)
+  (compile (concat "mizfe " (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))))))
 
 
 (defun mizar-it (&optional util)
@@ -668,12 +689,18 @@ if util given (eg. miz2prel), runs it instead of mizf"
 	       (term-exec "*mizar-output*" util util nil (list mizarg))
 	       (while  (term-check-proc "*mizar-output*") 
 		 (sit-for 5)))
-	     (revert-buffer t t t)
-	     (setq pos (point)) 
-	     (goto-char (point-min))
-	     (mizar-next-error)
-	     (if (= (point) (point-min)) (goto-char pos) t)) 
-	   )))))
+	   (insert-file-contents (buffer-file-name) nil nil nil t)
+           (clear-visited-file-modtime)
+	   (save-buffer))
+       (save-selected-window
+         (select-window (get-buffer-window (get-buffer "*mizar-output*")))
+	 (save-excursion
+	   (goto-char (point-max))
+	   (delete-blank-lines))
+	 (let ((new-height
+		(min 10 (+ 1 (count-lines (point-min) (point-max))))))
+	   (shrink-window (- (window-height) new-height))
+	   )))))))
 
 
 
