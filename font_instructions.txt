@@ -20,4 +20,4 @@ so if you want to use e.g. decimal ASCII codes, you may need to customize
 the variable "read-quoted-char-radix".
 It's done e.g. this way: run "M-x customize-save-variable RET",
 on prompt type   "read-quoted-char-radix RET" and then "10 RET".
- 
+
