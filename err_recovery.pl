@@ -17,6 +17,8 @@ err_recovery.pl [options] filename
    --maxoutbytes=<arg>,         -b<arg>
    --verifier=<arg>,		-v<arg>
    --accom=<arg>,		-a<arg>
+   --keeperrors,		-k
+   --rerun,			-r
    --help,                  	-h
    --man
 
@@ -56,6 +58,17 @@ The verifier to run. Default is "verifier".
 
 The accommodator to run. Default is "accom".
 
+=item B<<< --keeperrors, -k >>>
+
+Keep the error files (*.err) after each run.
+Useful for comparison of two verifier versions, when
+followed by rerun (--rerun).
+
+=item B<<< --rerun, -r >>>
+
+Do not create problems, assuming that they are already
+generated, and just rerun them.
+
 =item B<<< --help, -h >>>
 
 Print a brief help message and exit.
@@ -90,6 +103,8 @@ my $START_POS		= 1200;
 my $MAX_OUTPUT_BYTES    = 2000;
 my $VERIFIER		= "verifier";
 my $ACCOM		= "accom";
+my $KEEPERRORS;
+my $RERUN;
 
 ## Name of the original Mizar article to be peppered - $ARGV[0]
 my $MIZ_NAME;
@@ -266,24 +281,60 @@ sub Create_Peppered
     return @res;
 }
 
+=head2  Check_Existence()
+
+  Title        : Check_Existence()
+  Usage        : Create_Peppered($orig, $art_nr);
+  Function     : Check that $art_nr files created from $orig
+                 by previous run exist.
+  Returns      : List of the created filenames
+  Global Vars  : -
+  Args         : ($orig, $art_nr)
+
+=cut
+sub Check_Existence
+{
+    my ($orig, $art_nr) = @_;
+    my ($base, $i, @res);
+
+    die "$orig does not exist" unless(-e $orig);
+
+    $orig 	=~ m/(.*)[.]miz$/
+	or die "Not a Mizar file name: $orig";
+
+    $base 	= $1;
+
+    while($i++ < $art_nr)
+    {
+	my $new_name = $base."$i.miz";
+	die "$new_name does not exist" unless(-e $new_name);
+	push @res, $new_name;
+    }
+    return @res;
+}
+
 
 =head2  Test_Run()
 
   Title        : Test_Run()
-  Usage        : Test_Run($orig, $newfiles, $cpu);
+  Usage        : Test_Run($orig, $newfiles, $cpu, $keep);
   Function     : Run verifier efficiently on @$newfiles, 
                  printing output to STDOUT.
   Returns      : -
   Global Vars  : $MAX_OUTPUT_BYTES
-  Args         : $orig, $newfiles, $cpu;
+  Args         : $orig, $newfiles, $cpu, $keep;
 
 =cut
 ## The moving prevents accommodation
 sub Test_Run
 {
-    my ($orig, $newfiles, $cpu) = @_;
-    my ($res, $file);
+    my ($orig, $newfiles, $cpu, $keep) = @_;
+    my ($res, $file, $orig_base);
     my $hidden_orig = $orig."000";
+
+    $orig 	=~ m/(.*)[.]miz$/;
+    $orig_base 	= $1;
+
     `$ACCOM $orig; $VERIFIER -q -l $orig`;
     system("mv $orig $hidden_orig");
     foreach $file (@$newfiles)
@@ -292,6 +343,12 @@ sub Test_Run
 	system("mv $file $orig");
 	$res = `ulimit -t$cpu; $VERIFIER -q $orig 2>&1`;
 	system("mv $orig $file");
+	if($keep)
+	{
+	    $file 		=~ m/(.*)[.]miz$/;
+	    my $new_base 	= $1;
+	    system("mv $orig_base.err $new_base.err");
+	}
 	print (substr($res,0,$MAX_OUTPUT_BYTES), "\n");
     }
     system("mv $hidden_orig $orig");
@@ -309,6 +366,8 @@ GetOptions('number|n=i'		=> \$ARTICLE_NUMBER,
 	   'maxoutbytes|b=i'    => \$MAX_OUTPUT_BYTES,
 	   'verifier|v=s'    	=> \$VERIFIER,
 	   'accom|a=s'    	=> \$ACCOM,
+	   'keeperrors|k'	=> \$KEEPERRORS,
+	   'rerun|r'		=> \$RERUN,
 	   'help|h'          	=> \$help,
 	   'man'             	=> \$man)
     or pod2usage(2);
@@ -320,10 +379,11 @@ pod2usage(2) if ($#ARGV != 0);
 
 $MIZ_NAME = shift @ARGV;
 
-my @created = Create_Peppered($MIZ_NAME, $ARTICLE_NUMBER, $PEPPER_AMOUNT,
-			      $MIX_AMOUNT, $START_POS);
+my @created = $RERUN ? Check_Existence($MIZ_NAME, $ARTICLE_NUMBER)
+    : Create_Peppered($MIZ_NAME, $ARTICLE_NUMBER, $PEPPER_AMOUNT,
+		      $MIX_AMOUNT, $START_POS);
 
-Test_Run($MIZ_NAME, \@created, $CPU_LIMIT);
+Test_Run($MIZ_NAME, \@created, $CPU_LIMIT, $KEEPERRORS);
 
 
 
