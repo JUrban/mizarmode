@@ -14,16 +14,9 @@ A: Usually, you need to use "Toggle launch-dir" in the menu to set
 
 Q: What is the quick-run thing?
 
-A: It is a workaround for the slow display in the Emacs
-   term-mode. Mizar output is redirected to the *.out file, and the
-   file is searched for Mizar errors afterwards.
-
-
-Q: The normal (non quick-run) Mizar processing seems broken.
-
-A: Check that the term-mode is OK. In some older versions of Emacs
-   this might be the problem.
-
+A: It was a workaround for the slow display in the Emacs
+   term-mode. Since version 6.1.11, we use the quiet mode 
+   as standard, so quick-run now also means quiet mode.
 
 Q: Nothing works!
 
