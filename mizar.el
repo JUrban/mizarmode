@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.82 $
+;; $Revision: 1.83 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2964,7 +2964,7 @@ PARAM replaced with space."
 	(put sym1 'mmlquery-redef (cons start (get sym1 'mmlquery-redef)))
 	)))
     (setq allparams (cdr allparams)))
-
+  (incf dstart)  ;; this believs that end of line follows
   (add-text-properties (+ 3 start) dstart
 		       (list 'mouse-face  'highlight ; 'speedbar-selected-face   ; 'highlight ;'face 'underline 
 ;			     'fontified t 
