@@ -1,0 +1,1436 @@
+\input texinfo
+@c
+@c MizarMode.texi - Manual for Mizar Mode for Emacs
+@c formatting heavily stolen from ProofGeneral.texi
+@c 
+@setfilename MizarMode.info
+@settitle Emacs Authoring Environment for Mizar
+@setchapternewpage odd
+@paragraphindent 0
+@iftex
+@afourpaper
+@end iftex
+
+
+@set version 1.36
+@set xemacsversion 21.4
+@set fsfversion 20.7
+@set dosversion 21.2
+@set last-update Thu Jul 24 2003
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY 
+* Mizar Mode: (MizarMode).           Emacs Authoring Environment for Mizar
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+
+@finalout
+@titlepage
+@title Mizar Mode
+@subtitle Emacs Authoring Environment for Mizar
+@sp 1
+@subtitle User Manual for Mizar Mode @value{version}
+@subtitle @value{last-update}
+@subtitle @b{http://alioth.uwb.edu.pl/twiki/bin/view/Mizar/MizarMode}
+
+@author Josef Urban
+@page
+@vskip 0pt plus 1filll
+
+@sp 2
+
+This manual documents Mizar Mode, Version @value{version}, for use
+with GNU Emacs @value{fsfversion} and Windows port of GNU Emacs 
+@value{dosversion} or
+later versions.  Mizar Mode is distributed under the terms of the GNU
+General Public License (GPL).
+
+@sp 1
+
+Visit Mizar Mode on the web at 
+@uref{http://alioth.uwb.edu.pl/twiki/bin/view/Mizar/MizarMode}
+
+@sp 1
+
+@end titlepage
+
+@page
+
+
+@ifinfo
+@node Top, Prerequisities, (dir), (dir)
+@top Mizar Mode
+
+This file documents version @value{version} of @b{Mizar Mode}, an
+Emacs authoring environment for the Mizar system.
+
+Mizar Mode @value{version} has been tested with 
+ GNU Emacs @value{fsfversion} and Windows port of GNU Emacs 
+@value{dosversion}. 
+
+@menu
+* Prerequisities::              
+* Basic Functions::             
+* Summaries and Hide/Show::     
+* Running Mizar utilities::     
+* Miscellaneous editing::       
+* Browsing Functions::          
+* Grepping in MML::             
+* Miscellaneous Emacs facilities for fast mizaring::  
+* Constructor explanations::    
+* MML Query::                   
+* Mizar Proof Advisor::         
+* MoMM::                        
+* Mizar TWiki::                 
+* Function Index::              
+* Variable Index::              
+* Keystroke Index::             
+* Concept Index::               
+
+@detailmenu
+ --- The Detailed Node Listing ---
+
+Prerequisities
+
+* Installation::                
+* Emacs basics::                
+
+Installation
+
+* XEmacs compatibility::        
+
+Basic Functions
+
+* Running Mizar::               
+* Indentation and commenting::  
+* Error explanations and movement::  
+
+Summaries and Hide/Show
+
+* Hide/Show - Hiding proofs::   
+
+Running Mizar utilities
+
+* Simple constructor and vocabulary utilities::  
+* Irrelevant Utilities::        
+* Other Utilities::             
+
+Simple constructor and vocabulary utilities
+
+* Constructors and user symbols::  
+
+Miscellaneous editing
+
+* Proof checking::              
+* Then placement::              
+
+Miscellaneous Emacs facilities for fast mizaring
+
+* Imenu and Speedbar support::  
+* Abbreviations::               
+
+Constructor explanations
+
+* How Constructor explanations work::  
+* Getting Constructor explanations::  
+* Using Constructor explanations::  
+
+MML Query
+
+* Asking arbitrary queries::    
+
+MoMM
+
+* Installing MoMM::             
+* Starting MoMM in Mizar Mode::  
+* Getting MoMM hints::          
+
+@end detailmenu
+@end menu
+
+@end ifinfo
+
+
+@node Prerequisities, Basic Functions, Top, Top
+@chapter Prerequisities
+
+
+@menu
+* Installation::                
+* Emacs basics::                
+@end menu
+
+@node Installation, Emacs basics, Prerequisities, Prerequisities
+@section Installation
+@cindex installation
+@cindex mizar distribution
+@cindex compatibility
+
+Since Mizar version 6.1.12, Mizar Mode is part of the Mizar 
+distribution available at 
+@uref{http://mizar.uwb.edu.pl/system/#download}. 
+A sample customization file .emacs is also included there.
+The only installation step required, is to copy the declarations 
+in that file to your own .emacs file.
+
+The latest version of Mizar Mode is downloadable from
+@uref{http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/mizar.el}.
+
+Mizar Mode has been tested with GNU Emacs @value{fsfversion} 
+and Windows port of GNU Emacs @value{dosversion}. 
+If you use the Windows port, you need a GNU version of grep, for
+the grepping functions to work properly.
+
+@menu
+* XEmacs compatibility::        
+@end menu
+
+@node XEmacs compatibility,  , Installation, Installation
+@subsection XEmacs compatibility
+
+A lot of changes has been done, to make Mizar Mode work with XEmacs, 
+however, you still need to load into XEmacs the file etags.el 
+from the GNU Emacs (instead of XEmacs' tags), to have the browsing 
+extensions working.
+
+@node Emacs basics,  , Installation, Prerequisities
+@section Emacs basics
+
+Make sure you have the Emacs info pages installed.
+If you do not know what a key sequence like @kbd{C-x b}
+means, @inforef{User Input, User Input, emacs}, and 
+@inforef{Keys, Keys, emacs}.
+
+@inforef{Help, Help, emacs}, to learn how to 
+get help on anything you may encounter in Emacs.
+
+For basic survival, remember at least that:
+@itemize
+@item @kbd{C-h k} followed by a keybord shortcut, explains the shortcut 
+@item @kbd{C-h w} followed by a name of command, gives you its shortcuts
+@item @kbd{C-h i} enters the Info browser
+@item @kbd{C-h f} displays the documentation for a given function
+@item @kbd{C-h m} displays the documentation for current mode
+@end itemize
+
+
+@node Basic Functions, Summaries and Hide/Show, Prerequisities, Top
+@chapter Basic Functions
+
+@menu
+* Running Mizar::               
+* Indentation and commenting::  
+* Error explanations and movement::  
+@end menu
+
+@node Running Mizar, Indentation and commenting, Basic Functions, Basic Functions
+@section Running Mizar
+@kindex C-c RET  
+@kindex C-c c
+@cindex verifying
+@cindex compilation
+
+@table @kbd
+@item  C-c RET  
+@code{mizar-it}
+@item  C-c c
+@code{mizar-compile}
+@end table
+
+@c TEXI DOCSTRING MAGIC: mizar-it
+@deffn Command mizar-it &optional util noqr compil
+Run mizar verifier on the text in the current .miz buffer.@*
+Show the result in buffer *mizar-output*.
+If @var{util} is given, run it instead of verifier.
+If @samp{@code{mizar-use-momm}}, run tptpver instead.
+If @var{noqr}, does not use quick run.
+If @var{compil}, emulate compilation-like behavior for error messages.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-launch-dir
+@defopt mizar-launch-dir 
+If non-nil, verifier and other programs are called from here.@*
+Can be set from menu.
+Set this to parent directory, if you use
+private vocanulary file residing in ../dict/ , 
+otherwise Mizar *will not* find it.
+
+The default value is @code{nil}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-compile
+@deffn Command mizar-compile &optional util
+Run verifier (@samp{@code{mizar-it}}) in a compilation-like way.@*
+This means that the errors are shown and clickable in buffer 
+@strong{Compilation}, instead of being put into the editing buffer in
+the traditional Mizar way.
+If @var{util} is given, call it instead of the Mizar verifier.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-quick-run
+@defopt mizar-quick-run 
+Speeds up verifier by not displaying its intermediate output.@*
+Can be toggled from the menu, however the nil value is no
+longer supported and may be deprecated (e.g. on Windows).
+
+The default value is @code{t}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-show-output
+@defopt mizar-show-output 
+Possible values: none, 4, 10, all.@*
+Determines the size of the output window after processing. 
+Can be set from menu
+
+The default value is @code{10}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-goto-error
+@defopt mizar-goto-error 
+What error to move to after processing.@*
+Possible values are none, first, next, previous.
+Can be set from menu
+
+The default value is @code{"next"}.
+@end defopt
+
+
+@node Indentation and commenting, Error explanations and movement, Running Mizar, Basic Functions
+@section Indentation and commenting
+@kindex C-c C-c 
+@kindex TAB 
+@kindex M-C-\ 
+@cindex indentation
+@cindex comments
+
+@table @kbd
+@item  C-c C-c 
+@code{comment-region}
+@item  TAB 
+@code{mizar-indent-line}
+@item  M-C-\ 
+@code{indent-region}
+@end table
+
+@deffn Command comment-region
+Comment  each line in the region.
+With C-u prefix, uncomment each line in the region.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-indent-line
+@deffn Command mizar-indent-line 
+Indent current line as Mizar code.
+@end deffn
+
+@deffn Command indent-region
+Indent each nonblank line in the region.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-indent-width
+@defopt mizar-indent-width 
+Indentation width for Mizar articles.@*
+Customizable from Mizar Mode menu.
+
+The default value is @code{2}.
+@end defopt
+
+
+@node Error explanations and movement,  , Indentation and commenting, Basic Functions
+@section Error explanations and movement
+@kindex C-c C-n               
+@kindex C-c C-p               
+@kindex C-c C-e 
+@cindex error explanations
+
+@table @kbd
+@item  C-c C-n               
+@code{mizar-next-error}
+@item  C-c C-p               
+@code{mizar-previous-error}
+@item  C-c C-e 
+@code{mizar-strip-errors}
+@end table
+
+@c TEXI DOCSTRING MAGIC: mizar-next-error
+@deffn Command mizar-next-error 
+Go to the next error in a mizar text, return nil if not found.@*
+Show the error explanation in the minibuffer.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-previous-error
+@deffn Command mizar-previous-error 
+Go to the previous error in a mizar text, return nil if not found.@*
+Show the error explanation in the minibuffer.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-strip-errors
+@deffn Command mizar-strip-errors 
+Delete all error lines added by Mizar.@*
+These are lines beginning with ::>.
+@end deffn
+
+@node Summaries and Hide/Show, Running Mizar utilities, Basic Functions, Top
+@chapter Summaries and Hide/Show
+@kindex C-c C-r 
+@kindex C-c C-z 
+@cindex summaries
+
+
+@table @kbd
+@item  C-c C-r 
+@code{make-reserve-summary}
+@item  C-c C-z 
+@code{make-theorem-summary}
+@end table
+
+
+@c TEXI DOCSTRING MAGIC: make-reserve-summary
+@deffn Command make-reserve-summary 
+Make a summary of all type reservations before current point in the article.@*
+Display it in the buffer *Reservation-Summary* in other window.
+Previous contents of that buffer are killed first.
+Useful for finding out the exact meaning of variables used in
+some Mizar theorem or definition.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: make-theorem-summary
+@deffn Command make-theorem-summary 
+Make a summary of theorems in the buffer *Theorem-Summary*.@*
+Previous contents of that buffer are killed first.
+The command @samp{@code{hs-hide-all}}, accessible from the Hide/Show menu, 
+can be used instead, to make a summary of an article.
+@end deffn
+
+@menu
+* Hide/Show - Hiding proofs::   
+@end menu
+
+@node Hide/Show - Hiding proofs,  , Summaries and Hide/Show, Summaries and Hide/Show
+@section Hide/Show - Hiding proofs
+@kindex <S-mouse-2>
+@cindex hide/show
+@cindex proof hiding
+
+@table @kbd
+@item  <S-mouse-2>
+@code{hs-mouse-toggle-hiding}
+@end table
+
+
+Mizar Mode customizes the standard Hide/Show minor mode, 
+@inforef{Hideshow, Hideshow, emacs}, for hiding
+parts of proofs. 
+
+Except from the function @code{hs-mouse-toggle-hiding} bound to
+@kbd{<S-mouse-2>}, the following useful functions are accessible 
+from the menu Hide/Show. 
+
+@deffn Command hs-hide-all
+Hide all Mizar proofs in the article.@*
+This means that instead of each top-level proof brackets like
+@code{proof ... end;}, @code{now ... end;} or @code{hereby ... end;},
+you will see only three dots @code{...} in the buffer.@*
+The effect is actually very similar to that of creating an abstract
+from the article, however, e.g. the top-level simple justifications
+are still visible in the buffer.@*
+This kind of hiding has no effect on proof checking, the file
+is not modified by it. @xref{Proof checking}, for commands that
+disable proof checking of some patr of the article.
+@end deffn
+
+@deffn Command hs-show-block
+Show a selected Mizar proof.@*
+The first block following a point is shown.@*
+After hiding some large portion of text 
+(e.g. by @samp{@code{hs-hide-all}}), use this to completely unhide
+the part you are working on.
+@end deffn
+
+@deffn Command hs-hide-block
+Hide a selected Mizar proof.@*
+The nearest proof block around the point is hidden.
+@end deffn
+
+@deffn Command hs-hide-level
+Hide all subproofs of the current proof block.@*
+This command is useful for getting overview of the proof, when
+you are not interested in the detailed subproofs of its various
+lemmas.
+@end deffn 
+
+@deffn Command hs-show-all
+Show all of the article, cancel any hiding.@*.
+@end deffn 
+
+@c TEXI DOCSTRING MAGIC: hs-toggle-hiding
+@deffn Command hs-toggle-hiding 
+Toggle hiding/showing of a block.@*
+See @samp{@code{hs-hide-block}} and @samp{@code{hs-show-block}}.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: hs-mouse-toggle-hiding
+@deffn Command hs-mouse-toggle-hiding 
+Toggle hiding/showing of a block.@*
+This command should be bound to a mouse key.
+Argument E is a mouse event used by @samp{@code{mouse-set-point}}.
+See @samp{@code{hs-hide-block}} and @samp{@code{hs-show-block}}.
+@end deffn
+
+
+@node Running Mizar utilities, Miscellaneous editing, Summaries and Hide/Show, Top
+@chapter Running Mizar utilities
+@cindex Mizar utilities
+
+Here we deescribe how to use Mizar Mode, to run various compiled Mizar
+utilities provided in the Mizar distribution. 
+
+@menu
+* Simple constructor and vocabulary utilities::  
+* Irrelevant Utilities::        
+* Other Utilities::             
+@end menu
+
+@node Simple constructor and vocabulary utilities, Irrelevant Utilities, Running Mizar utilities, Running Mizar utilities
+@section Simple constructor and vocabulary utilities
+@kindex C-c C-f 
+@kindex C-c C-l 
+@kindex C-c C-t 
+
+These are compiled utilities available in the Mizar distribution. 
+@xref{Constructor explanations}, for more utilities working on the
+constructor representation of Mizar formulas.
+
+@menu
+* Constructors and user symbols::  
+@end menu
+
+
+@table @kbd
+@item  C-c C-f 
+@code{mizar-findvoc}
+@item  C-c C-l 
+@code{mizar-listvoc}
+@item  C-c C-t 
+@code{mizar-constr}
+@end table
+
+
+@c TEXI DOCSTRING MAGIC: mizar-findvoc
+@deffn Command mizar-findvoc 
+Find vocabulary for a symbol.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-listvoc
+@deffn Command mizar-listvoc 
+List vocabularies.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-constr
+@deffn Command mizar-constr 
+Show required constructors directives.@*
+Directives needed for Mizar theorems, definitions, 
+schemes or complete articles can be queried.
+@end deffn
+
+
+@node Constructors and user symbols,  , Simple constructor and vocabulary utilities, Simple constructor and vocabulary utilities
+@subsection Constructors and user symbols
+@cindex constructors
+@cindex user symbols
+@cindex vocabulary
+
+Mizar is overloaded on the symbol level, e.g. the sumbol '+'
+can be used for various operations.
+Before proof checking takes place, Mizar disambiguates this 
+overloading and replaces the user symbols with unique ``constructors''.
+
+Constructors are unambiguous and they express the semantics of Mizar
+formulas, so tools like MML Query, @xref{MML Query}, Mizar Proof Advisor,
+@xref{Mizar Proof Advisor}, or MoMM, @xref{MoMM}, often work with
+constructor representation.
+
+@node Irrelevant Utilities, Other Utilities, Simple constructor and vocabulary utilities, Running Mizar utilities
+@section Irrelevant Utilities
+@kindex C-c C-h         
+@kindex C-c TAB         
+@kindex C-c C-o
+@kindex C-c C-s 
+@kindex C-c C-y         
+@kindex C-c C-b
+@kindex C-c C-v         
+@kindex C-c C-a         
+@cindex irrelevant utilities
+
+By ``Irrelevant utilities'' we mean all those Mizar utilities, that
+check for relevancy of some parts of a Mizar article.
+
+Irrelevant utilities are usually highly relevant when you finish
+your article, and want to remove unnecesary proof steps, premises,
+etc. Sometimes you can learn this way, that your proofs are unnecessarily
+complicated, or even that you were proving something else than what
+you wanted to prove.
+
+@table @kbd
+@item  C-c C-h         
+@code{mizar-irrths}
+@item  C-c TAB         
+@code{mizar-relinfer}
+@item  C-c C-o
+@code{mizar-trivdemo}
+@item  C-c C-s 
+@code{mizar-reliters}
+@item  C-c C-y         
+@code{mizar-relprem}
+@item  C-c C-b
+@code{mizar-chklab}
+@item  C-c C-v         
+@code{mizar-irrvoc}
+@item  C-c C-a         
+@code{mizar-inacc}
+@end table
+
+@c TEXI DOCSTRING MAGIC: mizar-irrths
+@deffn Command mizar-irrths 
+Call Irrelevant Theorems & Schemes Detector on the article.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-relinfer
+@deffn Command mizar-relinfer 
+Call Irrelevant Inferences Detector on the article.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-trivdemo
+@deffn Command mizar-trivdemo 
+Call Trivial Proofs Detector on the article.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-reliters
+@deffn Command mizar-reliters 
+Call Irrelevant Iterative Steps Detector on the article.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-relprem
+@deffn Command mizar-relprem 
+Call Irrelevant Premises Detector on the article.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-irrvoc
+@deffn Command mizar-irrvoc 
+Call Irrelevant vocabulary Detector on the article.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-inacc
+@deffn Command mizar-inacc 
+Call Inaccessible Items Detector on the article.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-chklab
+@deffn Command mizar-chklab 
+Call Irrelevant Label Detector on the article.
+@end deffn
+
+@node Other Utilities,  , Irrelevant Utilities, Running Mizar utilities
+@section Other Utilities
+@cindex miz2prel
+@cindex miz2abs
+@cindex ratproof
+
+Additionally, the interface to the Mizar scripts @code{miz2prel} 
+and @code{miz2abs} and the @code{ratproof} utility is available
+from the menu. 
+
+Using the @code{ratproof} from the Mizar Mode is discouraged, since
+it operates directly on the edited file. The suggested replacement
+is the function @code{mizar-hide-proofs}, @xref{Proof checking}, 
+run with prefix @kbd{C-u} on the whole buffer. This is also available
+in menu as @code{<Proof checking> <@@proof -> proof on buffer>}.
+
+This now also holds about using the scripts @code{miz2prel} and
+@code{miz2abs}, however they may get better support in the future.
+
+@node Miscellaneous editing, Browsing Functions, Running Mizar utilities, Top
+@chapter Miscellaneous editing
+
+@menu
+* Proof checking::              
+* Then placement::              
+@end menu
+
+@node Proof checking, Then placement, Miscellaneous editing, Miscellaneous editing
+@section Proof checking
+@kindex C-c C-d
+@cindex proof checking
+
+@table @kbd
+@item  C-c C-d     
+@code{mizar-hide-proofs}
+@end table
+
+@c TEXI DOCSTRING MAGIC: mizar-hide-proofs
+@deffn Command mizar-hide-proofs &optional beg end reverse
+Put @@ before all proof keywords between @var{beg} and @var{end} to disable checking.@*
+With prefix (@var{reverse} non-nil) unhide.
+@end deffn
+
+
+This function is available also from menu, to make it easy to apply
+it in reverse mode and on complete buffer.
+
+@node Then placement,  , Proof checking, Miscellaneous editing
+@section Then placement
+@cindex then placement
+
+@c TEXI DOCSTRING MAGIC: mizar-move-then
+@deffn Command mizar-move-then &optional beg end reverse
+Change the placement of the @code{'then'} keyword between @var{beg} and @var{end}.@*
+With prefix (@var{reverse} non-nil) move from the end of lines to beginnings,
+otherwise from beginnings of lines to ends.
+This is a flamewar-resolving hack.
+@end deffn
+
+This function is available also from menu, to make it easy to apply
+it in reverse mode and on complete buffer.
+
+@node Browsing Functions, Grepping in MML, Miscellaneous editing, Top
+@chapter Browsing Functions
+@kindex M-;     
+@kindex <mouse-3>
+@kindex <S-down-mouse-3>
+@kindex M-. 
+@kindex <S-down-mouse-1>
+@kindex <S-down-mouse-2>
+@cindex browsing
+@cindex symbtags
+@cindex reftags
+
+Mizar mode has tags for library references (theorems, definitions 
+and schemes), vocabulary symbols, and  constructors
+(see @ref{Constructors and user symbols}).
+They are produced for each new version of MML by the Library Committee, 
+and reside in files ``reftags'' and ``symbtags'' in the abstr directory
+of the Mizar distribution.
+
+There are several commands, keyboard and mouse shortcuts, 
+to use them for searching and browsing.
+
+Some other commands using symbtags need the complete constructor
+information to work. @xref{Constructor explanations}, for them.
+
+@table @kbd
+@item  M-;     
+@code{mizar-symbol-def}
+@item  <mouse-3>
+@code{mizar-mouse-symbol-def}
+@item  <S-down-mouse-3>
+@code{mizar-mouse-direct-symbol-def}
+@item  M-. 
+@code{mizar-show-ref}
+@item  <S-down-mouse-1>
+@code{mizar-mouse-direct-show-ref}
+@item  M-*
+@code{pop-tag-mark}
+@end table
+
+
+@c TEXI DOCSTRING MAGIC: mizar-symbol-def
+@deffn Command mizar-symbol-def &optional nocompletion tag nootherw
+Find the definition of a symbol at point with completion using file symbtags.@*
+If in *.abs buffer, show its definition in current window, otherwise,
+i.e. in *.miz buffer, show it in other window.
+In the @strong{Completions} buffer, aside from its normal key bindings,
+';' is bound to show all exact matches.
+If invoked by right-click (@samp{@code{mizar-mouse-symbol-def}}),
+second right-click does this too.
+@var{nocompletion} goes to the first hit instead.
+If @var{tag} is given, search for it instead.
+@var{nootherw} finds in current window.
+File symbtags is included in the Mizar distribution.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-mouse-symbol-def
+@deffn Command mizar-mouse-symbol-def 
+<mouse-3> is bound to this function.@*
+Runs @code{mizar-symbol-def} and the second mouse-3
+shows the symbol's completions.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-mouse-direct-symbol-def
+@deffn Command mizar-mouse-direct-symbol-def 
+<S-down-mouse-3> is bound to this function.@*
+Goes directly to the best match of the symbol under the mouse click.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-show-ref
+@deffn Command mizar-show-ref &optional nocompletion
+Find the library reference with completion using file reftags.@*
+Show it in its abstract in other window.
+Non-nil @var{nocompletion} goes to the first hit without completing.
+Library references are theorems, definitions and schemes imported
+from other Mizar articles.
+File reftags is included in the Mizar distribution.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-mouse-direct-show-ref
+@deffn Command mizar-mouse-direct-show-ref 
+<S-down-mouse-1> is bound to this function.@*
+Goes directly to the reference under the mouse click.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mouse-find-tag-history
+@deffn Command mouse-find-tag-history 
+Popup menu with last 20 visited tags and go to selection.@*
+Works properly only for symbols (not references).
+@end deffn
+
+@deffn Command pop-tag-mark
+Go back to where the last tag search was invoked from.@*
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: symbol-apropos
+@deffn Command symbol-apropos 
+Displays list of all MML symbols that match a regexp.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-bury-all-abstracts
+@deffn Command mizar-bury-all-abstracts 
+Bury (put at the end of buffer list) all Mizar abstracts.@*
+Useful when you did too much browsing and want to get back to your
+editing buffers.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-close-all-abstracts
+@deffn Command mizar-close-all-abstracts 
+Close all Mizar abstracts.@*
+Useful when you did too much browsing and want to get back to your
+editing buffers.
+@end deffn
+
+@node Grepping in MML, Miscellaneous Emacs facilities for fast mizaring, Browsing Functions, Top
+@chapter Grepping in MML
+@kindex C-c g
+
+@table @kbd
+@item  C-c g
+@code{mizar-grep-abs}
+@item  C-c C-g
+@code{mizar-grep-full}
+@end table
+
+@c TEXI DOCSTRING MAGIC: mizar-grep-abs
+@deffn Command mizar-grep-abs exp
+Grep MML abstracts for regexp @var{exp}.@*
+Variable @samp{@code{mizar-grep-case-sensitive}} controls case sensitivity.
+The results are shown and clickable in the Compilation buffer. 
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-grep-full
+@deffn Command mizar-grep-full exp
+Greps full MML articles for regexp @var{exp}.@*
+Variable @samp{@code{mizar-grep-case-sensitive}} controls case sensitivity.
+The results are shown and clickable in the Compilation buffer. 
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-grep-case-sensitive
+@defopt mizar-grep-case-sensitive 
+Tells if MML grepping is case sensitive or not.
+
+The default value is @code{t}.
+@end defopt
+
+
+@node Miscellaneous Emacs facilities for fast mizaring, Constructor explanations, Grepping in MML, Top
+@chapter Miscellaneous Emacs facilities for fast mizaring
+
+@menu
+* Imenu and Speedbar support::  
+* Abbreviations::               
+@end menu
+
+@node Imenu and Speedbar support, Abbreviations, Miscellaneous Emacs facilities for fast mizaring, Miscellaneous Emacs facilities for fast mizaring
+@section Imenu and Speedbar support
+@cindex imenu
+@cindex speedbar
+
+When your article becomes large, it starts to be difficult
+to look up in it various definitions, theorems and other items.
+One solution is to use the Hide/Show commands, 
+@xref{Hide/Show - Hiding proofs},
+to hide the proofs that you do not need to see.
+
+
+The Imenu and Speedbar facilities on the other hand simulate 
+tag-like methods, generating index of important items in the 
+edited buffer on demand. 
+The index is then accessible either from menu, or from
+the special Speedbar frame. @inforef{Imenu, Imenu, emacs}, and
+@inforef{Speedbar, Speedbar , emacs} for more on these facilities.
+
+
+In Mizar Mode, Imenu is now instructed to include into the index 
+the following items from Mizar articles:
+
+@itemize
+@item Structures
+@item Modes
+@item Attributes
+@item Predicates
+@item Functors
+@item Clusters 
+@item Schemes
+@item Named Defintions
+@item Named Theorems
+@end itemize
+
+@node Abbreviations,  , Imenu and Speedbar support, Miscellaneous Emacs facilities for fast mizaring
+@section Abbreviations
+@cindex abbreviations
+@cindex dynamic abbreviations
+
+Emacs can support automatic expansion of
+abbreviations as you type, @inforef{Abbrevs, Abbrevs, emacs}.
+
+You can use them to make shortcuts for the long strings that
+you will write often in Mizar Mode - e.g. ``theorem'', 
+``correctness'', ``definition'', etc.
+
+Below are some found useful by author, you can copy them to your
+@file{.abbrev_defs} file. You can add more by running
+@kbd{C-x a l} (@code{add-mode-abbrev}).
+
+Finally, if you are too lazy to define your own abbreviations, 
+Emacs also provides ``dynamic'' completion by running
+@kbd{M-/} (@code{dabbrev-expand}), 
+@inforef{Dynamic Abbrevs, Dynamic Abbrevs, emacs}.
+
+
+
+@lisp
+(define-abbrev-table 'mizar-mode-abbrev-table '(
+    ("contra" "contradiction" nil 0)
+    ("refl" "reflexivity" nil 0)
+    ("hn" "hence" nil 0)
+    ("hl" "holds" nil 0)
+    ("pf" "proof" nil 0)
+    ("cons" "consider" nil 0)
+    ("pc" "per cases" nil 0)
+    ("coh" "coherence" nil 0)
+    ("fs" "FinSequence" nil 0)
+    ("hb" "hereby" nil 0)
+    ("sct" "such that" nil 0)
+    ("tco" "the carrier of" nil 0)
+    ("reg" "regular" nil 0)
+    ("ts" "thesis" nil 0)
+    ("rec" "reconsider" nil 0)
+    ("eq"  "equals" nil 0)
+    ("tm"  "theorem" nil 0)
+    ("el" "Element" nil 0)
+    ("supp" "suppose" nil 0)
+    ("rv"   "reserve" nil 0)
+    ("corr" "correctness" nil 0)
+    ("coh" "coherence" nil 0)
+    ("bei" "being" nil 0)
+    ("ass" "assume" nil 0)
+    ("monot" "monotone" nil 0)
+    ("uniq" "uniqueness" nil 0)
+    ("df"  "definition" nil 0)
+    ("cl" "cluster" nil 0)
+    ("exi" "existence" nil 0)
+    ("redef" "redefine" nil 0)
+    ("carr" "carrier" nil 0)
+    ("imp"  "implies" nil 0)
+    ("e" "end;" nil 0)
+    ))
+@end lisp
+
+@node Constructor explanations, MML Query, Miscellaneous Emacs facilities for fast mizaring, Top
+@chapter Constructor explanations
+@cindex constructor information
+
+Constructor explanations are used to access and query the semantic 
+(constructor) level of the Mizar formulas. 
+@xref{Constructors and user symbols}, for more on constructors.
+
+Constructor information can help a lot, if you are not sure, how
+Mizar resolves some overloaded symbols. Constructors are also
+more useful for searching, than the user symbols. 
+
+@menu
+* How Constructor explanations work::  
+* Getting Constructor explanations::  
+* Using Constructor explanations::  
+@end menu
+
+@node How Constructor explanations work, Getting Constructor explanations, Constructor explanations, Constructor explanations
+@section How Constructor explanations work
+
+Since the translation of the Mizar article to constructor level
+is nontrivial, we use Mizar itself to get access to that level,
+and take that information from an intermediate file produced
+by Mizar during verification.
+
+This has some drawbacks:
+@itemize
+@item Mizar has to be run before the constructor info is available.
+@item We have to ensure synchronization of the edting buffer with
+the intermediate file containing the constructor information.
+@item When the ``@@proof'' keyword is used to prevent proof checking, 
+this information is not available for the nonchecked part of article.
+@end itemize
+
+We solve the second problem by attaching the constructor information
+to the formulas in editing buffer as text property immediately 
+after verifying. Places with this property are then clickable
+with @kbd{<S-down-mouse-3>} (@code{mizar-show-constrs-other-window}),
+which displays the constructor information for that place 
+(translated according to variable @code{mizar-expl-kind})
+in buffer *Constructors list* in other window.
+That way, the constructor information usually 
+remains relevant even after most editing operations.
+
+
+Putting the constructor info into the editing buffer can slow 
+down the verifying, but for articles of average size
+the slowdown is not significant. Fot large articles, the
+``@@proof'' construct, @xref{Proof checking}, can help to prevent
+using this feature at large. 
+
+@node Getting Constructor explanations, Using Constructor explanations, How Constructor explanations work, Constructor explanations
+@section Getting Constructor explanations
+@kindex <S-down-mouse-3> 
+
+@table @kbd
+@item <S-down-mouse-3> 
+@code{mizar-show-constrs-other-window}
+@end table
+
+To use Constructor explanations, set the Verbosity in the menu 
+to any value different from ``none''. This influences the value
+of the variables @code{mizar-do-expl} and @code{mizar-expl-kind}.
+
+If you are new to this, better also check the option
+@code{Underline explanation points}, so that you know where to look
+for the clickable spots. You have to run Mizar first, for the 
+explanation points to appear, @xref{How Constructor explanations work}.
+
+
+@c TEXI DOCSTRING MAGIC: mizar-do-expl
+@defopt mizar-do-expl 
+Put constructor format of @code{'by'} items as properties after verifier run.
+
+The default value is @code{nil}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-expl-kind
+@defopt mizar-expl-kind 
+Variable controlling the display of constructor representation of formulas.@*
+Possible values are now 
+@code{'raw} for the internal Mizar representation,
+@code{'expanded} for expansion of clusters,
+@code{'translate} for expanded formula in absolute notation,
+@code{'constructors} for list of constructors in absolute notation,
+@code{'sorted} for sorted list of constructors in absolute notation.
+
+The default value is @code{sorted}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-underline-expls
+@defopt mizar-underline-expls 
+If t, the clickable explanation spots in mizar buffer are underlined.
+
+The default value is @code{nil}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-show-constrs-other-window
+@deffn Command mizar-show-constrs-other-window event
+Show constructors of the inference you click on.@*
+The constructors are translated according to the variable 
+@samp{@code{mizar-expl-kind}}, and shown in the buffer *Constructors list*.
+The variable @samp{@code{mizar-do-expl}} should be non-nil.
+@end deffn
+
+
+@node Using Constructor explanations,  , Getting Constructor explanations, Constructor explanations
+@section Using Constructor explanations
+@kindex <mouse-3>
+@kindex M-.
+@kindex <mouse-2>
+@kindex RET
+@kindex C-c C-c
+
+Once you get a constructor explanation of a given formula in 
+the buffer *Constructors list*, you can use it to get various 
+useful information.
+
+Available operations now include 
+@itemize
+@item Asking MML Query (@xref{MML Query},) for meaning of a constructor.
+@item Using tags (@xref{Browsing Functions},) to see the definition 
+      of a constructor.
+@item Sending the whole formula to Mizar Proof Advisor,
+@xref{Mizar Proof Advisor}.
+@end itemize
+
+The following special keybindings are available in the buffer
+*Constructors list*.
+
+@table @kbd
+@item <mouse-3>
+@code{mizar-mouse-cstr-tag}
+@item M-.
+@code{mizar-kbd-cstr-tag}
+@item <mouse-2>
+@code{mizar-mouse-ask-query}
+@item RET
+@code{mizar-kbd-ask-query}
+@item C-c C-c
+@code{mizar-ask-advisor}
+@end table
+
+@c TEXI DOCSTRING MAGIC: mizar-mouse-cstr-tag
+@deffn Command mizar-mouse-cstr-tag event
+Find the definition of the constructor we clicked on.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-kbd-cstr-tag
+@deffn Command mizar-kbd-cstr-tag pos
+Find the definition of the constructor at position @var{pos}.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-mouse-ask-query
+@deffn Command mizar-mouse-ask-query event
+Ask MML Query about the constructor we clicked on.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-kbd-ask-query
+@deffn Command mizar-kbd-ask-query pos
+Ask MML Query about the constructor at position @var{pos}.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-ask-advisor
+@deffn Command mizar-ask-advisor 
+Send the contents of the *Constr Explanations* buffer to Mizar Proof Advisor.@*
+Resulting advice is shown in the buffer *Proof Advice*, where normal tag-browsing
+keyboard bindings can be used to view the suggested references.
+
+@end deffn
+
+
+
+@node MML Query, Mizar Proof Advisor, Constructor explanations, Top
+@chapter MML Query
+@kindex C-c C-q
+
+@table @kbd
+@item C-c C-q
+@code{query-start-entry}
+@end table
+
+MML Query is a semantic search tool and browser for the MML, 
+written by Grzegorz Bancerek. You can find it at 
+@uref{http://megrez.mizar.org/mmlquery/}.
+
+In Mizar Mode, you can either ask MML Query for a meaning of
+a constructor, @xref{Using Constructor explanations}, or you can
+use it to send arbitrary queries to MML Query.
+
+@c TEXI DOCSTRING MAGIC:  mizar-query-browser
+@defopt mizar-query-browser 
+Browser for MML Query, we allow @code{'w3} or default.
+
+The default value is @code{nil}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: query-text-output
+@defvar query-text-output 
+If non-nil, text output is required from MML Query.
+@end defvar
+
+@c TEXI DOCSTRING MAGIC: query-start-entry
+@deffn Command query-start-entry 
+Start a new query in buffer *MML Query input*.
+@end deffn
+
+
+
+@menu
+* Asking arbitrary queries::    
+@end menu
+
+@node Asking arbitrary queries,  , MML Query, MML Query
+@section Asking arbitrary queries
+@kindex C-c C-c		
+@kindex M-p
+@kindex M-n
+@kindex M-s		
+@kindex M-r
+
+Once you are in the buffer *MML Query Input* 
+(usually by running @kbd{C-c C-q} (@code{query-start-entry})), 
+you can create and edit 
+an arbitrary query, and send it to MML Query.
+
+Following special bindings are available in that buffer:
+
+@table @kbd
+@item C-c C-c		
+@code{query-send-entry}
+@item M-p
+@code{query-previous-squery}
+@item M-n
+@code{query-next-squery}
+@item M-s		
+@code{query-squery-search-forward}
+@item M-r
+@code{query-squery-search-reverse}
+@end table
+
+
+@c TEXI DOCSTRING MAGIC: query-send-entry
+@deffn Command query-send-entry 
+Send the contents of the current buffer to MML Query.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: query-previous-squery
+@deffn Command query-previous-squery arg
+Cycle backwards through query-squery history.@*
+With a numeric prefix @var{arg}, go back @var{arg} queries.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: query-next-squery
+@deffn Command query-next-squery arg
+Cycle forwards through comment history.@*
+With a numeric prefix @var{arg}, go forward @var{arg} queries.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: query-squery-search-forward
+@deffn Command query-squery-search-forward str
+Search forwards through squery history for substring match of @var{str}.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: query-squery-search-reverse
+@deffn Command query-squery-search-reverse str
+Search backwards through squery history for substring match of @var{str}.
+@end deffn
+
+
+@node Mizar Proof Advisor, MoMM, MML Query, Top
+@chapter Mizar Proof Advisor
+
+Mizar Proof Advisor is a system trained on MML proofs by 
+data mining techniques. The server is running at 
+@uref{http://lipa.ms.mff.cuni.cz/~urban/posdemo.html}.
+
+It gets a formula in MML Query constructor format and 
+gives you theorems and definitions,
+that it evaluates as most promising for proving the formula.
+
+You can have a look at the success hitrates obtained by 10-fold 
+cross-validation at 
+@uref{http://lipa.ms.mff.cuni.cz/~urban/hitrate.jpg}.
+
+The typical usage in Mizar Mode is to ask for advice on 
+a formula, which you want to prove. 
+Mizar Proof Advisor uses constructor representation, so you
+have to use Constructor explanations, 
+@xref{Constructor explanations}, for more.
+
+Once you are in the buffer *Constructors list*, use the 
+command @kbd{C-c C-c} (@code{mizar-ask-advisor}) to get the advice.
+
+
+@c TEXI DOCSTRING MAGIC: advisor-limit
+@defopt advisor-limit 
+The number of hits you want Mizar proof Advisor to send you.
+
+The default value is @code{30}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-ask-advisor
+@deffn Command mizar-ask-advisor 
+Send the contents of the *Constr Explanations* buffer to Mizar Proof Advisor.@*
+Resulting advice is shown in the buffer *Proof Advice*, where normal tag-browsing
+keyboard bindings can be used to view the suggested references.
+
+@end deffn
+
+@node MoMM, Mizar TWiki, Mizar Proof Advisor, Top
+@chapter MoMM
+@cindex momm
+
+MoMM is a matching, interreduction and database tool, downloadable from
+@uref{http://kti.ms.mff.cuni.cz/~urban/MoMM/MoMM.tar.gz}.
+
+It can load all of the Mizar theorems - 
+now about 60000 clauses taking about 120M RAM - and tell you very 
+quickly, if a claim you try to prove is subsumed by any of them.
+
+Besides, there are about 700000 clauses created by logically correct 
+generalization of all of the simple facts (simple justifications) 
+ever proved by Mizar, that can additionally be loaded and used in 
+exactly the same manner.
+
+MoMM is based on Stephan Schulz's CLIB theorem proving library,
+available at 
+@uref{http://www4.informatik.tu-muenchen.de/~schulz/WORK/eprover.html},
+making use of its very efficient implementation and indexing, and 
+adding Mizar-specific features.
+
+Modified verifier (@file{tptpver}) generating MoMM problems from *4 errors 
+(inferences rejected by the Mizar checker) is available in the 
+MoMM distribution.
+
+You can also add your own articles to the database used by MoMM
+for the matching, using the MoMM exporter (@file{tptpexp}) and
+the additional @file{relcprem} tool from the MoMM distribution.
+
+@menu
+* Installing MoMM::             
+* Starting MoMM in Mizar Mode::  
+* Getting MoMM hints::          
+@end menu
+
+
+@node Installing MoMM, Starting MoMM in Mizar Mode, MoMM, MoMM
+@section Installing MoMM
+
+Download from @uref{http://kti.ms.mff.cuni.cz/~urban/MoMM/MoMM.tar.gz},
+and unpack the archive into the directory @file{$MIZFILES/MoMM}. 
+
+If it is not possible for you, unpack to arbitrary directory,
+and then set the Mizar Mode variable @code{mizar-momm-dir}.
+
+That's all.
+
+@c TEXI DOCSTRING MAGIC: mizar-momm-dir
+@defopt mizar-momm-dir 
+Directory containing the MoMM distribution.
+
+The default value is @code{"/usr/local/share/mizar/MoMM/"}.
+@end defopt
+
+
+@node Starting MoMM in Mizar Mode, Getting MoMM hints, Installing MoMM, MoMM
+@section Starting MoMM in Mizar Mode
+
+To be able to use MoMM, you have to start it and load it
+with examples from other MML articles.
+Several functions and variables controlling this are described
+here, the most useful are available from menu.
+
+@c TEXI DOCSTRING MAGIC: mizar-use-momm
+@defopt mizar-use-momm 
+If t, errors *4 are clickable, trying to get MoMM's hints.@*
+MoMM should be installed for this.
+
+The default value is @code{nil}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-momm-load-tptp
+@defopt mizar-momm-load-tptp 
+If t, the simple justification clause bases are loaded into MoMM too.
+
+The default value is @code{t}.
+@end defopt
+
+@c TEXI DOCSTRING MAGIC: mizar-run-momm-default
+@deffn Command mizar-run-momm-default &optional aname thsdirs tptp
+Run MoMM for article @var{aname}.@*
+Load theorems from all its directive filenames.
+If @var{thsdirs} is non-nil, use the theorem directive only.
+Complete typetable is loaded, which makes later on demand
+loading with @samp{@code{mizar-momm-add-files}} possible.
+Use @var{tptp} to load the tptp files (non-theorem information) too.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-run-momm
+@deffn Command mizar-run-momm 
+Get type, clause and termbank files for running MoMM and run it.@*
+Default process filter is used.  Verify that the default argument
+files exist first.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-momm-add-files
+@deffn Command mizar-momm-add-files tlist &optional tptp
+Add ths files from @var{tlist} into running MoMM.@*
+The type-table must be loaded on start,
+e.g. by running MoMM with all.typ.
+If @var{tptp}, load tptp files too.  Current directory is searched first,
+then the MoMM db.
+@end deffn
+
+@c TEXI DOCSTRING MAGIC: mizar-run-momm-full
+@deffn Command mizar-run-momm-full 
+Fast load MoMM with the full theorems db.@*
+This takes about @var{120m} in MoMM 0.2.
+@end deffn
+
+@node Getting MoMM hints,  , Starting MoMM in Mizar Mode, MoMM
+@section Getting MoMM hints
+@kindex <S-down-mouse-3>
+
+@table @kbd
+@item <S-down-mouse-3>
+@code{mizar-ask-momm}
+@end table
+
+After starting MoMM, you can use it to get hints for
+formulas rejected by the checker (formulas that gave *4 errors).
+
+The *4 errors become clickable with @kbd{<S-down-mouse-3>},
+and MoMM's results are shown in the buffer *MoMM's Hints*.
+
+@c TEXI DOCSTRING MAGIC: mizar-ask-momm
+@deffn Command mizar-ask-momm event
+Ask MoMM for hints on an error at click @var{event}.@*
+The results are put into the buffer *MoMM's Hints*.
+@end deffn
+
+@node Mizar TWiki, Function Index, MoMM, Top
+@chapter Mizar TWiki
+@cindex twiki
+
+TWiki is an easy-to-use Web-based collaboration platform. 
+
+Mizar TWiki is established at
+@uref{http://alioth.uwb.edu.pl/twiki/bin/view/Mizar}. 
+
+It is intended to help the Mizar users and developers with documenting 
+Mizar, reporting bugs, discussing new features or projects, etc.  
+
+Direct access to Mizar Twiki is available in the Mizar Mode.
+Please use the Mizar TWiki menu  to contribute raw examples and ideas 
+in the course of writing Mizar articles, so that other users can
+learn from your good or not so good experience, and painfully
+obtained knowledge.
+
+
+@c TEXI DOCSTRING MAGIC: mizar-twiki-comment-error
+@deffn Command mizar-twiki-comment-error &optional errstr
+Add a comment to the Mizar Twiki description of an error message.
+@end deffn
+
+
+@node Function Index, Variable Index, Mizar TWiki, Top
+@unnumbered Function and Command Index
+@printindex fn
+
+@node Variable Index, Keystroke Index, Function Index, Top
+@unnumbered Variable and User Option Index
+@printindex vr
+
+@node Keystroke Index, Concept Index, Variable Index, Top
+@unnumbered Keystroke Index
+@printindex ky
+
+@node Concept Index,  , Keystroke Index, Top
+@unnumbered Concept Index
+@printindex cp
+
+@page
+@contents
+@bye
+
+
