@@ -36,9 +36,9 @@ system "rm TAGS";
 print "reftags done\n";
 
 # read in vocabularies into %voch
-print "Reading in vocabulary information\n";
+print "Reading in vocabularies information\n";
 getnames();
-print "Vocabulary information read\n";
+print "Vocabularies information read\n";
 getccounts();
 
 # the main loop
@@ -252,7 +252,7 @@ sub defshash {
 sub maketransl {
     my ($doc) = @_;
     $trans=[[],[],[],[],[],[],[],[]];
-    my @result = $doc->xql ('Notations/Vocabulary/VocItem/ArticleID');
+    my @result = $doc->xql ('Notations/Vocabularies/Vocabulary/ArticleID');
     foreach my $node (@result) {
       my $name = $node->getAttributeNode("name")->getValue();
       if ($name eq "HIDDEN") { $hidden=1};
