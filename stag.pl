@@ -187,7 +187,7 @@ sub defshash {
     my $doc = $parser->parsefile ($nfile);
 
 # init bases
-    my @result = $doc->xql ('Notation/Signature/ArticleID');
+    my @result = $doc->xql ('Notations/Signature/ArticleID');
     foreach my $node (@result) {
       $lname = $node->getAttributeNode("name")->getValue();
       foreach $i (0 .. 6) { $bases[$i] += $ccounts{$lname}->[$i]; }
@@ -199,7 +199,7 @@ sub defshash {
     undef(%struct);                                  # constr structs names
     maketransl($doc);                                    # table for relative names in this .dno
 
-    my @patterns = $doc->xql ('Notation/Pattern');
+    my @patterns = $doc->xql ('Notations/Pattern');
 
     foreach $pattern (@patterns) {
       $pkind = $pattern->getAttributeNode("kind")->getValue();
@@ -252,7 +252,7 @@ sub defshash {
 sub maketransl {
     my ($doc) = @_;
     $trans=[[],[],[],[],[],[],[],[]];
-    my @result = $doc->xql ('Notation/Vocabulary/VocItem/ArticleID');
+    my @result = $doc->xql ('Notations/Vocabulary/VocItem/ArticleID');
     foreach my $node (@result) {
       my $name = $node->getAttributeNode("name")->getValue();
       if ($name eq "HIDDEN") { $hidden=1};
