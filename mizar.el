@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.38 $
+;; $Revision: 1.39 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2495,13 +2495,16 @@ If NOQR, does not use quick run.
 If COMPIL, emulate compilation-like behavior for error messages."
   (interactive)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier
-			 "verifier"))))
+			 "verifier")))
+	(makeenv makeenv))
     (if (eq mizar-emacs 'winemacs)
 	(progn
 	  (setq util (concat mizfiles util)
 		makeenv (concat mizfiles makeenv))))
     (cond ((not (string-match "miz$" (buffer-file-name)))
 	   (message "Not in .miz file!!"))
+	  ((not (executable-find makeenv))
+	   (message (concat makeenv " not found or not executable!!")))
 	  ((not (executable-find util))
 	   (message (concat util " not found or not executable!!")))
 	  (t
