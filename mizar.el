@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.44 $
+;; $Revision: 1.45 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1450,7 +1450,7 @@ keyboard bindings can be used to view the suggested references.
 			(query-handle-chars-cgi
 			 (buffer-substring-no-properties
 			  (point-min) (point-max)))))
-	 (command (concat "wget -q -O - " query)))
+	 (command (concat "wget -q -O - " (shell-quote-argument query))))
     (shell-command command advisor-output)
     (let ((abuffer (get-buffer advisor-output)))
       (if abuffer
