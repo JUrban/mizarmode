@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.72 $
+;; $Revision: 1.73 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -531,7 +531,7 @@ Used for exact completion.")
       (let ((empty t) ind more less res)
 	;; See previous indentation
 	(cond ((looking-at "end;") (setq less t))
-	      ((looking-at "\\(proof\\|now\\|hereby\\)") (setq more t)))
+	      ((looking-at "\\b\\(proof\\|now\\|hereby\\|per cases\\|case\\|suppose\\)\\b") (setq more t)))
 	(while empty
 	  (forward-line -1)
 	  (beginning-of-line)
@@ -547,7 +547,7 @@ Used for exact completion.")
 	(if (and more (= ind 2))
 	    0                           ;proof begins inside theorem
 	  ;; Real mizar code
-	  (cond ((looking-at "\\(proof\\|now\\|hereby\\)")
+	  (cond ((looking-at "\\(proof\\|now\\|hereby\\|per cases\\|case\\|suppose\\)")
 		 (setq res (+ ind mizar-indent-width)))
 		((looking-at "\\(definition\\|scheme\\|theorem\\|registration\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)")
 		 (setq res (+ ind 2)))
@@ -4354,14 +4354,14 @@ This is a flamewar-resolving hack."
 	   ;;		 1 font-lock-variable-name-face
 	   1 'mizar-builtin-face))
 	(proofs
-	 '("\\<\\(proof\\|now\\|end\\|hereby\\)"
+	 '("\\<\\b\\(proof\\|now\\|end\\|hereby\\|per\\|case\\|cases\\|suppose\\)\\b"
 	   0 'font-lock-keyword-face ))
 	(comments '("::[^\n]*"  0 'font-lock-comment-face ))
 	(refs '("[ \n\t]\\(by\\|from\\)[^;.]*" 0 'font-lock-type-face))
 	(extra '("&"  0  'mizar-builtin-face))
 	(keywords			; directives (queries)
 	 (list
-	  "\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|thesis\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>"
+	  "\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|thesis\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>"
 	  ;;		1 'mizar-builtin-face
 	  1 font-lock-variable-name-face))
 	(syms
@@ -4669,7 +4669,7 @@ move backward across N balanced expressions."
   (point)))
 
 
-(let ((mizar-mode-hs-info '(mizar-mode ".*\\b\\(proof\\|now\\|hereby\\)[ \n\r]" "end;" "::+" mizar-hs-forward-sexp mizar-hs-adjust-block-beginning)))
+(let ((mizar-mode-hs-info '(mizar-mode ".*\\b\\(proof\\|now\\|hereby\\|per cases\\|case\\|suppose\\)[ \n\r]" "end;" "::+" mizar-hs-forward-sexp mizar-hs-adjust-block-beginning)))
     (if (not (member mizar-mode-hs-info hs-special-modes-alist))
             (setq hs-special-modes-alist
 	                  (cons mizar-mode-hs-info hs-special-modes-alist))))
