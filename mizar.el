@@ -912,16 +912,19 @@ nil if no errors"
 (make-variable-buffer-local 'ecl-table-date)
 
 (defun parse-cluster-table (aname &optional reload)
-(let ((cludate (cadr (nth 5 (file-attributes (concat aname ".clu"))))))
-  (if (or reload (/= cluster-table-date cludate))
-      (let (tab)
-	(with-temp-buffer 
-	  (insert-file-contents (concat aname ".clu"))
-	  (setq tab
-		(vconcat '("")
-			 (split-string (buffer-string) " ;[\n]"))))
-	(setq cluster-table tab
-	      cluster-table-date cludate)))))
+  (let ((cluname (concat aname ".clu")))
+    (or (file-readable-p cluname)
+	(error "File unreadable: %s" cluname))
+    (let ((cludate (cadr (nth 5 (file-attributes cluname)))))
+      (if (or reload (/= cluster-table-date cludate))
+	  (let (tab)
+	    (with-temp-buffer 
+	      (insert-file-contents cluname)
+	      (setq tab
+		    (vconcat '("")
+			     (split-string (buffer-string) " ;[\n]"))))
+	    (setq cluster-table tab
+		  cluster-table-date cludate))))))
 
 
 (defun fix-pre-type (str &optional table)
@@ -1058,26 +1061,29 @@ verifier run; experimental so default is nil")
   (vconcat (mapcar 'string-to-int (split-string numvect))))
 
 (defun get-sgl-table (aname)
-"two vectors created from the .sgl file"
-(let ((sgldate (cadr (nth 5 (file-attributes (concat aname ".sgl"))))))
-  (if (/= constr-table-date sgldate)
-      (let* ((decl (with-temp-buffer 
-		     (insert-file-contents (concat aname ".sgl"))
-		     (split-string (buffer-string) "[\n]")))
-	     (count (string-to-int (car decl)))
-	     (result (cdr decl))
-	     (tail (nthcdr count decl))
-	     (nums (cdr tail))
-	     names)
-	(setcdr tail nil)
-	(setq names (vconcat result (list (upcase aname))))
-	(setq nums (vconcat (mapcar 'make-one-tvect nums)))
-	(list names nums)
-	(setq impnr (- (length names) 1)
-	      cstrnames names
-	      cstrnrs nums
-	      constr-table-date sgldate)
-	))))
+  "two vectors created from the .sgl file"
+  (let ((sglname (concat aname ".sgl")))
+    (or (file-readable-p sglname)
+	(error "File unreadable: %s" sglname))
+    (let ((sgldate (cadr (nth 5 (file-attributes sglname)))))
+      (if (/= constr-table-date sgldate)
+	  (let* ((decl (with-temp-buffer 
+			 (insert-file-contents sglname)
+			 (split-string (buffer-string) "[\n]")))
+		 (count (string-to-int (car decl)))
+		 (result (cdr decl))
+		 (tail (nthcdr count decl))
+		 (nums (cdr tail))
+		 names)
+	    (setcdr tail nil)
+	    (setq names (vconcat result (list (upcase aname))))
+	    (setq nums (vconcat (mapcar 'make-one-tvect nums)))
+	    (list names nums)
+	    (setq impnr (- (length names) 1)
+		  cstrnames names
+		  cstrnrs nums
+		  constr-table-date sgldate)
+	    )))))
 
 (defun idxrepr (idx nr)
 "does the work for tokenrepr, idx is index of constrkind"
@@ -1135,43 +1141,55 @@ the clusters inside frm must already be expanded here"
 (frmrepr (fix-pre-type frm table) cstronly))
 
 (defun mizar-getbys (aname)
-"Gets consructor repr of bys form the .pre file"
-(let (res)
-  (with-temp-buffer 
-    (insert-file-contents (concat aname ".pre"))
-    (goto-char (point-min))
-    (while (re-search-forward 
-	    "e[0-9]+ [0-9]+ [0-9]+ \\(.*\\)['][^;]*; *\\([0-9]+\\) \\([0-9]+\\)" 
-	    (point-max) t)
-      (let ((line (match-string 2))
-	    (col (match-string 3))
-	    (frm (match-string 1)))
-	(setq res (cons (list (string-to-int line) 
-			      (string-to-int col) frm) res)))))
-    (nreverse res)))
+  "Gets consructor repr of bys form the .pre file"
+  (let ((prename (concat aname ".pre")))
+    (or (file-readable-p prename)
+	(error "File unreadable: %s" prename))
+    (let (res)
+      (with-temp-buffer 
+	(insert-file-contents prename)
+	(goto-char (point-min))
+	(while (re-search-forward 
+		"e[0-9]+ [0-9]+ [0-9]+ \\(.*\\)['][^;]*; *\\([0-9]+\\) \\([0-9]+\\)" 
+		(point-max) t)
+	  (let ((line (match-string 2))
+		(col (match-string 3))
+		(frm (match-string 1)))
+	    (setq res (cons (list (string-to-int line) 
+				  (string-to-int col) frm) res)))))
+      (nreverse res))))
       
 
 (defvar byextent 1 "size of the underlined region")
 (defvar mizar-underline-expls nil 
 "if t, the clickable explanation spots in mizar buffer are underlined")
 
+(defvar mizar-expl-map
+  (let ((map (make-sparse-keymap))
+	(button_kword (if (eq mizar-emacs 'xemacs) [(shift button3)]
+			[(shift mouse-3)])))
+    (set-keymap-parent map mizar-mode-map)
+    (define-key map button_kword 'mizar-show-constrs-other-window)
+    map)
+"keymap used at explanation points")
+
 (defun mizar-put-bys (aname)
 "puts the constr. repr. of bys as text properties into the 
 mizar buffer, underlines and mouse-highlites the places"
 (save-excursion
+; check at least for the .pre file, not to exit with error below
+(if (not (file-readable-p (concat aname ".pre")))
+    (message "Cannot explain constructors, verifying was incomplete")
   (get-sgl-table aname)
   (parse-cluster-table aname)
   (let ((bys (mizar-getbys aname))
 	(oldhook after-change-functions)
-	(map (make-sparse-keymap))
-	map_kword button_kword props)
+	(map mizar-expl-map)
+	map_kword props)
     (setq after-change-functions nil)
     (if (eq mizar-emacs 'xemacs) 
-	(setq map_kword 'keymap
-	      button_kword [(shift button3)])
-      (setq map_kword 'local-map
-	      button_kword [(shift mouse-3)]))
-    (define-key map button_kword 'mizar-show-constrs-other-window)
+	(setq map_kword 'keymap)
+      (setq map_kword 'local-map))
     (setq props (list 'mouse-face 'highlight map_kword map))
     (if mizar-underline-expls 
 	(setq props (append props '(face underline))))
@@ -1191,7 +1209,7 @@ mizar buffer, underlines and mouse-highlites the places"
 	(put-text-property beg end 'expl frm)	
 	(setq bys (cdr bys))))
     (setq after-change-functions oldhook)
-    nil)))
+    nil))))
 	
 (defvar mizar-expl-kind 'sorted
 "possible values are now 'raw, 'expanded, 'translate, 'constructors, 'sorted")
@@ -1236,7 +1254,7 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 (defun mizar-ask-meaning-query (cstr)
 "Send a constructor query to MML Query"
 (interactive "s")
-(mizar-ask-query (concat query-url "meaning.cgi?entry=" cstr)))
+(mizar-ask-query (concat query-url "emacs_search?entry=" cstr)))
 
 (defun mizar-cstr-at-point (pos &optional agg2str)
 "Get the constructor around pos, if agg2str, replace aggr by struct"
@@ -1416,7 +1434,7 @@ the value of query-entry-mode-hook.
   "Send the contents of the current buffer to MML Query."
   (interactive)
   (ring-insert query-squery-ring (buffer-string))
-  (let ((query (concat query-url "search.cgi?input=" 
+  (let ((query (concat query-url "emacs_search?input="
 		     (query-handle-chars-cgi (buffer-string)))))
   (if query-text-output
       (setq query (concat query "&text=1")))
