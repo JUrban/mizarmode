@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.74 $
+;; $Revision: 1.75 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -120,12 +120,20 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
   "Running the Mizar utilities"
   :group 'mizar)
 
+(defgroup mizar-indenting nil
+  "Indenting in the Mizar mode"
+  :group 'mizar)
+
 (defgroup mizar-files nil
   "Files and paths settings in the Mizar mode"
   :group 'mizar)
 
 (defgroup mizar-grep nil
   "Grepping in the Mizar mode"
+  :group 'mizar)
+
+(defgroup mizar-faces nil
+  "Faces for Mizar keywords"
   :group 'mizar)
 
 (defgroup mizar-constructor-explanations nil
@@ -151,7 +159,12 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
 (defcustom mizar-indent-width 2 
 "*Indentation width for Mizar articles."
 :type 'integer
-:group 'mizar)
+:group 'mizar-indenting)
+
+(defcustom mizar-align-labels nil
+"*Indenting puts labels at the beginning of lines."
+:type 'boolean
+:group 'mizar-indenting)
 
 (defcustom mizar-abstracts-use-view t
 "*View-mode is used for Mizar abstracts."
@@ -317,8 +330,84 @@ MoMM should be installed for this."
 :type 'string
 :group 'mizar-files)
 
+(defvar mizar-mode-abbrev-table nil
+  "Abbrev table in use in Mizar-mode buffers.")
+(define-abbrev-table 'mizar-mode-abbrev-table ())
 
+(defcustom mizar-main-color (face-foreground font-lock-function-name-face)
+"*Color used for `mizar-main-keywords'."
+:type 'color
+:group 'mizar-faces)
 
+(defcustom mizar-block-color (face-foreground font-lock-keyword-face)
+"*Color used for `mizar-block-keywords'."
+:type 'color
+:group 'mizar-faces)
+
+(defcustom mizar-normal-color
+  (face-foreground font-lock-variable-name-face)
+"*Color used for `mizar-normal-keywords'."
+:type 'color
+:group 'mizar-faces)
+
+(defcustom mizar-skeleton-color mizar-normal-color
+"*Color used for `mizar-skeleton-keywords'."
+:type 'color
+:group 'mizar-faces)
+
+(defcustom mizar-formula-color
+  (if (and (boundp 'font-lock-background-mode)
+	   (eq font-lock-background-mode 'dark))
+      "LightSkyBlue" "Orchid")
+"*Color used for `mizar-formula-keywords'."
+:type 'color
+:group 'mizar-faces)
+
+(defcustom mizar-main-keywords 
+(list "theorem" "scheme" "definition" "registration" 
+      "notation" "schemes" "constructors" "definitions" 
+      "theorems" "vocabulary" "clusters" "signature"
+      "requirements" )
+"*Keywords starting main mizar text items. 
+Now also the environmental declarations."
+:type '(repeat string)
+:group 'mizar-faces)
+
+(defcustom mizar-block-keywords
+(list "proof" "now" "end" "hereby" "case" "suppose")
+"*Keywords for Mizar block starts and ends."
+:type '(repeat string)
+:group 'mizar-faces)
+
+(defcustom mizar-formula-keywords
+(list "for" "ex" "not" "&" "or" "implies" "iff" "st" "holds" "being")
+"*Keywords for logical symbols in Mizar formulas."
+:type '(repeat string)
+:group 'mizar-faces)
+
+(defcustom mizar-skeleton-keywords
+(list "assume" "cases"  "given" "hence" "let" "per" "take" "thus")
+"*Keywords denoting skeleton proof steps." 
+:type '(repeat string)
+:group 'mizar-faces)
+
+(defcustom mizar-normal-keywords 
+(list
+ "and" "antonym" "attr" "as" "be" "begin" "canceled" "cluster" 
+ "coherence" "compatibility" "consider" "consistency"  
+ "contradiction" "correctness" "def" "deffunc" 
+ "defpred" "environ" "equals" "existence"
+ "func" "if" "irreflexivity" 
+ "it" "means" "mode" "of"  "otherwise" "over" 
+ "pred" "provided" "qua" "reconsider" "redefine" "reflexivity" 
+ "reserve" "struct" "such" "synonym" 
+ "that" "then" "thesis" "where" 
+ "associativity" "commutativity" "connectedness" "irreflexivity" 
+ "reflexivity" "symmetry" "uniqueness" "transitivity" "idempotence" 
+ "asymmetry" "projectivity" "involutiveness")
+"*Mizar keywords not mentioned in other place."
+:type '(repeat string)
+:group 'mizar-faces)
 
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
@@ -493,6 +582,9 @@ Used for exact completion.")
 
 ;;;;;;;;;;;;  indentation (pretty poor) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar mizar-label-regexp "\\b[a-zA-Z_'0-9]+:"
+  "*Regexp denoting mizar labels*")
+
 (defun mizar-indent-line ()
   "Indent current line as Mizar code."
   (interactive)
@@ -501,19 +593,26 @@ Used for exact completion.")
     (beginning-of-line)
     (setq beg (point))
     (skip-chars-forward " \t")
-    (if (zerop (- indent (current-column)))
-	nil
-      (delete-region beg (point))
-      (mizar-indent-to indent))
+    (if (and mizar-align-labels (looking-at mizar-label-regexp))
+	(let ((lab (match-string 0)))
+	  (goto-char (match-end 0))
+	  (skip-chars-forward " \t")
+	  (delete-region beg (point))
+	  (insert lab)
+	  (if  ( > indent (length lab))
+	      (mizar-indent-to (- indent (length lab)))
+	    (insert " ")))
+      (if (zerop (- indent (current-column)))
+	  nil
+	(delete-region beg (point))
+	(mizar-indent-to indent)))
 					;      (indent-to (+ 3 indent)))
     (if (> (- (point-max) pos) (point))
 	(goto-char (- (point-max) pos)))
     ))
 
-
 (defun mizar-indent-to (indent)
   (insert-char 32 indent) )             ; 32 is space...cannot use tabs
-
 
 
 
@@ -525,31 +624,39 @@ Used for exact completion.")
     (cond
      ((looking-at "::::::") 0)		;Large comment starts
      ((looking-at "::") (current-column)) ;Small comment starts
-     ((looking-at "\\(theorem\\|scheme\\|definition\\|registration\\|environ\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)") 0)
+     ((looking-at "\\b\\(theorem\\|scheme\\|definition\\|registration\\|environ\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)\\b") 0)
      ((bobp) 0)				;Beginning of buffer
      (t
       (let ((empty t) ind more less res)
 	;; See previous indentation
 	(cond ((looking-at "end;") (setq less t))
-	      ((looking-at "\\b\\(proof\\|now\\|hereby\\|case\\|suppose\\)\\b") (setq more t)))
+	      ((looking-at 
+		"\\b\\(proof\\|now\\|hereby\\|case\\|suppose\\)\\b") 
+	       (setq more (match-string 0))))
+	;; Find previous noncommented line
 	(while empty
 	  (forward-line -1)
 	  (beginning-of-line)
- 	  (if (bobp)
- 	      (setq empty nil)
- 	    (skip-chars-forward " \t")
+ 	  (cond 
+	   ((bobp) (setq empty nil))
+	   ((and mizar-align-labels (looking-at mizar-label-regexp))
+	    (goto-char (match-end 0))
+	    (skip-chars-forward " \t")
+	    (setq empty nil))
+	   (t 
+	    (skip-chars-forward " \t")
 	    (if (not (looking-at "\\(::\\|\n\\)"))
- 		(setq empty nil))))
+ 		(setq empty nil)))))
  	(if (bobp)
  	    (setq ind 0)		;Beginning of buffer
 	  (setq ind (current-column)))	;Beginning of clause
 	;; See its beginning
-	(if (and more (= ind 2))
+	(if (and more (= ind 2) (string-equal more "proof"))
 	    0                           ;proof begins inside theorem
 	  ;; Real mizar code
-	  (cond ((looking-at "\\(proof\\|now\\|hereby\\|case\\|suppose\\)")
+	  (cond ((looking-at "\\b\\(proof\\|now\\|hereby\\|case\\|suppose\\)\\b")
 		 (setq res (+ ind mizar-indent-width)))
-		((looking-at "\\(definition\\|scheme\\|theorem\\|registration\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)")
+		((looking-at "\\b\\(definition\\|scheme\\|theorem\\|registration\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)\\b")
 		 (setq res (+ ind 2)))
  		(t (setq res ind)))
 	  (if less (max (- ind mizar-indent-width) 0)
@@ -2249,6 +2356,7 @@ keyboard bindings can be used to view the suggested references.
     (define-key map "\M-r" 'query-squery-search-reverse)
     (define-key map "\M-s" 'query-squery-search-forward)
     (define-key map "\C-c\C-c" 'query-send-entry)
+    (define-key map "\C-c\C-m" 'query-send-to-mmlquery)
     map)
 "Keymap in the *MML Query Input* buffer.
 Used for sending queries to MML Query server and browsing and searching
@@ -2333,6 +2441,18 @@ the value of query-entry-mode-hook."
       (setq query (concat query "&text=1")))
   (mizar-ask-query query)))
 
+(defun query-send-to-mmlquery ()
+  "Send the contents of the current buffer to the local mmlquery
+server, start it if not running."
+  (interactive)
+  (ring-insert query-squery-ring (buffer-string))
+  (unless (get-buffer "*mmlquery*")
+    (mizar-run-mmlquery))
+  (let ((mbuf (get-buffer "*mmlquery*")))
+    (process-send-string (get-process "mmlquery") 
+			 (concat (buffer-string) "\n"))
+    (pop-to-buffer mbuf)))
+
 (defun query-previous-squery (arg)
   "Cycle backwards through query-squery history.
 With a numeric prefix ARG, go back ARG queries."
@@ -2393,6 +2513,74 @@ With a numeric prefix ARG, go forward ARG queries."
 	   (query-next-squery (- n query-squery-ring-index)))
 	  (t (error "Not found")))))
 
+;;;;;;;;;; Inferior mmlquery mode ;;;;;;;;;;
+
+(defcustom mmlquery-program-name "/nfs/megrez/bin/mmlquery"
+  "Path to the mmlquery prgram."
+  :type 'string
+  :group 'mmlquery)
+
+(defvar inferior-mmlquery-mode-map nil)
+(defvar inferior-mmlquery-mode-syntax-table nil)
+
+(if inferior-mmlquery-mode-syntax-table
+    ()
+  (let ((table (make-syntax-table)))
+    (modify-syntax-entry ?_ "w" table)
+    (setq inferior-mmlquery-mode-syntax-table table)))
+
+(defun inferior-mmlquery-mode-variables ()
+  (set-syntax-table inferior-mmlquery-mode-syntax-table)
+)
+
+;; reserved for mmlquery-specific bindings
+(defun inferior-mmlquery-mode-commands (map) 
+;(define-key map "\t" 'mmlquery-indent-line)
+)
+
+(defun inferior-mmlquery-mode ()
+  "Major mode for interacting with an inferior Mmlquery process.
+
+The following commands are available:
+\\{inferior-mmlquery-mode-map}
+
+Entry to this mode calls the value of `inferior-mmlquery-mode-hook' with no arguments,
+if that value is non-nil.  Likewise with the value of `comint-mode-hook'.
+`inferior-mmlquery-mode-hook' is called after `comint-mode-hook'.
+
+You can send text to the inferior Mmlquery from other buffers
+using the commands `send-region', `send-string' and \\[mmlquery-consult-region].
+
+Commands:
+
+Return at end of buffer sends line as input.
+Return not at end copies rest of line to end and sends it.
+\\[comint-kill-input] and \\[backward-kill-word] are kill commands, imitating normal Unix input editing.
+\\[comint-interrupt-subjob] interrupts the shell or its current subjob if any.
+\\[comint-stop-subjob] stops. \\[comint-quit-subjob] sends quit signal."
+  (interactive)
+  (require 'comint)
+  (comint-mode)
+  (setq major-mode 'inferior-mmlquery-mode
+	mode-name "Inferior Mmlquery"
+	comint-prompt-regexp "^mmlquery> *")
+  (inferior-mmlquery-mode-variables)
+  (if inferior-mmlquery-mode-map nil
+    (setq inferior-mmlquery-mode-map (copy-keymap comint-mode-map))
+    (inferior-mmlquery-mode-commands inferior-mmlquery-mode-map))
+  (use-local-map inferior-mmlquery-mode-map)
+  (run-hooks 'inferior-mmlquery-mode-hook))
+
+(defun mizar-run-mmlquery ()
+  "Run an inferior Mmlquery process, I/O via buffer *mmlquery*."
+  (interactive)
+  (require 'comint)
+  (or (executable-find mmlquery-program-name)
+      (error "Mmlquery is not executable: %s" mmlquery-program-name))
+  (switch-to-buffer 
+   (make-comint "mmlquery" mmlquery-program-name 
+		nil "--input" "--present" ))
+  (inferior-mmlquery-mode))
 
 ;;;;;;;;;;; MMLQuery browsing
 
@@ -4265,10 +4453,9 @@ This is a flamewar-resolving hack."
 ;; Abbrevs
 (setq dabbrev-abbrev-skip-leading-regexp "\\(\\sw+\\.\\)+" )
 
-(defvar mizar-mode-abbrev-table nil
-  "Abbrev table in use in Mizar-mode buffers.")
-(define-abbrev-table 'mizar-mode-abbrev-table ())
-
+(defun mizar-fnt-regexp (words)
+"Create the regexp for font-lock from list of words."
+(concat "\\<\\b\\(" (mapconcat 'identity words "\\|") "\\)\\b"))
 
 ;; Font lock
 (defvar mizar-symbol-color nil "The color for the optional symbol fontification, white is suggested for the light-bg, nil (default) means no symbol fontification is done.")
@@ -4291,30 +4478,24 @@ This is a flamewar-resolving hack."
   (let* ((dark-bg (eq font-lock-background-mode 'dark))
 	 (faces
 	  (cond
-	   ((memq font-lock-display-type '(mono monochrome))
-	    '(
-	      (mizar-builtin-face nil nil nil nil t)
-	      (mizar-exit-face nil nil nil nil t)
+	   ((memq font-lock-display-type 
+		  '(mono monochrome grayscale greyscale grayshade 
+			 greyshade))
+	    `((mizar-main-face  nil nil nil nil t)
+	      (mizar-block-face nil nil nil nil t)
+	      (mizar-normal-face nil nil nil nil t)
+	      (mizar-formula-face nil nil nil nil t)
+	      (mizar-skeleton-face  nil nil nil nil t)
 	      ;;		    (mizar-symbol-face nil nil nil nil t)
-	      ))
-	   ((memq font-lock-display-type '(grayscale greyscale
-						     grayshade greyshade))
-	    '(
-	      (mizar-builtin-face nil nil nil nil t)
-	      (mizar-exit-face nil nil nil nil t)
-	      ;;		    (mizar-symbol-face nil nil nil nil t)
-	      ))
-	   (dark-bg			; dark colour background
-	    '(
-	      (mizar-builtin-face "LightSkyBlue" nil nil nil nil)
-	      (mizar-exit-face "green" nil nil nil nil)
-	      ;;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
 	      ))
 	   (t				; light colour background
-	    '(
-	      (mizar-builtin-face "Orchid" nil nil nil nil)
-	      (mizar-exit-face "ForestGreen" nil nil nil nil)
-	      ;;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
+	    `(
+	      (mizar-main-face ,mizar-main-color  nil nil nil nil)
+	      (mizar-block-face ,mizar-block-color nil nil nil nil)
+	      (mizar-normal-face ,mizar-normal-color nil nil nil nil)
+	      (mizar-formula-face ,mizar-formula-color nil nil nil nil)
+	      (mizar-skeleton-face ,mizar-skeleton-color nil nil nil nil)
+;;            (mizar-symbol-face mizar-symbol-color nil nil nil nil)
 	      )))))
     ;; mizar-symbol-color fontification
     (if mizar-symbol-color
@@ -4346,24 +4527,26 @@ This is a flamewar-resolving hack."
   ;; Font Lock Patterns
   (let (
 	;; "Native" Mizar patterns
-	(head-predicates
-	 '("\\<\\(theorem\\|scheme\\|definition\\|registration\\)\\>"
-	   0 font-lock-function-name-face))
+	(head-predicates 
+	 (list (mizar-fnt-regexp mizar-main-keywords)
+	       0 'mizar-main-face))
 	(connectives
-	 '("\\<\\(for\\|ex\\|not\\|&\\|or\\|implies\\|iff\\|st\\|holds\\|being\\)\\>"
+	 (list (mizar-fnt-regexp mizar-formula-keywords)
 	   ;;		 1 font-lock-variable-name-face
-	   1 'mizar-builtin-face))
+	   1 'mizar-formula-face))
 	(proofs
-	 '("\\<\\b\\(proof\\|now\\|end\\|hereby\\|case\\|suppose\\)\\b"
-	   0 'font-lock-keyword-face ))
+	 (list (mizar-fnt-regexp mizar-block-keywords)
+	   0 'mizar-block-face ))
 	(comments '("::[^\n]*"  0 'font-lock-comment-face ))
-	(refs '("[ \n\t]\\(by\\|from\\)[^;.]*" 0 'font-lock-type-face))
-	(extra '("&"  0  'mizar-builtin-face))
+	(refs '("[ \n\t]\\(by\\|from\\)[^;.]*" 0 'font-lock-type-face))	
+	(extra '("&"  0  'mizar-formula-face))
 	(keywords			; directives (queries)
-	 (list
-	  "\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|thesis\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>"
-	  ;;		1 'mizar-builtin-face
-	  1 font-lock-variable-name-face))
+	 (list (mizar-fnt-regexp mizar-normal-keywords)
+	  ;;		1 'mizar-formula-face
+	  1 'mizar-normal-face))
+	(skeletons 
+	 (list (mizar-fnt-regexp mizar-skeleton-keywords)
+	       0  'mizar-skeleton-face))
 	(syms
 	 (if mizar-symbol-color
 	     (list (mizar-get-dct (file-name-sans-extension (buffer-file-name)))
@@ -4382,17 +4565,11 @@ This is a flamewar-resolving hack."
 	connectives
 	proofs
 	keywords
+	skeletons
 	;; only if mizar-symbol-color defined and article has .dct
 	(if (and syms (not (equal "" (car syms)))) syms)
 	))
-      ((eq major-mode 'mizar-inferior-mode)
-       (list
-	     
-	keywords))
-      ((eq major-mode 'compilation-mode)
-       (list
-	      
-	keywords))))
+))
     ))
 
 
