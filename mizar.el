@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.66 $
+;; $Revision: 1.67 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -520,7 +520,7 @@ Used for exact completion.")
     (cond
      ((looking-at "::::::") 0)		;Large comment starts
      ((looking-at "::") (current-column)) ;Small comment starts
-     ((looking-at "\\(theorem\\|scheme\\|definition\\|environ\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)") 0)
+     ((looking-at "\\(theorem\\|scheme\\|definition\\|registration\\|environ\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)") 0)
      ((bobp) 0)				;Beginning of buffer
      (t
       (let ((empty t) ind more less res)
@@ -544,7 +544,7 @@ Used for exact completion.")
 	  ;; Real mizar code
 	  (cond ((looking-at "\\(proof\\|now\\|hereby\\)")
 		 (setq res (+ ind mizar-indent-width)))
-		((looking-at "\\(definition\\|scheme\\|theorem\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)")
+		((looking-at "\\(definition\\|scheme\\|theorem\\|registration\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)")
 		 (setq res (+ ind 2)))
  		(t (setq res ind)))
 	  (if less (max (- ind mizar-indent-width) 0)
@@ -927,7 +927,7 @@ skeleton using `mizar-skeleton-items-func', and pretty prints it using
     (skip-chars-backward "^ \t\n,;()")
     (if (or (looking-at "\\([^ \t\n:,;]+:def [0-9]+\\)")
 	    (looking-at "\\([^ \t\n:,;]+:[0-9]+\\)")
-	    (looking-at "\\([^ \t\n:,;()]+\\)[ \t\n,;:.()]"))
+	    (looking-at "\\([^ \t\n:,;]+:sch [0-9]+\\)"))
 	(buffer-substring-no-properties (match-beginning 1) (match-end 1))
       (current-word))
     ))
@@ -3665,6 +3665,7 @@ Show them in the buffer *Constructors List*."
   ("Attributes" "[ \n\r]\\(attr\\b.*\\)" 1)
   ("Predicates" "[ \n\r]\\(pred\\b.*\\)" 1)
   ("Functors" "[ \n\r]\\(func\\b.*\\)" 1)
+  ("Notation" "[ \n\r]\\(\\(synonym\\|antonym\\)\\b.*\\)" 1)
   ("Clusters" "[ \n\r]\\(cluster\\b.*\\)" 1)
   ("Schemes" "^[ ]*scheme[ \n\r]+\\([a-zA-Z0-9_']+\\)" 1)
   ("Named Defs" "[ \n\r]\\(:[a-zA-Z0-9_']+:\\)[ \n\r]" 1)
@@ -4342,7 +4343,7 @@ This is a flamewar-resolving hack."
   (let (
 	;; "Native" Mizar patterns
 	(head-predicates
-	 '("\\<\\(theorem\\|scheme\\|definition\\)\\>"
+	 '("\\<\\(theorem\\|scheme\\|definition\\|registration\\)\\>"
 	   0 font-lock-function-name-face))
 	(connectives
 	 '("\\<\\(for\\|ex\\|not\\|&\\|or\\|implies\\|iff\\|st\\|holds\\|being\\)\\>"
