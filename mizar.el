@@ -143,6 +143,7 @@
 (require 'hideshow)
 (require 'executable)
 (require 'term)
+(require 'imenu)
 
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
@@ -739,6 +740,20 @@ output window ")
 "what error to move to after processing, possible values are
 none,first,next,previous")
 
+(defvar mizar-imenu-expr 
+'(
+  ("Structures" "[ \n\r]\\(struct\\b.*\\)" 1)
+  ("Modes" "[ \n\r]\\(mode\\b.*\\)" 1)
+  ("Attributes" "[ \n\r]\\(attr\\b.*\\)" 1)
+  ("Predicates" "[ \n\r]\\(pred\\b.*\\)" 1)
+  ("Functors" "[ \n\r]\\(func\\b.*\\)" 1)
+  ("Clusters" "[ \n\r]\\(cluster\\b.*\\)" 1)
+  ("Schemes" "^[ ]*scheme[ \n\r]+\\([a-zA-Z0-9_']+\\)" 1)
+  ("Named Defs" "[ \n\r]\\(:[a-zA-Z0-9_']+:\\)[ \n\r]" 1)
+  ("Named Theorems" "^[ ]*theorem[ \n\r]+\\([a-zA-Z0-9_']+:\\)[ \n\r]" 1)
+)
+"Mizar imenu expression")
+
 
 (defun toggle-quick-run ()
 (interactive)
@@ -888,7 +903,12 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 if util given, runs it instead of mizf, if noqr, does not 
 use quick run"
   (interactive)
-  (let ((util (or util "verifier"))) 
+  (let ((util (or util "verifier"))
+	(makeenv "makeenv"))
+    (if (eq mizar-emacs 'winemacs)
+	(progn
+	  (setq util (concat mizfiles util)
+		makeenv (concat mizfiles makeenv))))
     (cond ((not (string-match "miz$" (buffer-file-name)))
 	   (message "Not in .miz file!!"))
 	  ((not (executable-find util))
@@ -904,12 +924,12 @@ use quick run"
 		   (message (concat "Running " util " on " fname " ..."))
 		   (if (get-buffer "*mizar-output*")
 		       (kill-buffer "*mizar-output*"))
-		   (if (= 0 (call-process "makeenv" nil (get-buffer-create "*mizar-output*") nil name))
+		   (if (= 0 (call-process makeenv nil (get-buffer-create "*mizar-output*") nil name))
 		       (shell-command (concat util " -q " name) 
 				      "*mizar-output*")
 		     (switch-to-buffer-other-window "*mizar-output*"))
 		   (message " ... done"))
-	       (if (= 0 (call-process "makeenv" nil nil nil name))
+	       (if (= 0 (call-process makeenv nil nil nil name))
 		   (progn
 		     (mizar-new-term-output noqr)
 		     (term-exec "*mizar-output*" util util nil (list name))
@@ -1358,6 +1378,8 @@ functions:
   (setq local-abbrev-table mizar-mode-abbrev-table)
   (mizar-mode-variables)
   (setq buffer-offer-save t)
+  (setq imenu-case-fold-search nil)
+  (setq imenu-generic-expression mizar-imenu-expr)
   (run-hooks  'mizar-mode-hook)
 ;  (define-key mizar-mode-map [(C-S-down-mouse-2)]   'hs-mouse-toggle-hiding)
 )
@@ -1455,7 +1477,7 @@ functions:
 (defvar mizar-emacs 
   (if (string-match "XEmacs\\|Lucid" (emacs-version))
       'xemacs
-    (if (string-match "windows" (emacs-version))
+    (if (string-match "windows\\|\\bnt" (emacs-version))
 	'winemacs		      
       'gnuemacs))
   "The variant of Emacs we're running.
@@ -1510,5 +1532,6 @@ Valid values are 'gnuemacs and 'xemacs.")
 	                  (cons mizar-mode-hs-info hs-special-modes-alist))))
 (add-hook 'mizar-mode-hook 'mizar-menu)
 (add-hook 'mizar-mode-hook 'hs-minor-mode)
+(add-hook 'mizar-mode-hook 'imenu-add-menubar-index)
 
 (provide 'mizar)
