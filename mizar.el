@@ -1,5 +1,7 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
+;; $Revision: 1.38 $
+;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
 ;;; Commentary:
