@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.45 $
+;; $Revision: 1.46 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -122,7 +122,8 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
 
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
-(defvar mizar-mode-map nil)
+(defvar mizar-mode-map nil "Keymap used by mizar mode..")
+
 
 ;; current xemacs has no custom-set-default
 (if (fboundp 'custom-set-default)
@@ -179,9 +180,11 @@ Customizable from Mizar Mode menu.")
   (setq comment-column 48)
   (make-local-variable 'comment-indent-function)
   (setq comment-indent-function 'mizar-comment-indent)
+;  (set (make-local-variable 'tool-bar-map) mizar-tool-bar-map)
   (make-local-variable 'font-lock-defaults)
   (setq font-lock-defaults
-      '(mizar-font-lock-keywords nil nil ((?_ . "w")))))
+      '(mizar-font-lock-keywords nil nil ((?_ . "w"))))  
+  )
 
 
 (defun mizar-mode-commands (map)
@@ -456,14 +459,17 @@ The results are shown and clickable in the Compilation buffer. "
 
 ;;;;;;;;;;;;;;; imenu and speedbar handling ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar mizar-sb-trim-hack
-(cond ((intern-soft "trim-words") (list (intern "trim-words")))
-      ((intern-soft  "speedbar-trim-words-tag-hierarchy")
-       (list (intern "speedbar-trim-words-tag-hierarchy"))))
+(cond ((fboundp 'trim-words) (list 'trim-words))
+      ((fboundp  'speedbar-trim-words-tag-hierarchy)
+       (list 'speedbar-trim-words-tag-hierarchy)))
 "Hack ensuring proper trimming across various speedbar versions."
 )
 
 (defvar mizar-sb-in-abstracts t
   "Tells if we use speedbar for abstracts too.")
+
+(defvar mizar-sb-in-mmlquery t
+  "Tells if we use speedbar for mmlquery abstracts too.")
 
 (defun mizar-setup-imenu-sb ()
 "Speedbar and imenu setup for mizar mode."
@@ -475,6 +481,8 @@ The results are shown and clickable in the Compilation buffer. "
 	(speedbar-add-supported-extension ".miz")
 	(if mizar-sb-in-abstracts
 	    (speedbar-add-supported-extension ".abs"))
+	(if mizar-sb-in-abstracts
+	    (speedbar-add-supported-extension ".gab"))
 	(setq speedbar-use-imenu-flag t
 	      speedbar-show-unknown-files nil
 	      speedbar-special-mode-expansion-list t
@@ -1284,14 +1292,17 @@ not use them to get constructor explanatios.")
 
 (defvar mizar-cstr-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\C-m" 'mizar-kbd-ask-query)
+    (define-key map "\C-m" 'mizar-kbd-cstr-mmlquery)
+    (define-key map "\C-\M-m" 'mizar-kbd-ask-query)
     (define-key map "\M-." 'mizar-kbd-cstr-tag)
     (define-key map "\C-c\C-c" 'mizar-ask-advisor)
     (if (eq mizar-emacs 'xemacs)
 	(progn
-	  (define-key map [button2] 'mizar-mouse-ask-query)
+	  (define-key map [button2] ' mizar-mouse-cstr-mmlquery)
+	  (define-key map [(shift button2)] 'mizar-mouse-ask-query)
 	  (define-key map [button3] 'mizar-mouse-cstr-tag))
-      (define-key map [mouse-2] 'mizar-mouse-ask-query)
+      (define-key map [mouse-2] 'mizar-mouse-cstr-mmlquery)
+      (define-key map [(shift mouse-2)] 'mizar-mouse-ask-query)
       (define-key map [mouse-3] 'mizar-mouse-cstr-tag))
     map)
 "Keymap in the buffer *Constructors list*.
@@ -1350,6 +1361,26 @@ Commands:
   (let ((cstr (mizar-cstr-at-point pos)))
     (if cstr (mizar-ask-meaning-query cstr)
       (message "No constructor at point"))))
+
+
+(defun mizar-mouse-cstr-mmlquery (event)
+"Find the definition of the constructor we clicked on in its
+MMLQuery abstract."
+  (interactive "e")
+  (select-window (event-window event))
+  (let ((cstr (mizar-cstr-at-point (event-point event))))
+    (if cstr (mmlquery-goto-symdef (intern cstr) t)
+      (message "No constructor at point"))))
+
+(defun mizar-kbd-cstr-mmlquery (pos)
+"Find the definition of the constructor at position POS in its
+MMLQuery abstract."
+  (interactive "d")
+  (let ((cstr (mizar-cstr-at-point pos)))
+    (if cstr (mmlquery-goto-symdef (intern cstr) t)
+      (message "No constructor at point"))))
+
+
 
 (defun mizar-kbd-cstr-tag (pos)
 "Find the definition of the constructor at position POS."
@@ -1627,6 +1658,567 @@ With a numeric prefix ARG, go forward ARG queries."
 	  (t (error "Not found")))))
 
 
+;;;;;;;;;;; MMLQuery browsing
+
+(defvar mmlquery-mode nil
+  "True if Mmlquery mode is in use.")
+
+(make-variable-buffer-local 'mmlquery-mode)
+(put 'mmlquery-mode 'permanent-local t)
+
+(defcustom mmlquery-mode-hook nil
+  "Functions to run when entering Mmlquery mode."
+  :type 'hook
+  :group 'mmlquery)
+
+(defvar mmlquery-mode-map nil
+  "Keymap for mmlquery minor mode.")
+
+(defvar mmlquery-mode-menu nil
+  "Menu for mmlquery minor mode.")
+
+
+(if mmlquery-mode-map
+    nil
+  (setq mmlquery-mode-map (make-sparse-keymap))
+  (define-key mmlquery-mode-map "\C-cn" 'mmlquery-next)
+  (define-key mmlquery-mode-map "\C-cp" 'mmlquery-previous)
+  (easy-menu-define mmlquery-mode-menu
+    mmlquery-mode-map
+    "Menu used when mmlquery minor mode is active."
+    '("MML Query"	    
+	    ["Next" mmlquery-next :active (< 0 mmlquery-history-position)
+	    :help "Go to the next mmlquery definition"]	    
+	    ["Previous" mmlquery-previous :active 
+              (< (+ 1 mmlquery-history-position) (ring-length mmlquery-history))
+	    :help "Go to the previous definition"]
+	    ("Hiding items in browser"	    
+	     ["Definitional theorems" mmlquery-toggle-def :style radio 
+	      :selected (not (memq 'mmlquery-def buffer-invisibility-spec)) :active t
+	      :help "Toggle hiding of definitional theorems" ]
+	      ["Definienda" mmlquery-toggle-dfs :style radio :selected 
+	      (not (memq 'mmlquery-dfs buffer-invisibility-spec)) :active t
+	      :help "Toggle hiding of constructor definienda" ]
+	     ["Property formulas" mmlquery-toggle-property-hiding 
+	      :style radio :selected (not mmlquery-properties-hidden) :active t
+	      :help "Hide/Show all property formulas" ]
+	     ["Existential clusters" (mmlquery-toggle-hiding 'mmlquery-exreg) :style radio 
+	      :selected (not (memq 'mmlquery-exreg buffer-invisibility-spec)) :active t
+	      :help "Toggle hiding of existential clusters" ]
+	     ["Functor clusters" (mmlquery-toggle-hiding 'mmlquery-funcreg) :style radio 
+	      :selected (not (memq 'mmlquery-funcreg buffer-invisibility-spec)) :active t
+	      :help "Toggle hiding of functor clusters" ]
+	     ["Conditional clusters" (mmlquery-toggle-hiding 'mmlquery-condreg) :style radio 
+	      :selected (not (memq 'mmlquery-condreg buffer-invisibility-spec)) :active t
+	      :help "Toggle hiding of conditional clusters" ]	
+	      ["Theorems" (mmlquery-toggle-hiding 'mmlquery-th) :style radio 
+	      :selected (not (memq 'mmlquery-th buffer-invisibility-spec)) :active t
+	      :help "Toggle hiding of theorems" ]
+	     ))))
+
+(or (assq 'mmlquery-mode minor-mode-map-alist)
+    (setq minor-mode-map-alist
+          (cons (cons 'mmlquery-mode mmlquery-mode-map)
+                minor-mode-map-alist)))
+(or (assq 'mmlquery-mode minor-mode-alist)
+    (setq minor-mode-alist
+	  (cons '(mmlquery-mode " MMLQuery")
+		minor-mode-alist)))
+
+
+(defvar mmlquery-tool-bar-map
+  (if (display-graphic-p)
+      (let ((tool-bar-map (make-sparse-keymap)))
+;	(tool-bar-add-item-from-menu 'Info-exit "close" Info-mode-map)
+	(tool-bar-add-item-from-menu 'mmlquery-previous "left_arrow" mmlquery-mode-map)
+	(tool-bar-add-item-from-menu 'mmlquery-next "right_arrow" mmlquery-mode-map)
+ 	(tool-bar-add-item-from-menu 'mmlquery-toggle-def "cut" mmlquery-mode-map)
+ 	(tool-bar-add-item-from-menu 'mmlquery-toggle-dfs "preferences" mmlquery-mode-map)
+	(tool-bar-add-item-from-menu 'mmlquery-toggle-property-hiding "paste" 
+				     mmlquery-mode-map)
+;; 	(tool-bar-add-item-from-menu 'Info-top-node "home" Info-mode-map)
+;; 	(tool-bar-add-item-from-menu 'Info-index "index" Info-mode-map)
+;; 	(tool-bar-add-item-from-menu 'Info-goto-node "jump_to" Info-mode-map)
+;; 	(tool-bar-add-item-from-menu 'Info-search "search" Info-mode-map)
+	tool-bar-map)))
+
+
+
+
+(defun mmlquery-mode (&optional arg)
+  "Minor mode for browsing text/mmlquery files.
+These are files with embedded formatting information in the MIME standard
+text/mmlquery format.
+Turning the mode on runs `mmlquery-mode-hook'.
+
+Commands:
+
+\\<mmlquery-mode-map>\\{mmlquery-mode-map}"
+  (interactive "P")
+  (let ((mod (buffer-modified-p)))
+    (cond ((or (<= (prefix-numeric-value arg) 0)
+	       (and mmlquery-mode (null arg)))
+	   ;; Turn mode off
+	   (easy-menu-remove mmlquery-mode-menu) ; xemacs only
+	   (setq mmlquery-mode nil)
+	   (setq buffer-file-format (delq 'text/mmlquery buffer-file-format)))
+	  
+	  (mmlquery-mode nil)		; Mode already on; do nothing.
+
+	  (t (setq mmlquery-mode t)	; Turn mode on
+	     (mizar-mode)               ; Turn on mizar-mode
+	     (hs-minor-mode -1)         ; Turn off hs-minor-mode
+	     (add-to-list 'buffer-file-format 'text/mmlquery)
+	     (add-to-list 'fontification-functions 'mmlquery-underline-highlited)
+	
+	     (make-local-variable 'font-lock-fontify-region-function)
+	     (make-local-variable 'mmlquery-properties-hidden)
+	     (set (make-local-variable 'tool-bar-map) mmlquery-tool-bar-map)
+	     (let ((oldfun font-lock-fontify-region-function))
+	       (setq font-lock-fontify-region-function
+		     `(lambda (beg end loudly) 
+			(,oldfun beg end loudly)
+		       (mmlquery-underline-in-region beg end))))	
+
+	     (mmlquery-underline-highlited 0)
+	     (mmlquery-default-invisibility)
+	     (easy-menu-add mmlquery-mode-menu) ; for xemacs only
+
+	     (run-hooks 'mmlquery-mode-hook)))
+    (set-buffer-modified-p mod)
+    (force-mode-line-update)))
+
+
+
+;; Reading .gab files
+
+;; The .gab files contain anchors and definitions. 
+;; During parsing, the text properties are set for anchors,
+;; while definitions are used to save their position as symbol
+;; property 'definition.
+
+;; If the 'definition property is missing from a symbol, we 
+;; open the .gab file containing the symbol first.
+
+
+;; Parsing  completely stolen from enriched.el
+
+;; We use a lot of invisibility
+(put 'invisible 'format-list-valued t)
+
+(defconst mmlquery-annotation-regexp "<\\(/\\)?\\([-A-Za-z0-9]+\\)>"
+  "Regular expression matching mmlquery-text annotations.")
+
+(defconst mmlquery-translations
+  '(
+;;    (mouse-face    (highlight   "a"))		   
+    (PARAMETER     (t           "p")) ; Argument of preceding annotation
+    ;; The following are not part of the standard:
+    (FUNCTION      (mmlquery-decode-anchor "a")
+		   (mmlquery-decode-definition "l")
+		   (mmlquery-decode-constructor "c")
+		   (mmlquery-decode-property     "r")
+		   (mmlquery-decode-hidden "h")) ; generic hidden
+    (read-only     (t           "x-read-only"))
+    (unknown       (nil         format-annotate-value))
+)
+  "List of definitions of text/mmlquery annotations.
+See `format-annotate-region' and `format-deannotate-region' for the definition
+of this structure.")
+
+
+(defvar mmlquery-anchor-map
+  (let ((map (make-sparse-keymap))
+	(button_kword (if (eq mizar-emacs 'xemacs) [button2]
+			[mouse-2])))
+    (set-keymap-parent map mizar-mode-map)
+    (define-key map button_kword 'mmlquery-goto-def-mouse)
+    (define-key map "\C-m"  'mmlquery-goto-def)
+    map)
+"Keymap used at mmlquery anchors.")
+
+
+(defun mmlquery-decode-anchor (start end &optional param)
+  "Decode an anchor property for text between START and END.
+PARAM is a `<p>' found for the property.
+Value is a list `(START END SYMBOL VALUE)' with START and END denoting
+the range of text to assign text property SYMBOL with value VALUE "
+  (let ((map mmlquery-anchor-map))
+    (add-text-properties start end 
+			 (list 'mouse-face 'highlight 'face 'underline 
+			       'fontified t local-map-kword map))
+    (list start end 'anchor (intern param))))
+
+(defun mmlquery-decode-definition (start end &optional param)
+  "Decode a definition property for text between START and END.
+PARAM is a `<p>' found for the property.
+Value is a list `(START END SYMBOL VALUE)' with START and END denoting
+the range of text to assign text property SYMBOL with value VALUE "
+(let (kind (sym (intern param)))
+  (unless (string-match ".*\\:\\([a-z]+\\) .*" param)
+    (error "Error: all dli items are supposed to match \":[a-z]+[ ]\": %s" param))
+  (setq kind (intern (concat "mmlquery-" (match-string 1 param))))
+  (put sym 'mmlquery-definition start)
+  (put sym 'mmlquery-kind kind)
+  (put-text-property start end 'mmlquery-kind kind)
+  (list start end 'invisible kind)))
+
+(defvar mmlquery-property-map
+  (let ((map (make-sparse-keymap))
+	(button_kword (if (eq mizar-emacs 'xemacs) [button2]
+			[mouse-2])))
+    (set-keymap-parent map mizar-mode-map)
+    (define-key map button_kword 'mmlquery-toggle-property-invis-mouse)
+    (define-key map "\C-m"  'mmlquery-toggle-property-invis)
+    map)
+"Keymap used at mmlquery properties.")
+
+(defun mmlquery-decode-property (start end &optional param)
+  "Decode a 'property property for text between START and END.
+PARAM is a `<p>' found for the property and must be nil.
+Value is a list `(START END SYMBOL VALUE)' with START and END denoting
+the range of text to assign text property SYMBOL with value VALUE "
+  (let ((map mmlquery-property-map)
+	(text (buffer-substring-no-properties start end)))
+    (or (string-match "^\\([a-z]+\\);" text)
+	(error "Error: all properties are supposed to match \"^[a-z]+$\": %s" param))
+    (let ((prop (match-string 1 text)))
+      (add-text-properties start (+ start (length prop))
+			   (list 'mouse-face 'highlight 'face 'underline 
+				 'fontified t local-map-kword map))
+      (list start end 'mmlquery-property (intern (concat "mmlquery-" prop))))))
+
+
+(defun mmlquery-decode-hidden (start end &optional param)
+  "Decode a hidden property for text between START and END.
+PARAM is a `<p>' found for the property.
+Value is a list `(START END SYMBOL VALUE)' with START and END denoting
+the range of text to assign text property SYMBOL with value VALUE "
+  (unless (string-match "^[a-z]+$" param)
+    (error "Error: all properties are supposed to match \"^[a-z]+$\": %s" param))
+  (let ((invis (get-text-property start 'invisible))
+	(kind (intern  (concat "mmlquery-" param))))
+    (put-text-property start end 'mmlquery-property-fla t)
+    (list start end 'invisible 'mmlquery-property)
+))
+
+
+(defun get-mmlquery-symbol-article (sym)
+"Extract the article name from a symbol, append '.gab'."
+  (let ((sname (symbol-name sym)))
+    (unless (string-match "\\([A-Z_0-9]+\\):.*" sname)
+      (error "Bad article name %s in symbol %S" sname sym))
+    (concat (downcase (match-string 1 sname)) ".gab")))
+
+
+(defun mmlquery-decode-constructor (start end &optional param)
+  "Decode a constructor property for text between START and END.
+PARAM is a `<p>' found for the property.
+Value is a list `(START END SYMBOL VALUE)' with START and END denoting
+the range of text to assign text property SYMBOL with value VALUE "
+(let ((sym (intern param)))
+;; The first def in its article is the 'true' original for us 
+  (if (and (not (get sym 'constructor))
+	   (equal (get-mmlquery-symbol-article sym)
+		  (file-name-nondirectory (buffer-file-name (current-buffer)))))      	   
+      (put sym 'constructor start)
+;; otherwise it is stored among redefinitions
+    (put sym 'constructor-redef (cons start (get sym 'constructor-redef))))
+  (list start end 'definition sym)))
+
+
+
+(defun mmlquery-next-annotation ()
+  "Find and return next text/mmlquery annotation.
+Any \"<<\" strings encountered are converted to \"<\".
+Return value is \(begin end name positive-p), or nil if none was found."
+  (while (and (search-forward "<" nil 1)
+	      (progn (goto-char (match-beginning 0))
+		     (not (looking-at mmlquery-annotation-regexp))))
+    (forward-char 1)
+    (if (= ?< (char-after (point)))
+	(delete-char 1)
+      ;; A single < that does not start an annotation is an error,
+      ;; which we note and then ignore.
+      (message "Warning: malformed annotation in file at %s" 
+	       (1- (point)))))
+  (if (not (eobp))
+      (let* ((beg (match-beginning 0))
+	     (end (match-end 0))
+	     (name (downcase (buffer-substring 
+			      (match-beginning 2) (match-end 2))))
+	     (pos (not (match-beginning 1))))
+	(list beg end name pos))))
+
+
+(defun mmlquery-remove-header ()
+  "Remove file-format header at point."
+  (while (looking-at "^::[ \t]*Content-[Tt]ype: .*\n")
+    (delete-region (point) (match-end 0)))
+  (if (looking-at "^\n")
+      (delete-char 1)))
+
+(defun mmlquery-decode (from to)
+  (save-excursion
+    (save-restriction
+      (narrow-to-region from to)
+      (goto-char from)
+      (mmlquery-remove-header)
+      ;; Translate annotations
+      (format-deannotate-region from (point-max) mmlquery-translations
+				'mmlquery-next-annotation)
+      (point-max))))
+
+;;;; The browsing functions
+
+(defvar mmlquery-history-size 512
+"*Size of the mmlquery history ring.
+When this is reached, the oldest element is forgotten.")
+
+(defvar mmlquery-history-position -1
+"Our position in mmlquery-history.
+Has to be updated with any operation on `mmlquery-history'.")
+
+(defvar mmlquery-history (make-ring mmlquery-history-size)
+  "History of definitions user has visited.
+It has a browser-like behavior: going from the middle of it
+to something different from its successor causes the whole
+successor list to be forgotten.
+Each element of the history is a list
+(buffer file-name position), if buffer was killed and file-name exists, we re-open the file.")
+
+(defvar mmlquery-abstracts 
+"/home/urban/mizarmode/gab/"
+;(substitute-in-file-name "$MIZFILES/gab")
+  "*Directory containing the mmlquery abstracts for browsing.")
+
+      
+(defun ring-delete-from (ring index)
+"Delete all RING elements starting from INDEX (including it).
+INDEX = 0 is the most recently inserted; higher indices
+correspond to older elements.
+If INDEX > RING legth, do nothing and return nil, otherwise 
+return the new RING length."
+(if (< index (ring-length ring))
+;; This could be done more efficiently
+(let ((count (+ 1 index)))
+  (while (< 0 count)
+    (ring-remove ring 0)
+    (decf count))
+  (ring-length ring))))
+
+
+(defun mmlquery-goto-def (&optional pos)
+"Goto the definition of the constructor at point or POS if given."
+  (interactive "d")
+  (let* ((anch (get-text-property (or pos (point)) 'anchor)))
+    (unless anch (error "No mmlquery reference at point!"))
+    (mmlquery-goto-symdef anch t)))
+
+(defun mmlquery-goto-def-mouse (event)
+"Goto to the definition of the constructor we clicked on."
+  (interactive "e")
+  (select-window (event-window event))
+  (let* ((anch (get-text-property (event-point event) 'anchor)))
+    (unless anch (error "No mmlquery reference at point!"))
+    (mmlquery-goto-symdef anch t)))
+
+
+(defun mmlquery-goto-symdef (anch &optional push)
+"Go to the definition of ANCH. 
+If PUSH, push positions onto the mmlquery-history."
+  (let ((afile (concat mmlquery-abstracts 
+		       (get-mmlquery-symbol-article anch)))
+	(defpos (get anch 'constructor))
+	(oldbuf (current-buffer))
+	(oldfile (buffer-file-name (current-buffer)))
+	(oldpos (point)))
+;; Load the article if not yet
+    (unless defpos
+      (find-file-noselect afile)
+      (setq defpos (get anch 'constructor)))
+    (unless defpos (error "No mmlquery definition for symbol %S" anch))
+    (find-file afile)
+    (goto-char defpos)
+    (if push
+	(progn
+;; Forget the forward part of history
+;; This delees the mmlquery-history-position too
+	  (if (<= 0 mmlquery-history-position)
+	      (ring-delete-from mmlquery-history 
+				mmlquery-history-position))
+;; Fix the previous position too - we deleted it above
+	  (ring-insert mmlquery-history (list oldbuf oldfile oldpos))
+	  (ring-insert mmlquery-history 
+		       (list (current-buffer) afile defpos))
+	  (setq mmlquery-history-position 0)))
+    anch))
+
+
+(defun mmlquery-goto-history-pos (history-pos)
+"Go to the history position HISTORY-POS, trying to re-open the file
+if killed in the meantime. Error if it is in temporary buffer,
+which was killed."
+(if (buffer-live-p (car history-pos))
+    (switch-to-buffer (car history-pos))
+  (if (cadr history-pos)
+      (find-file (cadr history-pos))
+    (error "Cannot go back, the temporary buffer was deleted.")))
+(goto-char (third history-pos)))
+
+
+(defun mmlquery-previous ()
+  "Go back to the previous mmlquery definiition visited
+before `mmlquery-history-position', and change this variable.
+If `mmlquery-history-position' is 0, i.e. we just start using
+the history, add the current position into `mmlquery-history', 
+to be able to return here with `mmlquery-next'."
+  (interactive)
+;; Initialy the ring-length is 0 and mmlquery-history-position is -1
+  (if (<= (ring-length mmlquery-history) (+ 1 mmlquery-history-position))
+      (message "No previous definitions visited.")
+
+    (incf mmlquery-history-position)
+    (mmlquery-goto-history-pos (ring-ref mmlquery-history 
+					 mmlquery-history-position))))
+
+(defun mmlquery-next ()
+  "Go forward to the next mmlquery definiition visited
+before `mmlquery-history-position', and change this variable."
+  (interactive)
+;; Initialy the ring-length is 0 and mmlquery-history-position is -1
+  (if (<= mmlquery-history-position 0)
+      (message "No next definitions visited.")
+    (decf mmlquery-history-position)
+    (mmlquery-goto-history-pos (ring-ref mmlquery-history 
+					 mmlquery-history-position))))
+
+(defvar mmlquery-default-hidden-kinds
+  (list 'mmlquery-def 'mmlquery-dfs 'mmlquery-property)
+  "List of item kinds that get hidden upon loading of 
+mmlquery abstracts.")
+
+(defun mmlquery-default-invisibility ()
+(dolist (sym mmlquery-default-hidden-kinds)
+  (add-to-invisibility-spec sym)))
+
+
+
+;; Borrowed from lazy-lock.el.
+;; We use this to preserve or protect things when modifying text properties.
+(defmacro save-buffer-state (varlist &rest body)
+  "Bind variables according to VARLIST and eval BODY restoring buffer state."
+  `(let* ,(append varlist
+		  '((modified (buffer-modified-p)) (buffer-undo-list t)
+		    (inhibit-read-only t) (inhibit-point-motion-hooks t)
+		    (inhibit-modification-hooks t)
+		    deactivate-mark buffer-file-name buffer-file-truename))
+     ,@body
+     (when (and (not modified) (buffer-modified-p))
+       (set-buffer-modified-p nil))))
+
+
+(defun mmlquery-underline-highlited (start)
+"Add 'underline to 'highlite."
+(save-buffer-state nil
+(save-excursion
+  (goto-char start)
+  (while (not (eobp))
+    (let ((mfprop (get-text-property (point) 'mouse-face))
+	  (next-change
+	   (or (next-single-property-change (point) 'mouse-face 
+					    (current-buffer))
+	       (point-max))))
+      (if (eq mfprop 'highlight)
+	  (put-text-property (point) next-change 'face 'underline))
+      (goto-char next-change))))))
+
+(defun mmlquery-underline-in-region (beg end)
+  (mmlquery-underline-highlited beg))
+
+
+(defun mmlquery-toggle-hiding (sym)
+(if (memq sym buffer-invisibility-spec)
+    (remove-from-invisibility-spec sym)
+  (add-to-invisibility-spec sym))
+(redraw-frame (selected-frame))   ; Seems needed
+)
+
+(defun mmlquery-toggle-dfs () (interactive) (mmlquery-toggle-hiding 'mmlquery-dfs))
+(defun mmlquery-toggle-def () (interactive) (mmlquery-toggle-hiding 'mmlquery-def))
+
+(defun mmlquery-toggle-property-invis (&optional pos force)
+"Toggle hiding of the property formula at POS.
+Non-nil FORCE can be either 'hide or 'unhide, and then this
+function is used to force the hiding state."
+  (interactive)
+  (save-buffer-state nil
+  (let* ((pos (or pos (point)))
+	 (propval (get-text-property pos 'mmlquery-property))
+	 next-change start invis)
+    (or propval (error "No MMLQuery expression at point!"))
+    (setq next-change
+	  (or (next-single-property-change pos 'mmlquery-property (current-buffer))
+	      (point-max)))
+    (or (get-text-property (- next-change 1)  'mmlquery-property-fla)
+	(error "No property formula available for this property!"))
+    (setq start (next-single-property-change pos 'mmlquery-property-fla 
+					     (current-buffer) next-change))
+    (setq invis (get-text-property start 'invisible))
+    (if  (memq 'mmlquery-property invis)
+	(setq invis (delq 'mmlquery-property invis))
+      (setq invis (cons 'mmlquery-property invis)))
+    (put-text-property start  next-change 'invisible invis))))
+
+(defun mmlquery-toggle-property-invis-mouse (event)
+"Toggle hiding of the property formula we clicked on."
+  (interactive "e")
+  (select-window (event-window event))
+  (mmlquery-toggle-property-invis (event-point event)))
+
+
+(defvar mmlquery-properties-hidden t
+"Tells the property hiding for mmlquery abstracts. Is buffer-local there.")
+
+(defun mmlquery-toggle-property-hiding ()
+"Force all property formulas to be either hidden or not,
+according to current value of the flag `mmlquery-properties-hidden'.
+Toggle the flag afterwards."
+(interactive)
+(save-buffer-state nil
+(save-excursion
+  (setq mmlquery-properties-hidden (not mmlquery-properties-hidden))
+  (goto-char (point-min))
+  (while (not (eobp))
+    (let ((mfprop (get-text-property (point) 'mmlquery-property-fla))
+	  (next-change
+	   (or (next-single-property-change (point) 'mmlquery-property-fla 
+					    (current-buffer))
+	       (point-max))))
+      (if mfprop
+	  (let (doit (invis (get-text-property (point) 'invisible)))
+	    (if mmlquery-properties-hidden
+		(if (not (memq 'mmlquery-property invis))
+		    (setq invis (cons 'mmlquery-property invis) doit t))
+	      (if (memq 'mmlquery-property invis)	      
+		  (setq invis (delq 'mmlquery-property invis) doit t)))
+	    (if doit (put-text-property (point) next-change 'invisible invis))))
+      (goto-char next-change))))))
+
+
+(defun mmlquery-find-abstract ()
+"Start the Emacs MMLQuery browser for given article."
+(interactive)
+(or (file-directory-p mmlquery-abstracts)
+    (error "MMLQuery abstracts not available, put them into %s, or change the variable 'mmlquery-abstracts!" mmlquery-abstracts))
+(let ((olddir default-directory)
+      (oldbuf (current-buffer)))
+  (unwind-protect
+      (progn 
+	(cd mmlquery-abstracts)
+	(call-interactively 'find-file))
+    (set-buffer oldbuf)
+    (cd olddir))))
 
 ;;;;;;;;;;;;;;;;;;;;; MoMM ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Caution, this version of mizar.el is transitory. I have
@@ -2331,8 +2923,6 @@ Show them in the buffer *Constructors List*."
 
 (defvar mizar-region-count 0  "Number of regions on mizar-region-stack.")
 
-(defvar mizar-mode-map nil "Keymap used by mizar mode..")
-
 (defvar mizar-quick-run t 
 "*Speeds up verifier by not displaying its intermediate output.
 Can be toggled from the menu, however the nil value is no
@@ -2880,7 +3470,6 @@ This is a flamewar-resolving hack."
 	   (setq result (concat result result1 "\n" )))))
     result))
 
-
 ;; Abbrevs
 (setq dabbrev-abbrev-skip-leading-regexp "\\(\\sw+\\.\\)+" )
 
@@ -3017,7 +3606,7 @@ This is a flamewar-resolving hack."
 	  ))))
 
 
-(defun mizar-mode ()
+(defun mizar-mode (&optional arg)
   "Major mode for editing Mizar articles and viewing Mizar abstracts.
 
 In addition to the following commands, there are special bindings
@@ -3029,7 +3618,7 @@ Commands:
 \\{mizar-mode-map}
 Entry to this mode calls the value of `mizar-mode-hook'
 if that value is non-nil."
-  (interactive)
+  (interactive "P")
   (kill-all-local-variables)
 					;  (set-syntax-table text-mode-syntax-table)
   (use-local-map mizar-mode-map)
@@ -3041,8 +3630,7 @@ if that value is non-nil."
   (setq buffer-offer-save t)
   (mizar-setup-imenu-sb)
   (run-hooks  'mizar-mode-hook)
-;  (define-key mizar-mode-map [(C-S-down-mouse-2)]   'hs-mouse-toggle-hiding)
-)
+  )
 
 (defvar html-help-url "http://ktilinux.ms.mff.cuni.cz/~urban/MizarModeDoc/html"
 "The html help for Mizar Mode resides here")
@@ -3090,20 +3678,25 @@ if that value is non-nil."
 	    ["Report bug" (browse-url mizar-twiki-bugs) t]
 	    ["MML Suggestions" (browse-url mizar-twiki-mml-sugg) t]
 	    )
-	  '("MML Query"
+	  '("MML Query"	    
+	    ["View MMLQuery abstract" mmlquery-find-abstract t
+	     :help "Start Emacs MMLQuery browser for given abstract"]
 	    ["Query window" query-start-entry t]
 	    ("MML Query server"
 	     ["Megrez" (setq query-url megrez-url) :style radio :selected (equal query-url megrez-url) :active t]
 	     ["Alioth" (setq query-url alioth-url) :style radio :selected (equal query-url alioth-url) :active t]
 	     )
-	    ("MML Query browser"
+	    ("MML Query browser" 
+	     :help "The preferred browser for WWW version of MMLQuery"
 	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active t]
 	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active t]
 	     )
 	    ["Show keybindings in *MML Query input*" (describe-variable 'query-entry-map) t]
 	    )
 	  '("Constr. Explanations"
-	    ("Verbosity"
+	    :help "Explaining and browsing constructors in your formulas"
+	    ("Verbosity" 
+	     :help "Set to non-none to activate constructor explanations"
 	    ["none" (mizar-toggle-cstr-expl 'none) :style radio :selected (not mizar-do-expl) :active t]
 	    ["sorted constructors list" (mizar-toggle-cstr-expl 'sorted)
 	     :style radio :selected
@@ -3123,7 +3716,8 @@ if that value is non-nil."
 	    )
 	    ["Underline explanation points"
 	     (setq mizar-underline-expls
-		   (not mizar-underline-expls)) :style toggle :selected mizar-underline-expls  :active mizar-do-expl ]
+		   (not mizar-underline-expls)) :style toggle :selected mizar-underline-expls  :active mizar-do-expl 
+	      :help "Make the clickable explanation points underlined"]
 	    ["Show keybindings in *Constructors list*" (describe-variable 'mizar-cstr-map) :active mizar-do-expl]
 	    )
 	  '("Grep"
@@ -3216,13 +3810,15 @@ if that value is non-nil."
   (let ((menu (delete nil (eval mizar-menu))))
     (cond
      ((eq mizar-emacs 'gnuemacs)
-      (easy-menu-define mizar-menu-map (current-local-map) "" menu))
+      (easy-menu-define mizar-menu-map mizar-mode-map "" menu))
      ((eq mizar-emacs 'xemacs)
       (easy-menu-add menu))
      ;; The default
      (t
-      (easy-menu-define mizar-menu-map (current-local-map) "" menu))
+      (easy-menu-define mizar-menu-map mizar-mode-map "" menu))
      )))
+
+(mizar-menu)
 
 
 (defun mizar-hs-forward-sexp (arg)
@@ -3260,7 +3856,7 @@ move backward across N balanced expressions."
     (if (not (member mizar-mode-hs-info hs-special-modes-alist))
             (setq hs-special-modes-alist
 	                  (cons mizar-mode-hs-info hs-special-modes-alist))))
-(add-hook 'mizar-mode-hook 'mizar-menu)
+;(add-hook 'mizar-mode-hook 'mizar-menu)
 (add-hook 'mizar-mode-hook 'hs-minor-mode)
 (add-hook 'mizar-mode-hook 'imenu-add-menubar-index)
 ;; adding this as a hook causes an error when opening
