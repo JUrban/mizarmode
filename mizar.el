@@ -128,6 +128,15 @@
 ;; Please report any bugs or useful improvements/modifications to 
 ;; Bob Beck, beck@cs.UAlberta.CA (beck@alberta)
 
+(defvar mizar-emacs 
+  (if (featurep 'xemacs)
+      'xemacs
+    (if (featurep 'dos-win32)
+	'winemacs		      
+      'gnuemacs))
+  "The variant of Emacs we're running.
+Valid values are 'gnuemacs,'xemacs and 'winemacs.")
+
 (eval-when-compile
   (require 'compile)
   (require 'font-lock)
@@ -144,7 +153,9 @@
 (require 'executable)
 (require 'term)
 (require 'imenu)
-(require 'speedbar nil t) ;;noerror if not present
+(if (eq mizar-emacs 'xemacs)
+    (require 'speedbar) ;; no NOERROR in xemacs 
+  (require 'speedbar nil t)) ;;noerror if not present
 
 
 (defvar mizar-mode-syntax-table nil)
@@ -1488,17 +1499,6 @@ functions:
 	  )
   "The definition for the menu in the editing buffers."
   )
-
-
-
-(defvar mizar-emacs 
-  (if (string-match "XEmacs\\|Lucid" (emacs-version))
-      'xemacs
-    (if (string-match "windows\\|\\bnt" (emacs-version))
-	'winemacs		      
-      'gnuemacs))
-  "The variant of Emacs we're running.
-Valid values are 'gnuemacs and 'xemacs.")
 
 
 (defun mizar-menu ()
