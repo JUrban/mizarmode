@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.71 $
+;; $Revision: 1.72 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1253,11 +1253,9 @@ INDENT is the current indentation level."
 
 (put 'mizar-mode 'find-tag-default-function 'mizar-ref-at-point)
 
-(defvar mizsymbtags
-  (substitute-in-file-name "$MIZFILES/abstr/symbtags")
+(defvar mizsymbtags (concat mizfiles "abstr/symbtags")
   "Symbol tags file created with stag.pl (now in Mizar distro).")
-(defvar mizreftags
-  (substitute-in-file-name "$MIZFILES/abstr/reftags")
+(defvar mizreftags (concat mizfiles "abstr/reftags")
   "References tags file created with stag.pl (now in Mizar distro).")
 
 ;; nasty to redefine these two, but working; I could not get the local vars machinery right
@@ -1530,7 +1528,7 @@ If TABLE is not given, get it with `mizar-get-errors'."
 	      )))))
 
 
-(defvar mizar-err-msgs (substitute-in-file-name "$MIZFILES/mizar.msg")
+(defvar mizar-err-msgs (concat mizfiles "mizar.msg")
   "File with explanations of Mizar error messages.")
 (defun mizar-getmsgs (errors &optional cformat)
 "Return string of error messages for ERRORS.
