@@ -854,6 +854,41 @@ nil if no errors"
 
 ;;;;;;;;;;;;;;; end of errflag ;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;; scanning ;;;;;;;;;;;;;;;;;;;;;
+
+(defvar mizar-symbols-regexp "" "string for fontification of symbols")
+(defvar dct-table-date -1 "date of the dct file")
+
+(make-variable-buffer-local 'mizar-symbols-regexp)
+(make-variable-buffer-local 'dct-table-date)
+
+;; fixed for xemacs leaving "" in the end
+(defun buff-to-symblist ()
+(let ((l (delete "" (split-string (buffer-string) "\n")))
+      res)
+  (while l
+;    (if (string-match "^.[0-9]+ \\(.*\\)" (car l))
+    (if (string-match "^[GKLMORUV][0-9]+ \\(.*\\)" (car l))
+	(setq res (cons (match-string 1 (car l)) res)))
+    (setq l (cdr l)))
+  (nreverse res)))
+
+
+(defun mizar-get-dct (aname)
+"Returns the symbols regexp for an article"
+(save-excursion
+  (let ((dct (concat aname ".dct"))) 
+    (if (file-readable-p dct)
+	(let ((dctdate (cadr (nth 5 (file-attributes dct)))))
+	  (if (/= dct-table-date dctdate)
+	      (let (tab)
+		(with-temp-buffer           ; sort columns, then lines
+		  (insert-file-contents dct) 
+		  (setq tab (buff-to-symblist)))
+		(setq dct-table-date dctdate
+		      mizar-symbols-regexp (regexp-opt tab))))))
+    mizar-symbols-regexp)))
+
 ;;;;;;; some cluster hacking (also for MMLQuery) ;;;;;;;;;;;;;;;;;;
 ;;; this should be improved by outputing the cluster tables after
 ; analyzer (or having interactive verifier), we now have only clusters
@@ -1180,7 +1215,7 @@ meanings via symbtags or sending constructor queries to MML Query.
 Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 
 (defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/")
-(defvar megrez-url "http://smegrez.cs.shinshu-u.ac.jp/cgi-bin/")
+(defvar megrez-url "http://megrez.mizar.org/cgi-bin/")
 (defvar query-url megrez-url)
 (defvar query-text-output nil 
 "if nonnil, text output is required from MML Query")
@@ -1454,6 +1489,7 @@ the value of query-entry-mode-hook.
 (defvar mizar-twiki-pitfalls (concat mizar-twiki-url "MizarPitfall"))
 (defvar mizar-twiki-faq (concat mizar-twiki-url "MizarFAQ"))
 (defvar mizar-twiki-bugs (concat mizar-twiki-url "BugReport"))
+(defvar mizar-twiki-mml-sugg (concat mizar-twiki-url "MmlSuggestion"))
 
 (defun mizar-error-at-point ()
   (let ((cw (current-word)))
@@ -2160,6 +2196,8 @@ if found end on the first number of the error"
 
 
 ;; Font lock
+(defvar mizar-symbol-color nil "The color for the optional symbol fontification, white is suggested for the light-bg, nil (default) means no symbol fontification is done")
+
 
 (defun mizar-font-lock-keywords ()
   "Set up font lock keywords for the current Mizar system."
@@ -2184,23 +2222,30 @@ if found end on the first number of the error"
 		  '(
 		    (mizar-builtin-face nil nil nil nil t)
 		    (mizar-exit-face nil nil nil nil t)
+;		    (mizar-symbol-face nil nil nil nil t)
 ))
 		 ((memq font-lock-display-type '(grayscale greyscale
 							   grayshade greyshade))
 		  '(
 		    (mizar-builtin-face nil nil nil nil t)
 		    (mizar-exit-face nil nil nil nil t)
+;		    (mizar-symbol-face nil nil nil nil t)
 ))
 		 (dark-bg 		; dark colour background
 		  '(
 		    (mizar-builtin-face "LightSkyBlue" nil nil nil nil)
 		    (mizar-exit-face "green" nil nil nil nil)
+;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
 ))
 		 (t			; light colour background
 		  '(
 		    (mizar-builtin-face "Orchid" nil nil nil nil)
 		    (mizar-exit-face "ForestGreen" nil nil nil nil)
+;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
 )))))
+;; mizar-symbol-color fontification
+	  (if mizar-symbol-color 
+	      (setq faces (cons (list 'mizar-symbol-face mizar-symbol-color nil nil nil nil) faces)))
 
 	  (while faces
 	    (if (fboundp 'font-lock-make-face)
@@ -2246,10 +2291,11 @@ if found end on the first number of the error"
 		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>" 
 		;;		1 'mizar-builtin-face
 		1 font-lock-variable-name-face))
-
-	      
-	     
-	      )
+	      (syms 
+	       (if mizar-symbol-color
+		   (list (mizar-get-dct (file-name-sans-extension (buffer-file-name))) 
+			 0 'mizar-symbol-face)))
+	       )
 	  ;; Make font lock list
 	  (delq
 	   nil
@@ -2263,6 +2309,8 @@ if found end on the first number of the error"
 	      connectives
 	      proofs
 	      keywords
+;; only if mizar-symbol-color defined and article has .dct
+	      (if (and syms (not (equal "" (car syms)))) syms)
 	      ))
 	    ((eq major-mode 'mizar-inferior-mode)
 	     (list
@@ -2273,8 +2321,6 @@ if found end on the first number of the error"
 	      
 	      keywords))))
 	  ))))
-
-
 
 
 (defun mizar-mode ()
@@ -2356,6 +2402,7 @@ functions:
 	    ["Describe pitfall" (browse-url mizar-twiki-pitfalls) t]
 	    ["View FAQ" (browse-url mizar-twiki-faq) t]
 	    ["Report bug" (browse-url mizar-twiki-bugs) t]
+	    ["MML Suggestions" (browse-url mizar-twiki-mml-sugg) t]
 	    )
 	  '("MML Query"
 	    ["Query window" query-start-entry t]
