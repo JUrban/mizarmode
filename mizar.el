@@ -1446,6 +1446,30 @@ the value of query-entry-mode-hook.
 	  (t (error "Not found")))))
 
 
+;;;;;;;;;;;;;;;;;;;;; Mizar TWiki  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar mizar-twiki-url "http://alioth.uwb.edu.pl/twiki/bin/view/Mizar/")
+(defvar mizar-twiki-questions (concat mizar-twiki-url "MizarQuestion"))
+(defvar mizar-twiki-features (concat mizar-twiki-url "FeatureBrainstorming"))
+(defvar mizar-twiki-language (concat mizar-twiki-url "MizarLanguage"))
+(defvar mizar-twiki-pitfalls (concat mizar-twiki-url "MizarPitfall"))
+(defvar mizar-twiki-faq (concat mizar-twiki-url "MizarFAQ"))
+(defvar mizar-twiki-bugs (concat mizar-twiki-url "BugReport"))
+
+(defun mizar-error-at-point ()
+  (let ((cw (current-word)))
+    (if (string-match "[^0-9]*\\([0-9]+\\)\\b" cw)
+	(match-string 1 cw)
+      "")))
+
+(defun mizar-twiki-comment-error (&optional errstr)
+(interactive)
+(let ((errstr 
+       (or errstr 
+	   (read-string  (concat "ErrorCode to comment on: (Default: " 
+				 (mizar-error-at-point) "): " )
+			 nil nil      (mizar-error-at-point)))))
+  (browse-url (concat mizar-twiki-url "ErrorNo" errstr))))
+
 ;;;;;;;;;;;;;;;  abbrevs for article references ;;;;;;;;;;;;
 (defun mizar-th-abbrevs (&optional aname)
 (interactive)
@@ -1953,10 +1977,6 @@ use quick run, if compil, emulate compilation-like behavior"
 
 			 
 
-
-
-
-
 (defun mizar-listvoc (&optional whole-exp)
   "list vocabularies"
   (interactive "p")
@@ -2324,6 +2344,15 @@ functions:
 	  "-"
 	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
+	  '("Mizar TWiki"
+	    ["Browse Mizar Twiki" (browse-url mizar-twiki-url) t]
+	    ["Ask Mizar question" (browse-url mizar-twiki-questions) t]	
+	    ["Suggest feature" (browse-url mizar-twiki-features) t]
+	    ["Comment Mizar error" mizar-twiki-comment-error t]
+	    ["Describe pitfall" (browse-url mizar-twiki-pitfalls) t]
+	    ["View FAQ" (browse-url mizar-twiki-faq) t]
+	    ["Report bug" (browse-url mizar-twiki-bugs) t]
+	    )
 	  '("MML Query"
 	    ["Query window" query-start-entry t]
 	    ("MML Query server" 
