@@ -222,6 +222,7 @@
   (define-key mizar-mode-map "\C-c\C-h" 'mizar-irrths)
   (define-key mizar-mode-map "\C-c\C-v" 'mizar-irrvoc)
   (define-key mizar-mode-map "\C-c\C-i" 'mizar-relinfer)
+  (define-key mizar-mode-map "\C-c\C-o" 'mizar-trivdemo)
   (define-key mizar-mode-map "\C-c\C-s" 'mizar-reliters)
   (define-key mizar-mode-map "\C-c\C-b" 'mizar-chklab)
   (define-key mizar-mode-map "\C-c\C-y" 'mizar-relprem)
@@ -819,6 +820,10 @@ if util given (eg. miz2prel), runs it instead of mizf"
   (interactive "p")
   (mizar-error-util "reliters"))
 
+(defun mizar-trivdemo (&optional whole-exp)
+  (interactive "p")
+  (mizar-error-util "trivdemo"))
+
 (defun mizar-chklab (&optional whole-exp)
   (interactive "p")
   (mizar-error-util "chklab"))
@@ -1224,6 +1229,7 @@ functions:
 	    ["Use revf" toggle-use-revf :style toggle :selected mizar-use-revf  :active t]
 	    ["Irrelevant Theorems" mizar-irrths t]
 	    ["Irrelevant Inferences" mizar-relinfer t]
+	    ["Trivial Proofs" mizar-trivdemo t]
 	    ["Irrelevant Iterative Steps" mizar-reliters t]
 	    ["Irrelevant Premises" mizar-relprem t]
 	    ["Irrelevant Labels" mizar-chklab t]
