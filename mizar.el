@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.80 $
+;; $Revision: 1.81 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -181,7 +181,7 @@ Speedbar can be (de)activated later by running the command `speedbar'."
 :type 'boolean
 :group 'mizar-speedbar)
 
-(defcustom mizar-show-output 10
+(defcustom mizar-show-output 4
 "*Determines the size of the output window after processing.
 Possible values: none, 4, 10, all."
 :type '(choice (const :tag "no output" none)
