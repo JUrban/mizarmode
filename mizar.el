@@ -1,3 +1,5 @@
+;; Sat Jun 1 2002 ... gnu winemacs supported now, imenu,speedbar and grep,
+;; many fixes, we use now quiet mode, implemented since Mizar 6.1.11
 ;; Fri Jan 11 2002 ... mizar-launch-dir added, controlling from where
 ;; mizf is run; use it e.g. if 'dict/' and 'text/' are in the same directory  
 ;; Dec 20 2001 ... some changes by Freek Wiedijk and Dan Synek:
@@ -131,7 +133,7 @@
 (defvar mizar-emacs 
   (if (featurep 'xemacs)
       'xemacs
-    (if (featurep 'dos-win32)
+    (if (featurep 'dos-w32)
 	'winemacs		      
       'gnuemacs))
   "The variant of Emacs we're running.
@@ -436,6 +438,56 @@ rigidly along with this one (not yet)."
       (grep (concat "grep -i -n -e \"" exp "\" " miz)))
     ))
 
+
+;;;;;;;;;;;;;;; imenu and speedbar handling ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar mizar-sb-trim-hack
+(cond ((intern-soft "trim-words") (list (intern "trim-words")))
+      ((intern-soft  "speedbar-trim-words-tag-hierarchy")
+       (list (intern "speedbar-trim-words-tag-hierarchy"))))
+"Hack ensuring proper trimming across various speedbar versions"
+)
+
+(defvar mizar-sb-in-abstracts t
+  "Tells if we use speedbar for abstracts too")
+
+(defun mizar-setup-imenu-sb ()
+"Speedbar and imenu setup for mizar mode"
+(progn
+  (setq imenu-case-fold-search nil)
+  (setq imenu-generic-expression mizar-imenu-expr)
+  (if (featurep 'speedbar)
+      (progn
+	(speedbar-add-supported-extension ".miz")
+	(if mizar-sb-in-abstracts
+	    (speedbar-add-supported-extension ".abs"))
+	(setq speedbar-use-imenu-flag t
+	      speedbar-show-unknown-files nil
+	      speedbar-special-mode-expansion-list t
+	      speedbar-tag-hierarchy-method mizar-sb-trim-hack
+	      ;;'(simple-group trim-words)
+	      ;;'('speedbar-trim-words-tag-hierarchy 'trim-words)
+	      )))))
+
+
+;; I want the tags in other window, probably some local machinery 
+;; should be applied instead of a redefinition here
+(defun speedbar-tag-find (text token indent)
+  "For the tag TEXT in a file TOKEN, goto that position.
+INDENT is the current indentation level."
+  (let ((file (speedbar-line-path indent)))
+    (speedbar-find-file-in-frame file)
+    (save-excursion (speedbar-stealthy-updates))
+    ;; Reset the timer with a new timeout when cliking a file
+    ;; in case the user was navigating directories, we can cancel
+    ;; that other timer.
+    (speedbar-set-timer speedbar-update-speed)
+    (switch-to-buffer-other-window (current-buffer))
+    (goto-char token)
+    (run-hooks 'speedbar-visiting-tag-hook)
+    ;;(recenter)
+    (speedbar-maybee-jump-to-attached-frame)
+    ))
+
 ;;;;;;;;;;;;  tha tags handling starts here ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; xemacs seems unhappy yet
 
@@ -675,27 +727,32 @@ and you want to get to your editing buffers"
 
 (defvar mizar-err-msgs (substitute-in-file-name "$MIZFILES/mizar.msg")
   "File with explanations of Mizar error messages")
-(defun mizar-getmsgs (errors)
-"Gets sorted errors, returns string of messages"
+(defun mizar-getmsgs (errors &optional cformat)
+"Gets sorted errors, returns string of messages, if cformat,
+returns list of numbered messages for mizar-compile"
 (save-excursion
   (let ((buf (find-file-noselect  mizar-err-msgs))
-	(msgs ""))
+	(msgs (if cformat nil ""))
+	(prefix (if cformat " *" (concat mizar-error-start " ")))
+)
     (set-buffer buf)
     (goto-char (point-min))
     (while errors
       (let* ((s (number-to-string (car errors)))
-	     (res (concat mizar-error-start " " s ": "))
+	     (res  (concat prefix s ": "))
 	     msg)
 	(if (re-search-forward (concat "^# +" s "\\b") (point-max) t)
 	    (let (p)
 	      (forward-line 1)
 	      (setq p (point))
 	      (end-of-line)
-	      (setq msg (buffer-substring p (point)))
+	      (setq msg (buffer-substring p (point)))	      
 	      (setq res (concat res  msg "\n")))
 	  (setq res (concat res  "  ?" "\n"))
 	  (goto-char (point-min)))
-	(setq msgs (concat msgs res))
+	(if cformat
+	    (setq msgs (nconc msgs (list (list (car errors) res))))
+	    (setq msgs (concat msgs res)))
 	(setq errors (cdr errors))))
     msgs)))
 
@@ -722,9 +779,34 @@ and you want to get to your editing buffers"
 	  (mizar-error-flag aname table)
 	  (mizar-addfmsg aname table))))))
   
+(defun mizar-comp-addmsgs (atab expl)
+"Replace errcodes in atab by  explanations from expl, atab is
+reversed"
+(let ((msgs "")
+      (atab atab))
+  (while atab
+    (let* ((l1 expl)
+	   (currecord (car atab))
+	   (ercode (third currecord)))
+      (while (not (= ercode (caar l1)))
+	(setq l1 (cdr l1)))
+      (setq msgs (concat aname ".miz:" (number-to-string (car currecord)) ":" 
+			 (number-to-string (cadr currecord)) ":" 
+			 (cadar l1) msgs)))
+    (setq atab (cdr atab)))
+  msgs))
 
 
-
+(defun mizar-compile-errors (aname)
+"Return string of errors and explanations in compile-like format,
+nil if no errors"
+  (let ((errors (concat aname ".err"))) 
+    (if (and (file-readable-p errors)
+	     (< 0 (file-size errors)))
+	(let* ((table (mizar-get-errors aname))
+	       (atab (sort-for-errflag table))
+	       (expl (mizar-getmsgs (mizar-err-codes aname table) t)))
+	  (mizar-comp-addmsgs atab expl)))))
 
 
 ;;;;;;;;;;;;;;; end of errflag ;;;;;;;;;;;;;;;;;;
@@ -854,12 +936,18 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
       (end-of-buffer-other-window 0))))
 
 
-(defun mizar-compile ()
-  "compile a mizar file in the traditional way"
+(defun mizar-compile (&optional util)
+"compile a mizar file in the traditional way"
   (interactive)
-  (let ((old-dir (mizar-switch-to-ld)))
-    (compile (concat "mizfe " (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name)))))
-    (if old-dir (setq default-directory old-dir))))
+  (mizar-it util nil t))
+
+; (defun mizar-compile ()
+;   "compile a mizar file in the traditional way"
+;   (interactive)
+;   (let ((old-dir (mizar-switch-to-ld)))
+;     (compile (concat "mizfe " (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name)))))
+;     (if old-dir (setq default-directory old-dir))))
+
 
 
 (defun mizar-handle-output  ()
@@ -911,10 +999,10 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	(cd mizar-launch-dir)
 	old-dir)))
 
-(defun mizar-it (&optional util noqr)
+(defun mizar-it (&optional util noqr compil)
   "Run mizar on the text in the current .miz buffer;
 if util given, runs it instead of mizf, if noqr, does not 
-use quick run"
+use quick run, if compil, emulate compilation-like behavior"
   (interactive)
   (let ((util (or util "verifier"))
 	(makeenv "makeenv"))
@@ -932,30 +1020,47 @@ use quick run"
 		  (old-dir (mizar-switch-to-ld)))
 	     (mizar-strip-errors)
 	     (save-buffer)
-	     (if (and mizar-quick-run (not noqr))
-		 (save-excursion
-		   (message (concat "Running " util " on " fname " ..."))
-		   (if (get-buffer "*mizar-output*")
-		       (kill-buffer "*mizar-output*"))
-		   (if (= 0 (call-process makeenv nil (get-buffer-create "*mizar-output*") nil name))
-		       (shell-command (concat util " -q " name) 
-				      "*mizar-output*")
-		     (switch-to-buffer-other-window "*mizar-output*"))
-		   (message " ... done"))
+	     (cond 
+	      ((and compil (not noqr))
+	       (if (get-buffer "*compilation*") ; to have launch-dir
+		    (kill-buffer "*compilation*"))
+	       (let ((cbuf (get-buffer-create "*compilation*")))
+		 (switch-to-buffer-other-window cbuf)
+		 (erase-buffer)
+		 (insert "Running " util " on " fname " ...\n")
+		 (sit-for 0)     ; force redisplay
+		 (if (= 0 (call-process makeenv nil cbuf nil  name))
+		     (call-process util nil cbuf nil "-q" name))))
+	     ((and mizar-quick-run (not noqr))
+	      (save-excursion
+		(message (concat "Running " util " on " fname " ..."))
+		(if (get-buffer "*mizar-output*")
+		    (kill-buffer "*mizar-output*"))
+		(if (= 0 (call-process makeenv nil (get-buffer-create "*mizar-output*") nil name))
+		    (shell-command (concat util " -q " name) 
+				   "*mizar-output*")
+		  (switch-to-buffer-other-window "*mizar-output*"))
+		(message " ... done")))
+	     (t
 	       (if (= 0 (call-process makeenv nil nil nil name))
 		   (progn
 		     (mizar-new-term-output noqr)
 		     (term-exec "*mizar-output*" util util nil (list name))
 		     (while  (term-check-proc "*mizar-output*") 
-		       (sit-for 1)))))
-	     (if old-dir (setq default-directory old-dir))	   
-	     (mizar-do-errors name)
-	     (save-buffer)
-	     (mizar-handle-output)
-	     (mizar-show-errors)
+		       (sit-for 1))))))
+	     (if old-dir (setq default-directory old-dir))
+	     (if (and compil (not noqr))
+		 (progn
+		   (insert (mizar-compile-errors name))
+		   (compilation-mode)
+		   (goto-char (point-min))
+		   (other-window 1))
+	       (mizar-do-errors name)
+	       (save-buffer)
+	       (mizar-handle-output)
+	       (mizar-show-errors))
 	     )))))
 
-	     
 
 (defun mizar-irrths ()  
   (interactive)
@@ -1391,28 +1496,11 @@ functions:
   (setq local-abbrev-table mizar-mode-abbrev-table)
   (mizar-mode-variables)
   (setq buffer-offer-save t)
-  (setq imenu-case-fold-search nil)
-  (setq imenu-generic-expression mizar-imenu-expr)
-  (if (featurep 'speedbar)
-      (progn
-	(speedbar-add-supported-extension ".miz")
-	(setq speedbar-use-imenu-flag t
-	      speedbar-show-unknown-files nil
-	      speedbar-special-mode-expansion-list t
-	      speedbar-tag-hierarchy-method mizar-sb-trim-hack
-;;'(simple-group trim-words)
-;;'('speedbar-trim-words-tag-hierarchy 'trim-words)
-)))
+  (mizar-setup-imenu-sb)
   (run-hooks  'mizar-mode-hook)
 ;  (define-key mizar-mode-map [(C-S-down-mouse-2)]   'hs-mouse-toggle-hiding)
 )
 
-(defvar mizar-sb-trim-hack
-(cond ((intern-soft "trim-words") (list (intern "trim-words")))
-      ((intern-soft  "speedbar-trim-words-tag-hierarchy")
-       (list (intern "speedbar-trim-words-tag-hierarchy"))))
-"Hack ensuring proper trimming across various speedbar versions"
-)
 
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
@@ -1438,7 +1526,7 @@ functions:
 	  ["Reserv. before point" make-reserve-summary t]
 	  "-"
 	  ["Run Mizar" mizar-it t]
-	  ["Mizar Compile" mizar-compile (not (eq mizar-emacs 'winemacs))]
+	  ["Mizar Compile" mizar-compile t]
 	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active (eq mizar-emacs 'gnuemacs)]
 	  ["Toggle launch-dir" mizar-set-launch-dir :style toggle :selected mizar-launch-dir  :active t]
 	  (list "Show output"
@@ -1556,29 +1644,5 @@ functions:
 ;;    (add-hook 'mizar-mode-hook '(lambda () (speedbar 1))))
 (if (featurep 'speedbar)
     (speedbar 1))
-
-
-;; I want the tags in other window, probably some local machinery 
-;; should be applied instead of a redefinition here
-(defun speedbar-tag-find (text token indent)
-  "For the tag TEXT in a file TOKEN, goto that position.
-INDENT is the current indentation level."
-  (let ((file (speedbar-line-path indent)))
-    (speedbar-find-file-in-frame file)
-    (save-excursion (speedbar-stealthy-updates))
-    ;; Reset the timer with a new timeout when cliking a file
-    ;; in case the user was navigating directories, we can cancel
-    ;; that other timer.
-    (speedbar-set-timer speedbar-update-speed)
-    (switch-to-buffer-other-window (current-buffer))
-    (goto-char token)
-    (run-hooks 'speedbar-visiting-tag-hook)
-    ;;(recenter)
-    (speedbar-maybee-jump-to-attached-frame)
-    ))
-
-
-
-
 
 (provide 'mizar)
