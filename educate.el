@@ -228,7 +228,7 @@ If POSTED-DATA is non-nil, the request is POST instead of GET.
 
     (with-current-buffer buf
       (goto-char (point-min))
-      (if (looking-at "HTTP/[0-9.]+ \\([0-9]+\\) \\(.*\\)\r\n")
+      (if (looking-at "HTTP/[0-9.]+ \\([0-9]+\\) \\(.*\\)")
           (progn
             (forward-line 1)
             (while (looking-at "^.+[:].+")
