@@ -1,0 +1,5 @@
+# syntax rules for Mizar - insert into nyour Syntax file by
+# selecting Menu->Command->Edit syntax file 
+
+file ..\*\\.(abs|miz|gab|gab.raw)$ Mizar\sArticle
+include mizar.syntax
