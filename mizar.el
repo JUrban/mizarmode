@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.50 $
+;; $Revision: 1.51 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -3013,13 +3013,6 @@ Show them in the buffer *Constructors List*."
 
 (defvar mizar-region-count 0  "Number of regions on mizar-region-stack.")
 
-(defvar mizar-launch-dir nil
-"*If non-nil, verifier and other programs are called from here.
-Can be set from menu.
-Set this to parent directory, if you use
-private vocabulary file residing in ../dict/ , 
-otherwise Mizar *will not* find it.")
-
 (defvar mizar-imenu-expr
 '(
   ("Structures" "[ \n\r]\\(struct\\b.*\\)" 1)
@@ -3051,33 +3044,6 @@ See the documentation for the variable `mizar-show-output'."
 See the documentation for the variable `mizar-goto-error'."
 (interactive)
 (setq mizar-goto-error where))
-
-(defun mizar-set-launch-dir ()
-"Set the directory, where the verifier is launched.
-This must be set to parent directory, if you use
-private vocabulary file residing in ../dict/ ."
-(interactive)
-(let ((ld (or mizar-launch-dir "none"))
-      pdefault default dir)
-  (if mizar-launch-dir
-      (setq pdefault "none" default "")
-    (setq pdefault  (file-name-directory (directory-file-name
-                       (file-name-directory (buffer-file-name))))
-	  default pdefault))
-  (setq dir (read-string  (concat "current launch dir: " ld
-				  ", set to (Default: "
-				  pdefault "): " )
-			  nil nil  default))
-  (mizar-set-ld dir)))
-  
-  
-(defun mizar-set-ld (dir)
-(if (or (equal "" dir) (not dir))
-    (setq mizar-launch-dir nil)
-  (if (file-accessible-directory-p dir)
-      (setq mizar-launch-dir dir)
-    (error (concat "Directory not accessible: " dir)))))
-
 
 
 (defun make-theorem-summary ()
@@ -3113,7 +3079,7 @@ can be used instead, to make a summary of an article."
 if force is non nil, do it regardless of the value of mizar-quick-run"
 (if (or force (not mizar-quick-run))
     (let ((buff (get-buffer "*mizar-output*"))
-	  (dir (or mizar-launch-dir default-directory)))
+	  (dir default-directory))
       (if (and  buff
 		(not (member '(major-mode . term-mode)
 			     (buffer-local-variables buff))))
@@ -3216,7 +3182,8 @@ If COMPIL, emulate compilation-like behavior for error messages."
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
 		  (old-dir (file-name-directory name)))
-	     (if mizar-launch-dir (cd mizar-launch-dir))
+	     (cd (concat old-dir "/.."))
+;;	     (if mizar-launch-dir (cd mizar-launch-dir))
 	     (mizar-strip-errors)
 	     (save-buffer)
 	     (cond
@@ -3821,7 +3788,6 @@ if that value is non-nil."
 	  ["Run Mizar" mizar-it t]
 	  ["Mizar Compile" mizar-compile t]
 	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active (eq mizar-emacs 'gnuemacs)]
-	  ["Toggle launch-dir" mizar-set-launch-dir :style toggle :selected mizar-launch-dir  :active t]
 	  (list "Show output"
 		["none" (mizar-toggle-show-output "none") :style radio :selected (equal mizar-show-output "none") :active t]
 		["4 lines" (mizar-toggle-show-output 4) :style radio :selected (equal mizar-show-output 4) :active t]
