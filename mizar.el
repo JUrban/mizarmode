@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.62 $
+;; $Revision: 1.63 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -899,7 +899,10 @@ This function is called in the interactive function
 "Insert a proof skeleton for formula starting at BEG after point END.
 For normal interactive usage, just select the region containing 
 the formula, and run this function. 
-The lisppars utility needs to be installed for this to work.
+The lisppars utility needs to be installed for this to work -
+it is distributed with Mizar since version 6.4, and the
+formula has to be accessible in the article to the Mizar parser -
+e.g. not commented.
 Calls `mizar-parse-region-fla' to parse the formula, Then creates the
 skeleton using `mizar-skeleton-items-func', and pretty prints it using
 `mizar-skeleton-string'."
@@ -4340,15 +4343,20 @@ if that value is non-nil."
 (defvar mizar-menu
   '(list  "Mizar"
 	  ["Customize Mizar Mode" (customize-group 'mizar) t]
-	  ["Browse HTML Help" (browse-url html-help-url) t]
-	  ["Visited symbols" mouse-find-tag-history t]
+	  ["Browse HTML Help" (browse-url html-help-url) t]	  
 	  '("Goto errors"
 	    ["Next error"  mizar-next-error t]
 	    ["Previous error" mizar-previous-error t]
 	    ["Remove error lines" mizar-strip-errors t])
 	  "-"
-	  ["View symbol def" mizar-symbol-def t]
-	  ["Show reference" mizar-show-ref t]
+	  '("Browsing in abstracts"
+	    ["View symbol def" mizar-symbol-def t]
+	    ["Show reference" mizar-show-ref t]
+	    ["Visited symbols" mouse-find-tag-history t]
+	    ["Symbol apropos" symbol-apropos t]
+	    ["Bury all abstracts" mizar-bury-all-abstracts t]
+	    ["Close all abstracts" mizar-close-all-abstracts t]
+	    )
 	  '("MoMM"
 	    ["Use MoMM (Not Mizar 6.2. yet!)" mizar-toggle-momm :style toggle
 	     :selected mizar-use-momm  :active t]
@@ -4439,11 +4447,7 @@ if that value is non-nil."
 	    ["Full items in abstracts" mizar-grep-abs-full-items t]
 	    ["Full items in MML Query abstracts" mizar-grep-gab-full-items 
 	     :active t
-	     :help "Also C-u C-c i"])
-	  
-	  ["Symbol apropos" symbol-apropos t]
-	  ["Bury all abstracts" mizar-bury-all-abstracts t]
-	  ["Close all abstracts" mizar-close-all-abstracts t]
+	     :help "Also C-u C-c i"])	  
 	  "-"
 	  ["View theorems" make-theorem-summary t]
 	  ["Reserv. before point" make-reserve-summary t]
@@ -4483,6 +4487,9 @@ if that value is non-nil."
 	    ["Miz2Abs" (mizar-it "miz2abs" t) (eq mizar-emacs 'gnuemacs)]
 	    ["Ratproof" (mizar-it "ratproof") t])
 	  "-"
+	  ["Insert proof skeleton" mizar-insert-skeleton 
+	   :active t
+	   :help "Formula being proved has to be selected"]
 	  ["Comment region" comment-region t]
 ;; uncomment-region is not present in older Emacs
 	  ["Uncomment region" (if (fboundp 'uncomment-region) 
