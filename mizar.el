@@ -1,3 +1,5 @@
+;; Fri Jan 11 2002 ... mizar-launch-dir added, controlling from where
+;; mizf is run; use it e.g. if 'dict/' and 'text/' are in the same directory  
 ;; Dec 20 2001 ... some changes by Freek Wiedijk and Dan Synek:
 ;; undo and output fixed, standard compilation (C-c c) is now possible
 ;; using the scripts mizfe and erpp.pl (put them where mizf is and make
@@ -573,6 +575,9 @@ and you want to get to your editing buffers"
 
 (defvar mizar-use-revf nil "tells if the script revf is used for running mizar irrelevant utilities")
 
+(defvar mizar-launch-dir nil 
+"If non-nil, mizf and other scripts are called from here")
+
 
 (defun toggle-quick-run ()
 (interactive)
@@ -583,6 +588,32 @@ and you want to get to your editing buffers"
 (if (or mizar-use-revf (executable-find "revf"))
     (setq mizar-use-revf (not mizar-use-revf))
   (error "The revf script not found or not executable!")))
+
+
+(defun mizar-set-launch-dir ()
+(interactive)
+(let ((ld (or mizar-launch-dir "none"))
+      pdefault default dir)
+  (if mizar-launch-dir
+      (setq pdefault "none" default "")
+    (setq pdefault  (file-name-directory (directory-file-name 
+                       (file-name-directory (buffer-file-name))))
+	  default pdefault))
+  (setq dir (read-string  (concat "current launch dir: " ld 
+				  ", set to (Default: "
+				  pdefault "): " )
+			  nil nil  default))
+  (mizar-set-ld dir)))
+  
+  
+(defun mizar-set-ld (dir)
+(if (or (equal "" dir) (not dir))
+    (setq mizar-launch-dir nil)
+  (if (file-accessible-directory-p dir)
+      (setq mizar-launch-dir dir)
+    (error (concat "Directory not accessible: " dir)))))
+
+
 
 (defun make-theorem-summary ()
   "Make a summary of theorems in the buffer *Theorem-Summary*.
@@ -631,7 +662,8 @@ and you want to get to your editing buffers"
 "prepare output buffer if it was destroyed by quick-run; 
 if force is non nil, do it regardless of the value of mizar-quick-run"
 (if (or force (not mizar-quick-run))
-    (let ((buff (get-buffer "*mizar-output*")))
+    (let ((buff (get-buffer "*mizar-output*"))
+	  (dir (or mizar-launch-dir default-directory)))
       (if (and  buff 
 		(not (member '(major-mode . term-mode) 
 			     (buffer-local-variables buff))))
@@ -641,6 +673,9 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	    (ansi-term "bash")
 	    (rename-buffer "*mizar-output*")))
       (display-buffer "*mizar-output*")
+      (save-excursion
+	(set-buffer "*mizar-output*")
+	(cd  dir))
       (end-of-buffer-other-window 0))))
 
 (defun idle-message (fname times period)
@@ -656,7 +691,6 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
   (interactive)
   (compile (concat "mizfe " (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))))))
 
-
 (defun mizar-it (&optional util)
   "run mizar on the text in the current .miz buffer;
 if util given (eg. miz2prel), runs it instead of mizf"
@@ -667,42 +701,47 @@ if util given (eg. miz2prel), runs it instead of mizf"
 	  ((not (executable-find util))
 	   (message (concat util " not found or not executable!!")))
 	  (t 
-	   (save-buffer)
 ;	 (setq buff (current-buffer))
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
-		  (temp-fname (concat name mizar-quick-run-temp-ext)))
-	     (progn
-	       (if (and mizar-quick-run (equal util "mizf"))
-		 (save-excursion
-		   (message (concat "Verifying " fname " "))
-		   (if (file-exists-p temp-fname) (delete-file temp-fname))
-		   (shell-command  (concat "mizf " name ">" temp-fname
-					   "&") "*mizar-output*")
-		   (let ((mizpr (get-buffer-process "*mizar-output*"))
-			 (ctime (cadr (current-time))))
-		     (while  (eq (process-status mizpr) 'run)
-	 	       (sit-for 1)
- 		       (message "Verifying %s (quick-run) ... %d s"
-				fname (- (cadr (current-time)) ctime))))
-		   (set-buffer "*mizar-output*")
-		   (insert (display-mizar-results temp-fname)))
+		  (temp-fname (concat name mizar-quick-run-temp-ext))
+		  old-dir )
+	     (save-buffer)
+	     (if (and mizar-quick-run (equal util "mizf"))
+		 (progn
+		   (if mizar-launch-dir
+		       (progn (setq old-dir default-directory)
+			      (cd mizar-launch-dir)))
+		   (save-excursion
+		     (message (concat "Verifying " fname " "))
+		     (if (file-exists-p temp-fname) (delete-file temp-fname))
+		     (shell-command  (concat "mizf " name ">" temp-fname
+					     "&") "*mizar-output*")
+		     (let ((mizpr (get-buffer-process "*mizar-output*"))
+			   (ctime (cadr (current-time))))
+		       (while  (eq (process-status mizpr) 'run)
+			 (sit-for 1)
+			 (message "Verifying %s (quick-run) ... %d s"
+				  fname (- (cadr (current-time)) ctime))))
+		     (set-buffer "*mizar-output*")
+		     (insert (display-mizar-results temp-fname)))
+		   (if old-dir (setq default-directory old-dir)))
 	       (mizar-new-term-output (not (equal util "mizf")))
 	       (term-exec "*mizar-output*" util util nil (list name))
 	       (while  (term-check-proc "*mizar-output*") 
 		 (sit-for 5)))
-	   (insert-file-contents (buffer-file-name) nil nil nil t)
-           (clear-visited-file-modtime)
-	   (save-buffer))
-       (save-selected-window
-         (select-window (get-buffer-window (get-buffer "*mizar-output*")))
-	 (save-excursion
-	   (goto-char (point-max))
-	   (delete-blank-lines))
-	 (let ((new-height
-		(min 10 (+ 1 (count-lines (point-min) (point-max))))))
-	   (shrink-window (- (window-height) new-height))
-	   )))))))
+	     (insert-file-contents (buffer-file-name) nil nil nil t)
+	     (clear-visited-file-modtime)
+	     (save-buffer)
+	     (save-selected-window
+	       (select-window (get-buffer-window (get-buffer "*mizar-output*")))
+	       (save-excursion
+		 (goto-char (point-max))
+		 (delete-blank-lines))
+	       (let ((new-height
+		      (min 10 (+ 1 (count-lines (point-min) (point-max))))))
+		 (shrink-window (- (window-height) new-height))
+		 )))))))
 
 
 
@@ -1167,6 +1206,7 @@ functions:
 	  "-"
 	  ["Run Mizar" mizar-it t]
 	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active t]
+	  ["Toggle launch-dir" mizar-set-launch-dir :style toggle :selected mizar-launch-dir  :active t]
 	  "-"
 	  (list "Voc. & Constr. Utilities"
 		["Findvoc" mizar-findvoc t]
