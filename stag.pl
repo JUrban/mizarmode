@@ -80,19 +80,17 @@ print "symbtags tags done\n";
 
 # read constrcounts into global hash %ccounts
 sub getccounts {
-    my $f,$f1;
+    my $f,$f1,$f2;
     undef %ccounts;
 
-    open(LAR,  $ENV{MIZFILES}."/mml.lar");
-    @fnames = ("hidden","tarski");    
-    while (<LAR>) { chop; push @fnames, $_;} # get article names
-    close(LAR);
-    while ($f = shift @fnames) {
+    @fnames = `ls *.abs`; 
+    foreach $f2 (@fnames) {
+	($f) = split(/\./,$f2);
 	$f1= $prel.substr($f,0,1)."/".$f.".dco";
 	$ccounts{uc($f)} = get1count($f1);
     }
 # debug
-#    foreach $key (keys %ccounts) {$bla = $ccounts{$key}; print "$bla\n";  foreach $i (0 .. 6) { print "$bla->[$i]"; }}
+#   foreach $key (keys %ccounts) {$bla = $ccounts{$key}; print "$bla\n";  foreach $i (0 .. 6) { print "$bla->[$i]"; }}
 }
 
 sub get1count {
