@@ -1,5 +1,11 @@
 #!/usr/bin/perl 
 
+# these XML modules are now used for processing XML-format of 
+# the Mizar internal database, they should be available for any
+# major Perl distribution
+use XML::XQL;
+use XML::XQL::DOM;
+
 # Dec 14 2001 ... fixed "[pred]" and "dualizing-func", seems OK for MML 3.26.709
 # July 24, 2001 ... correcthidden fixed for Mizar 6.1.04 ... "[." added, still to fix
 #  a bug introduced by "dualizing-func" 
@@ -43,11 +49,12 @@ while ($file = shift) {
     ($fnoext) = split(/\./,$file);
     print "$fnoext\n";
     $nfile= $prel.substr($file,0,1)."/".$fnoext.".dno";
-    open(IN, $nfile) or next;
+#    open(IN, $nfile) or next;
+    next unless (-e $nfile);;
     # this creates %defh...for each "func "pred" etc ... list of symbols from .dno
     defshash();                                  
     foreach $key (keys %defh) {$bound{$key} = $#{$defh{$key}}};  # %bound holds the counts
-    close(IN);        
+#    close(IN);        
     open(IN, $file);                                             # opening .abs 
     $bytes=0;                                                    # counting bytes for tags
     print OUT "\n$file,\n";                                        # tag file header
@@ -96,14 +103,27 @@ sub getccounts {
 sub get1count {
     my $f1 = shift(@_);
     my $arr = [0,0,0,0,0,0,0];
+    return $arr unless (-e $f1);
 
-    open(IN, $f1) or return $arr;
-    do { $_=<IN>;} until /\#/;
-    $_ = <IN>;
-    while(m/([KRVMGUL])([0-9]+)/g) {
-	$arr->[index($constrs,$1)] += $2;
+    my $parser = new XML::DOM::Parser;
+    my $doc = $parser->parsefile ($f1);
+    my @result = $doc->xql ('Constructors/ConstrCounts/ConstrCount');
+
+    foreach my $node (@result) {
+      my $kind = $node->getAttributeNode ("kind");
+      my $nr = $node->getAttributeNode ("nr");
+
+      $arr->[index($constrs, $kind->getValue())] += $nr->getValue();
     }
-    close(IN);
+
+# old stuff - remove after debugging
+#     open(IN, $f1) or return $arr;
+#     do { $_=<IN>;} until /\#/;
+#     $_ = <IN>;
+#     while(m/([KRVMGUL])([0-9]+)/g) {
+# 	$arr->[index($constrs,$1)] += $2;
+#     }
+#     close(IN);
     return $arr;
 }
 
@@ -162,59 +182,84 @@ sub defshash {
     %defnrs = ( "func" => [], "pred" => [], "mode" => [], 
 	      "attr" => [], "sel" => [], "struct" => []);
     @bases = (0,0,0,0,0,0,0);                        #constr bases
-    $_=<IN>; 
-    while (!/\#/) {                                  # init bases
-	chop;
-	$lname = $_;
-	foreach $i (0 .. 6) { $bases[$i] += $ccounts{$_}->[$i]; }
-	$_=<IN>;
+    
+    my $parser = new XML::DOM::Parser;
+    my $doc = $parser->parsefile ($nfile);
+
+# init bases
+    my @result = $doc->xql ('Notation/Signature/ArticleID');
+    foreach my $node (@result) {
+      $lname = $node->getAttributeNode("name")->getValue();
+      foreach $i (0 .. 6) { $bases[$i] += $ccounts{$lname}->[$i]; }
     }
 # remove the last one
     foreach $i (0 .. 6) { $bases[$i] -= $ccounts{$lname}->[$i]; }
     $hidden=0;                                       # if using HIDDEN, ban V1 (="strict") 
     undef(%selh);                                    # for each struct constr array of its sels  
     undef(%struct);                                  # constr structs names
-    maketransl();                                    # table for relative names in this .dno
-    while (<IN>) {
-	if (/^([ñò¬íëï]).*$/) {
-	    if ($1 eq "ë") { @Gs = /(G[0-9]+)/g; $g = $Gs[$#Gs]; }  # if "U" def, get its  struct 
-	    else { undef $g };
-	    $_=<IN>;
-	    m/^([KORVMGU])([0-9]+).*$/ or print "st not found in $nfile: $_";
-	    if (($1 eq "V")&&($2 == 1)&&($hidden==1)) { next}; # strict not visible
-	    $r = $2; $s = $1;
-	    if (defined($g)) { pushsel()};		   # push "U" into its struct array in %selh
-	    $p = index($all,$1);
-	    $f = $defh{$symb[$p]};	                   # array of the syntax symbol
-	    $nrs = $defnrs{$symb[$p]};
-	    $f->[1+$#{$f}] = $trans->[$p][$r-1];           # put the string there
-	    $nrs->[1+$#{$nrs}] = 0;   # init;
-	    <IN>; $_=<IN>; 
-	    if (m/^([KRMVUG])([0-9]+)/)  {  # antonyms and strmodes  ignored
-		$tr = $2 - $bases[index($constrs,$1)];
-		if ($tr > 0) { $nrs->[$#{$nrs}] = $tr;} 
-		if ($s eq "G") {
-		    $1 eq "G" or print "constr not found in $nfile: $_";
-		    $struct{$1.$2} = $f->[$#{$f}];  # keeps names of struc constrs
-		}
-	    }
-	}}
+    maketransl($doc);                                    # table for relative names in this .dno
+
+    my @patterns = $doc->xql ('Notation/Pattern');
+
+    foreach $pattern (@patterns) {
+      $pkind = $pattern->getAttributeNode("kind")->getValue();
+
+      next unless ($pkind =~ m/[KRMVUG]/);
+      if ($pkind eq "U")
+	{
+	  my @argtypes = $pattern->xql('ArgTypes/Typ');
+	  my $struc = $argtypes[$#argtypes];
+	  $g = 'G' . $struc->getAttributeNode ("nr")->getValue();
+	}
+      else { undef $g };
+
+      my $format = ($pattern->xql('Format'))[0];
+      my $fkind = $format->getAttributeNode ("kind")->getValue();
+      my $fnr = $format->getAttributeNode ("symbolnr")->getValue();
+
+      $r = $fnr; $s = $fkind;
+      # strict not visible
+      if (($fkind eq "V")&&($fnr == 1)&&($hidden==1)) { next};
+
+      # push "U" into its struct array in %selh
+      if (defined($g)) { pushsel()};
+
+      $p = index($all, $fkind);
+      $f = $defh{$symb[$p]};	                   # array of the syntax symbol
+      $nrs = $defnrs{$symb[$p]};
+      $f->[1+$#{$f}] = $trans->[$p][$r-1];           # put the string there
+      $nrs->[1+$#{$nrs}] = 0;   # init;
+
+      # set constructors
+      my $ckind = $pattern->getAttributeNode("constrkind")->getValue();
+      my $cnr = $pattern->getAttributeNode("constrnr")->getValue();
+
+      if ($ckind =~ m/[KRMVUG]/)  {  # antonyms and strmodes  ignored
+	$tr = $cnr - $bases[index($constrs,$ckind)];
+	if ($tr > 0) { $nrs->[$#{$nrs}] = $tr;} 
+	if ($s eq "G") {
+	  $ckind eq "G" or print "constr not found in $nfile: $_";
+	  $struct{$ckind.$cnr} = $f->[$#{$f}];  # keeps names of struc constrs
+	}
+      }
+    }
+    $doc->dispose();
     return %defh;
 }
 
 # $trans...tells the voc name and the number in that voc of a given ralative symbol
 # this creates the trans table for one .dno
 sub maketransl {
+    my ($doc) = @_;
     $trans=[[],[],[],[],[],[],[],[]];
-    while (<IN>) { 
-	if (/^\#/) {return $trans;};                    # ending hash found
-	m/^v([A-Z0-9_-]+).*$/ or print "Error1";
-	if ($1 eq "HIDDEN") { $hidden=1};
-	foreach $i (0 .. 7) {
-	    foreach $j (0 .. $#{$voch{$1}->[$i]}) {
-		$trans->[$i][1+$#{$trans->[$i]}] = $voch{$1}->[$i][$j];
+    my @result = $doc->xql ('Notation/Vocabulary/VocItem/ArticleID');
+    foreach my $node (@result) {
+      my $name = $node->getAttributeNode("name")->getValue();
+      if ($name eq "HIDDEN") { $hidden=1};
+      foreach my $i (0 .. 7) {
+	    foreach my $j (0 .. $#{$voch{$name}->[$i]}) {
+		$trans->[$i][1+$#{$trans->[$i]}] = $voch{$name}->[$i][$j];
 	    }}
-	$_=<IN>;
     }
 }
 
