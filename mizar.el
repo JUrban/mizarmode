@@ -724,6 +724,7 @@ tabs"
 				  (< (cadr x) (cadr y)))))
 	)))
 
+
 (defun mizar-error-flag (aname &optional table)
 "Insert error flags into main mizar buffer (like errflag)."
 (interactive "s")
@@ -734,26 +735,35 @@ tabs"
 	(if (or (and (eq mizar-emacs 'xemacs) (not lline))
 		(and (not (eq mizar-emacs 'xemacs)) (< 0 lline)))
 	    (error "Main buffer and the error file do not agree, run verifier!"))
-	(end-of-line)
-	(insert "\n::>")
-	(let ((cline (caar atab)) srec sline scol snr)
+	(if (< 0 (forward-line))
+	    (insert "\n"))
+	(let ((cline (caar atab)) srec sline scol snr 
+	      (currerrln "::>") (cpos 3))
 	  (while atab 
 	    (setq srec (car atab) sline (car srec) 
 		  scol (- (cadr srec) 1)         ; 0 based in emacs
 		  snr (caddr srec) atab (cdr atab))
 	    (if (> cline sline)		; start new line ... go back
 		(progn
-		  (forward-line (- sline cline))
-		  (insert "::>\n")
-		  (backward-char)
+		  (insert currerrln "\n")    ; insert previous result
+		  (forward-line (- (- sline cline) 1))
+		  (setq currerrln "::>" cpos 3)
 		  (setq cline sline)
 		  ))
-	    (if (> scol (current-column)) ; enough space
-		(progn
-		  (mizar-move-to-column scol t)
-		  (insert (concat "*" (number-to-string snr))))
-	      (insert (concat "," (number-to-string snr))) ; not enough space
-	      )))))))
+	    (let* ((snrstr (number-to-string snr))
+		   (snrl (length snrstr)))
+	      (if (> scol cpos)              ; enough space
+		  (progn
+		    (setq cpos scol)
+		    (if (<  (length currerrln) cpos)
+			(let ((str (make-string         ; spaces
+				    (- cpos (length currerrln)) 32)))
+			  (setq currerrln (concat currerrln str))))
+		    (setq currerrln (concat currerrln "*" snrstr)))
+		(setq currerrln (concat currerrln "," snrstr)))
+	      (setq cpos (+ cpos snrl)))
+	      ))))))
+
 
 (defvar mizar-err-msgs (substitute-in-file-name "$MIZFILES/mizar.msg")
   "File with explanations of Mizar error messages")
@@ -1472,7 +1482,98 @@ the value of query-entry-mode-hook.
 	(concat aname ":def " (number-to-string defnr))))
   )))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;; viewing constructor explanation of imported theorems and defs
+(defvar theorem-table nil "table of theorems for the article")
+(defvar theorem-directives nil "list of then directives parsed from thl")
+(defvar theorem-table-date -1 
+"as constr-table-date")
 
+(make-variable-buffer-local 'theorem-table)
+(make-variable-buffer-local 'theorem-table-date)
+(make-variable-buffer-local 'theorem-directives)
+
+
+(defun parse-theorems (aname &optional reload)
+"loads theorem-table and theorem-directives from .thl and .eth files"
+(let ((thldate (cadr (nth 5 (file-attributes (concat aname ".thl"))))))
+  (if (or reload (/= theorem-table-date thldate))
+      (let (directives table)
+      (with-temp-buffer 
+	(insert-file-contents (concat aname ".thl"))
+	(let* ((all (split-string (buffer-string) "[\n]"))
+	       (count (string-to-number (car all)))
+	       (i 0))
+	  (setq table (make-vector (* 2 count) 0)) ; just hash redundancy
+	  (setq all (cdr all))
+	  (while (< i count)
+	    (let* ((symb (intern (car all) table))
+		   (nrs (split-string (cadr all)))
+		   (thvec (make-vector (string-to-number (car nrs))
+				       nil))
+		   (dfvec (make-vector (string-to-number (cadr nrs))
+				       nil)))
+	      (put symb 'ths thvec)
+	      (put symb 'defs dfvec)
+	      (setq directives (cons (car all) directives))
+	      (setq i (+ 1 i))
+	      (setq all (cddr all))))
+	  (setq directives (nreverse directives)))
+      (with-temp-buffer
+	(insert-file-contents (concat aname ".eth"))
+	(let* ((all (split-string (buffer-string) "[\n]"))
+	       (count (string-to-number (car all)))
+	       (dirs directives)
+	       (i 0))
+	  (setq all (cdr all))
+	  (while (< i count)
+	    (let* ((tcount (string-to-number (car all)))
+		   (dcount 0)
+		   (symb (intern-soft (car dirs) table))
+		   (thvec (get symb 'ths ))
+		   (dfvec (get symb 'defs))
+		   (tnr 0) (dnr 0))
+	      (setq all (cdr all))
+	      (while (< tnr tcount)
+		(aset thvec tnr (car all)) 
+		(setq tnr (+ 1 tnr)
+		      all (cddr all)))
+	      (setq dcount (string-to-number (car all)))
+	      (setq all (cdr all))
+	      (while (< dnr dcount)
+		(aset dfvec dnr (car all)) 
+		(setq dnr (+ 1 dnr)
+		      all (cddr all))))
+	    (setq i (+ i 1)
+		  all (cdr all)
+		  dirs (cdr dirs))))))
+      (setq theorem-table table
+	    theorem-directives directives
+	    theorem-table-date thldate)))
+  theorem-table))
+
+(defun mizar-ref-constrs (article nr &optional def table)
+  "constrs of the reference, if no table, use the buffer-local theorem-table"
+  (let* ((aname (file-name-nondirectory 
+		(file-name-sans-extension 
+		 (buffer-file-name))))
+	 (ltable (or table (parse-theorems aname)))
+	 (symb (intern-soft article ltable))
+	 (what (if def 'defs 'ths))
+	 arr res)
+    (if (not symb) (error "Article %s not in environment" article))
+    (setq arr (get symb what))
+    (if (< (length arr) nr)
+	(error "Maximum for article %s is %d" article (length arr)))
+    (get-sgl-table aname)           ;; ensure up-to-date
+    (parse-cluster-table aname)     ;; ensure up-to-date
+    (setq res (copy-sequence (aref arr (- nr 1))))
+    (cond ((eq mizar-expl-kind 'raw) res)
+	  ((eq mizar-expl-kind 'expanded) (fix-pre-type res cluster-table))
+	  ((eq mizar-expl-kind 'translate) (expfrmrepr res cluster-table))
+	  ((eq mizar-expl-kind 'constructors)
+	   (prin1-to-string (expfrmrepr res cluster-table t)))
+	  (t ""))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2340,7 +2441,7 @@ functions:
 ;; other file via speedbar, so we do it the bad way
 ;;(if (featurep 'speedbar)
 ;;    (add-hook 'mizar-mode-hook '(lambda () (speedbar 1))))
-(if (featurep 'speedbar)
+(if (and window-system (featurep 'speedbar))
     (speedbar 1))
 
 (provide 'mizar)
