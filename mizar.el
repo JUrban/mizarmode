@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.56 $
+;; $Revision: 1.57 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -946,9 +946,20 @@ The results are shown and clickable in the Compilation buffer. "
   (while (re-search-forward "\.gab\.raw" end t)
     (replace-match ".gab"))))
 
+(defun mizar-raw-to-gab-all (buf str)
+"Fix it all in the end."
+(save-excursion
+  (set-buffer buf)
+  (goto-char (point-min))
+  (while (re-search-forward "^[a-zA-Z0-9_]+\.gab\\(\.raw\\)" nil t)
+    (replace-match "" nil nil nil 1))))
+
 (defun mizar-gab-compilation-setup ()
   (make-local-variable 'after-change-functions)
-  (add-to-list 'after-change-functions 'mizar-raw-to-gab))
+  (make-local-variable 'compilation-finish-functions)
+  (add-to-list 'after-change-functions 'mizar-raw-to-gab)
+  (add-to-list 'compilation-finish-functions 'mizar-raw-to-gab-all)
+)
 
 (defun mizar-grep-gab (exp)
 "Grep MML Query abstracts for regexp EXP.
@@ -2164,7 +2175,7 @@ With a numeric prefix ARG, go forward ARG queries."
 	    ["Previous" mmlquery-previous :active 
               (< (+ 1 mmlquery-history-position) (ring-length mmlquery-history))
 	    :help "Go to the previous definition"]
-	    ("Hiding items in browser"	    
+	    ("Items displayed in browser"	    
 	     ["Definitional theorems" mmlquery-toggle-def :style radio 
 	      :selected (not (memq 'mmlquery-def buffer-invisibility-spec)) :active t
 	      :help "Toggle hiding of definitional theorems" ]
@@ -3915,126 +3926,124 @@ This is a flamewar-resolving hack."
 
 (defun mizar-font-lock-keywords ()
   "Set up font lock keywords for the current Mizar system."
-  (if window-system
-      (progn
-	(require 'font-lock)
-	(if (boundp 'font-lock-background-mode)
-	    ()
-	  (make-local-variable 'font-lock-background-mode)
-	  (setq font-lock-background-mode 'light)) ; Assume light bg
-	(if (boundp 'font-lock-display-type)
-	    ()
-	  (make-local-variable 'font-lock-display-type)
-	  (setq font-lock-display-type 'color)) ; Assume color
+  (require 'font-lock)
+  (if (boundp 'font-lock-background-mode)
+      ()
+    (make-local-variable 'font-lock-background-mode)
+    (setq font-lock-background-mode 'light)) ; Assume light bg
+  (if (boundp 'font-lock-display-type)
+      ()
+    (make-local-variable 'font-lock-display-type)
+    (setq font-lock-display-type 'color)) ; Assume color
 
-	;; Create faces
-	;; Format: (FACE FOREGROUND BACKGROUND BOLD-P ITALIC-P UNDERLINE-P)
-	(let* ((dark-bg (eq font-lock-background-mode 'dark))
-	       (faces
-		(cond
-		 ((memq font-lock-display-type '(mono monochrome))
-		  '(
-		    (mizar-builtin-face nil nil nil nil t)
-		    (mizar-exit-face nil nil nil nil t)
-;		    (mizar-symbol-face nil nil nil nil t)
-))
-		 ((memq font-lock-display-type '(grayscale greyscale
-							   grayshade greyshade))
-		  '(
-		    (mizar-builtin-face nil nil nil nil t)
-		    (mizar-exit-face nil nil nil nil t)
-;		    (mizar-symbol-face nil nil nil nil t)
-))
-		 (dark-bg 		; dark colour background
-		  '(
-		    (mizar-builtin-face "LightSkyBlue" nil nil nil nil)
-		    (mizar-exit-face "green" nil nil nil nil)
-;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
-))
-		 (t			; light colour background
-		  '(
-		    (mizar-builtin-face "Orchid" nil nil nil nil)
-		    (mizar-exit-face "ForestGreen" nil nil nil nil)
-;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
-)))))
-;; mizar-symbol-color fontification
-	  (if mizar-symbol-color
-	      (setq faces (cons (list 'mizar-symbol-face mizar-symbol-color nil nil nil nil) faces)))
-
-	  (while faces
-	    (if (fboundp 'font-lock-make-face)
-		;; The preferred way
-		(font-lock-make-face (car faces))
-	      ;; The clumsy way
-	      (let ((facename (nth 0 (car faces)))
-		    (fg (nth 1 (car faces)))
-		    (bg (nth 2 (car faces)))
-		    (bold (nth 3 (car faces)))
-		    (ital (nth 4 (car faces)))
-		    (under (nth 5 (car faces))))
-		(make-face facename)
-		(if fg (set-face-foreground facename fg))
-		(if bg (set-face-background facename bg))
-		(if bold (make-face-bold facename))
-		(if ital (make-face-italic facename))
-		(if bold (make-face-bold facename))
-		(set-face-underline-p facename under)
-		;; This is needed under Emacs 20 for some reason.
-		(set facename facename)
-		))
-	    (setq faces (cdr faces))))
-      
-	;; Font Lock Patterns
-	(let (
-	      ;; "Native" Mizar patterns
-	      (head-predicates
-	       '("\\<\\(theorem\\|scheme\\|definition\\)\\>"
-		 0 font-lock-function-name-face))
-	      (connectives
-	       '("\\<\\(for\\|ex\\|not\\|&\\|or\\|implies\\|iff\\|st\\|holds\\|being\\)\\>"
-		 ;;		 1 font-lock-variable-name-face
-		 1 'mizar-builtin-face))
-	      (proofs
-	       '("\\<\\(proof\\|now\\|end\\|hereby\\)"
-		 0 'font-lock-keyword-face ))
-	      (comments '("::[^\n]*"  0 'font-lock-comment-face ))
-	      (refs '("[ \n\t]\\(by\\|from\\)[^;.]*" 0 'font-lock-type-face))
-	      (extra '("&"  0  'mizar-builtin-face))
-	      (keywords			; directives (queries)
-	       (list
-		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>"
-		;;		1 'mizar-builtin-face
-		1 font-lock-variable-name-face))
-	      (syms
-	       (if mizar-symbol-color
-		   (list (mizar-get-dct (file-name-sans-extension (buffer-file-name)))
-			 0 'mizar-symbol-face)))
-	       )
-	  ;; Make font lock list
-	  (delq
-	   nil
-	   (cond
-	    ((eq major-mode 'mizar-mode)
-	     (list
-	      comments
-	      extra
-	      refs
-	      head-predicates
-	      connectives
-	      proofs
-	      keywords
-;; only if mizar-symbol-color defined and article has .dct
-	      (if (and syms (not (equal "" (car syms)))) syms)
+  ;; Create faces
+  ;; Format: (FACE FOREGROUND BACKGROUND BOLD-P ITALIC-P UNDERLINE-P)
+  (let* ((dark-bg (eq font-lock-background-mode 'dark))
+	 (faces
+	  (cond
+	   ((memq font-lock-display-type '(mono monochrome))
+	    '(
+	      (mizar-builtin-face nil nil nil nil t)
+	      (mizar-exit-face nil nil nil nil t)
+	      ;;		    (mizar-symbol-face nil nil nil nil t)
 	      ))
-	    ((eq major-mode 'mizar-inferior-mode)
-	     (list
+	   ((memq font-lock-display-type '(grayscale greyscale
+						     grayshade greyshade))
+	    '(
+	      (mizar-builtin-face nil nil nil nil t)
+	      (mizar-exit-face nil nil nil nil t)
+	      ;;		    (mizar-symbol-face nil nil nil nil t)
+	      ))
+	   (dark-bg			; dark colour background
+	    '(
+	      (mizar-builtin-face "LightSkyBlue" nil nil nil nil)
+	      (mizar-exit-face "green" nil nil nil nil)
+	      ;;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
+	      ))
+	   (t				; light colour background
+	    '(
+	      (mizar-builtin-face "Orchid" nil nil nil nil)
+	      (mizar-exit-face "ForestGreen" nil nil nil nil)
+	      ;;		    (mizar-symbol-face mizar-symbol-color nil nil nil nil)
+	      )))))
+    ;; mizar-symbol-color fontification
+    (if mizar-symbol-color
+	(setq faces (cons (list 'mizar-symbol-face mizar-symbol-color nil nil nil nil) faces)))
+
+    (while faces
+      (if (fboundp 'font-lock-make-face)
+	  ;; The preferred way
+	  (font-lock-make-face (car faces))
+	;; The clumsy way
+	(let ((facename (nth 0 (car faces)))
+	      (fg (nth 1 (car faces)))
+	      (bg (nth 2 (car faces)))
+	      (bold (nth 3 (car faces)))
+	      (ital (nth 4 (car faces)))
+	      (under (nth 5 (car faces))))
+	  (make-face facename)
+	  (if fg (set-face-foreground facename fg))
+	  (if bg (set-face-background facename bg))
+	  (if bold (make-face-bold facename))
+	  (if ital (make-face-italic facename))
+	  (if bold (make-face-bold facename))
+	  (set-face-underline-p facename under)
+	  ;; This is needed under Emacs 20 for some reason.
+	  (set facename facename)
+	  ))
+      (setq faces (cdr faces))))
+      
+  ;; Font Lock Patterns
+  (let (
+	;; "Native" Mizar patterns
+	(head-predicates
+	 '("\\<\\(theorem\\|scheme\\|definition\\)\\>"
+	   0 font-lock-function-name-face))
+	(connectives
+	 '("\\<\\(for\\|ex\\|not\\|&\\|or\\|implies\\|iff\\|st\\|holds\\|being\\)\\>"
+	   ;;		 1 font-lock-variable-name-face
+	   1 'mizar-builtin-face))
+	(proofs
+	 '("\\<\\(proof\\|now\\|end\\|hereby\\)"
+	   0 'font-lock-keyword-face ))
+	(comments '("::[^\n]*"  0 'font-lock-comment-face ))
+	(refs '("[ \n\t]\\(by\\|from\\)[^;.]*" 0 'font-lock-type-face))
+	(extra '("&"  0  'mizar-builtin-face))
+	(keywords			; directives (queries)
+	 (list
+	  "\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\|idempotence\\|asymmetry\\|projectivity\\|involutiveness\\)\\>"
+	  ;;		1 'mizar-builtin-face
+	  1 font-lock-variable-name-face))
+	(syms
+	 (if mizar-symbol-color
+	     (list (mizar-get-dct (file-name-sans-extension (buffer-file-name)))
+		   0 'mizar-symbol-face)))
+	)
+    ;; Make font lock list
+    (delq
+     nil
+     (cond
+      ((eq major-mode 'mizar-mode)
+       (list
+	comments
+	extra
+	refs
+	head-predicates
+	connectives
+	proofs
+	keywords
+	;; only if mizar-symbol-color defined and article has .dct
+	(if (and syms (not (equal "" (car syms)))) syms)
+	))
+      ((eq major-mode 'mizar-inferior-mode)
+       (list
 	     
-	      keywords))
-	    ((eq major-mode 'compilation-mode)
-	     (list
+	keywords))
+      ((eq major-mode 'compilation-mode)
+       (list
 	      
-	      keywords))))
-	  ))))
+	keywords))))
+    ))
 
 
 (defun mizar-mode (&optional arg)
