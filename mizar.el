@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.65 $
+;; $Revision: 1.66 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -3813,6 +3813,78 @@ Currently only `mizar-allow-long-lines'."
   (if force (mizar-call-util accomname buffer "-a" article)
     (mizar-call-util accomname buffer article)))
 
+(defun mizar-noqr-sentinel (process signal)
+  (if (memq (process-status process) '(exit signal))
+      (mizar-handle-noqr-exit (car mizar-noqr-data))))
+
+(defvar mizar-noqr-data nil
+  "Holds the filename of the mizar article currently processed using 
+`term-exec', and the associated process (i.e. it is a cons cell
+(filename . process). 
+Nil iff nothing is processed right now, serves also as a state variable.")
+
+(defun mizar-handle-noqr-exit (filename)  
+(setq mizar-noqr-data nil)
+(let* ((name (file-name-sans-extension filename))
+       (fname (file-name-nondirectory name)))
+  (pop-to-buffer (get-file-buffer filename))
+  (if mizar-do-expl
+      (save-excursion
+	(remove-text-properties (point-min) (point-max)
+				'(mouse-face nil expl nil local-map nil))
+	(mizar-put-bys fname)))	     
+  (mizar-do-errors name)
+  (save-buffer)
+  (mizar-handle-output)
+  (mizar-show-errors))
+)
+
+
+(defun mizar-it-noqr (&optional util forceacc)
+"Run mizar in terminal on the text in the current .miz buffer.
+Show the result in buffer *mizar-output*.
+If UTIL is given, run it instead of verifier.
+If `mizar-use-momm', run tptpver instead.
+If FORCEACC, run makeenv with the -a option."
+  (interactive)
+  (let ((util (or util (if mizar-use-momm mizar-momm-verifier
+			 "verifier")))
+	(makeenv makeenv))
+    (if (eq mizar-emacs 'winemacs)
+	(progn
+	  (setq util (concat mizfiles util)
+		makeenv (concat mizfiles makeenv))))
+    (cond ((not (string-match "miz$" (buffer-file-name)))
+	   (error "Not in .miz file!!"))
+	  ((not (executable-find makeenv))
+	   (error (concat makeenv " not found or not executable!!")))
+	  ((not (executable-find util))
+	   (error (concat util " not found or not executable!!")))
+	  (t
+	   (let* ((filename (buffer-file-name))
+		  (name (file-name-sans-extension (buffer-file-name)))
+		  (fname (file-name-nondirectory name))
+		  (old-dir (file-name-directory name)))
+	     (cd (concat old-dir "/.."))
+	     (if mizar-noqr-data (kill-process (cdr mizar-noqr-data)))
+	     ;; now mizar-noqr-data is nil, it was cleared by the handler
+	     (if mizar-noqr-data (error "Previous process unkillable"))
+	     (mizar-strip-errors)
+	     (save-buffer)
+	     (unwind-protect
+		 (let  ((excode (mizar-accom makeenv forceacc nil name)))
+		   (if (and (numberp excode) (= 0 excode))
+		       (progn
+			 (mizar-new-term-output noqr)
+			 (term-exec "*mizar-output*" util util nil (list name))
+			 (let ((proc (get-buffer-process "*mizar-output*")))
+			   (setq mizar-noqr-data (cons filename proc))
+			   (set-process-sentinel proc 'mizar-noqr-sentinel))
+			 )
+		     (mizar-handle-noqr-exit filename)))
+	       (if old-dir (setq default-directory old-dir)))
+	     )))))
+
 (defun mizar-it (&optional util noqr compil silent forceacc)
 "Run mizar verifier on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
@@ -3823,6 +3895,8 @@ If COMPIL, emulate compilation-like behavior for error messages.
 If SILENT, just run UTIL without messaging and errorflagging.
 If FORCEACC, run makeenv with the -a option."
   (interactive)
+  (if (or noqr (not mizar-quick-run)) 
+      (mizar-it-noqr util forceacc)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier
 			 "verifier")))
 	(makeenv makeenv))
@@ -3851,7 +3925,7 @@ If FORCEACC, run makeenv with the -a option."
 		     (if (and (numberp excode) (= 0 excode))
 			 (mizar-call-util util nil "-q" name)
 		       (error "Makeenv error, try mizaring first!"))))
-		  ((and compil (not noqr))
+		  (compil
 		   (if (get-buffer "*compilation*") ; to have launch-dir
 		       (kill-buffer "*compilation*"))
 		   (let ((cbuf (get-buffer-create "*compilation*")))
@@ -3864,7 +3938,7 @@ If FORCEACC, run makeenv with the -a option."
 		       (if (and (numberp excode) (= 0 excode))
 			   (mizar-call-util util cbuf "-q" name)))
 		     (other-window 1)))
-		  ((and mizar-quick-run (not noqr))
+		  (t
 		   (save-excursion
 		     (message (concat "Running " util " on " fname " ..."))
 		     (if (get-buffer "*mizar-output*")
@@ -3878,15 +3952,7 @@ If FORCEACC, run makeenv with the -a option."
 					   (shell-quote-argument name))
 					  mizout)
 			 (display-buffer mizout)))
-		     (message " ... done")))
-		  (t
-		   (let  ((excode (mizar-accom makeenv forceacc nil name)))
-		     (if (and (numberp excode) (= 0 excode))
-			 (progn
-			   (mizar-new-term-output noqr)
-			   (term-exec "*mizar-output*" util util nil (list name))
-			   (while  (term-check-proc "*mizar-output*")
-			     (sit-for 1)))))))
+		     (message " ... done"))))
 	       (if old-dir (setq default-directory old-dir)))
 	     (unless silent
 	       (if mizar-do-expl
@@ -3894,7 +3960,7 @@ If FORCEACC, run makeenv with the -a option."
 		     (remove-text-properties (point-min) (point-max)
 					     '(mouse-face nil expl nil local-map nil))
 		     (mizar-put-bys fname)))
-	       (if (and compil (not noqr))
+	       (if compil
 		   (save-excursion
 		     (set-buffer "*compilation*")
 		     (insert (mizar-compile-errors name))
@@ -3904,7 +3970,7 @@ If FORCEACC, run makeenv with the -a option."
 		 (save-buffer)
 		 (mizar-handle-output)
 		 (mizar-show-errors))
-	       ))))))
+	       )))))))
 
 
 (defun mizar-irrths ()
