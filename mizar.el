@@ -2448,6 +2448,8 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	   (mizar-previous-error))
 	  (t pos))))
 
+(defvar makeenv "makeenv" "Program used for creating the aticle envionment")
+
 (defun mizar-it (&optional util noqr compil)
   "Run mizar on the text in the current .miz buffer;
 if util given, runs it instead of verifier, if mizar-use-momm,
@@ -2455,8 +2457,7 @@ run tptpver instead; if noqr, does not
 use quick run, if compil, emulate compilation-like behavior"
   (interactive)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier 
-			 "verifier")))
-	(makeenv "makeenv"))
+			 "verifier"))))
     (if (eq mizar-emacs 'winemacs)
 	(progn
 	  (setq util (concat mizfiles util)
