@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.69 $
+;; $Revision: 1.70 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -158,7 +158,7 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
 :type 'boolean
 :group 'mizar)
 
-(defcustom mizar-launch-speedbar t
+(defcustom mizar-launch-speedbar nil
 "*Launch speedbar upon entering mizar-mode for the first time.
 Speedbar can be (de)activated later by running the command `speedbar'."
 :type 'boolean
