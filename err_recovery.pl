@@ -14,6 +14,7 @@ err_recovery.pl [options] filename
    --mixamount=<arg>,		-x<arg>
    --cpulimit=<arg>,		-c<arg>
    --startpos=<arg>,		-s<arg>
+   --maxoutbytes=<arg>,         -b<arg>
    --help,                  	-h
    --man
 
@@ -38,6 +39,13 @@ Not implemented yet!
 
 CPU limit for each try, default is 7.
 
+=item B<<< --maxoutbytes=<arg>, -b<arg> >>>
+
+Maximal length of output printed from one test, 
+default is 2000. Used to keep the log file reasonably
+small when performing large number of tests giving
+long error output like access violations.
+
 =item B<<< --help, -h >>>
 
 Print a brief help message and exit.
@@ -54,6 +62,12 @@ Josef Urban urban@kti.ms.mff.cuni.cz
 
 =cut
 
+=head1 APPENDIX
+
+Description of functions defined here.
+
+=cut
+
 use strict;
 use Pod::Usage;
 use Getopt::Long;
@@ -63,6 +77,7 @@ my $PEPPER_AMOUNT	= 30;
 my $MIX_AMOUNT		= 10;
 my $CPU_LIMIT		= 7;
 my $START_POS		= 1200;
+my $MAX_OUTPUT_BYTES    = 2000;
 
 ## Name of the original Mizar article to be peppered - $ARGV[0]
 my $MIZ_NAME;
@@ -147,6 +162,22 @@ sub Rand_List
     return @res;
 }
 
+# Now randomly deletes a random substring
+sub Mix
+{
+    my ($str) = @_;
+    if(1/$MIX_AMOUNT < rand)
+    {
+	my $offset1  = Random_Int_In(0, length($str) - 1);
+	my $offset2  = Random_Int_In($offset1, length($str) - 1);
+	return substr($str,0,$offset1).substr($str,$offset2);
+    }
+    else
+    {
+	return $str;
+    }
+}
+
 sub Pepper_With_Syntax
 {
     my ($fname, $pepper_nr, $mix_nr, $start, $white_nr, $contents) = @_;
@@ -171,14 +202,15 @@ sub Pepper_With_Syntax
 	Debug_Print "$lastpos,$newpos;";
 	if( $cur_white == $posvec[$i])
 	{
-	    print OUT substr($contents, $lastpos, ($newpos - $lastpos));
+	    print OUT Mix(substr($contents, $lastpos, 
+				 ($newpos - $lastpos)));
 	    print OUT ($mizar_keywords[$wordvec[$i]], " ");
 	    $lastpos = $newpos;
 	}
 	else
 	{
 	    Debug_Print "FAILED\n";
-	    print OUT substr($contents,$lastpos);
+	    print OUT Mix(substr($contents,$lastpos));
 	};
     }
     close(OUT);
@@ -223,6 +255,17 @@ sub Create_Peppered
 }
 
 
+=head2  Test_Run()
+
+  Title        : Test_Run()
+  Usage        : Test_Run($orig, $newfiles, $cpu);
+  Function     : Run verifier efficiently on @$newfiles, 
+                 printing output to STDOUT.
+  Returns      : -
+  Global Vars  : $MAX_OUTPUT_BYTES
+  Args         : $orig, $newfiles, $cpu;
+
+=cut
 ## The moving prevents accommodation
 sub Test_Run
 {
@@ -237,7 +280,7 @@ sub Test_Run
 	system("mv $file $orig");
 	$res = `ulimit -t$cpu; verifier -q $orig 2>&1`;
 	system("mv $orig $file");
-	print "$res\n";
+	print (substr($res,0,$MAX_OUTPUT_BYTES), "\n");
     }
     system("mv $hidden_orig $orig");
 }
@@ -251,6 +294,7 @@ GetOptions('number|n=i'		=> \$ARTICLE_NUMBER,
 	   'mixamount|x=i'     	=> \$MIX_AMOUNT,
 	   'cpulimit|c=i'    	=> \$CPU_LIMIT,
 	   'startpos|s=i'   	=> \$START_POS,
+	   'maxoutbytes|b=i'    => \$MAX_OUTPUT_BYTES,
 	   'help|h'          	=> \$help,
 	   'man'             	=> \$man)
     or pod2usage(2);
