@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.64 $
+;; $Revision: 1.65 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -3809,13 +3809,19 @@ Currently only `mizar-allow-long-lines'."
     (apply 'call-process program nil buffer nil "-l" args)
   (apply 'call-process program nil buffer nil args)))
 
-(defun mizar-it (&optional util noqr compil silent)
+(defun mizar-accom (accomname force buffer article)
+  (if force (mizar-call-util accomname buffer "-a" article)
+    (mizar-call-util accomname buffer article)))
+
+(defun mizar-it (&optional util noqr compil silent forceacc)
 "Run mizar verifier on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
 If UTIL is given, run it instead of verifier.
 If `mizar-use-momm', run tptpver instead.
 If NOQR, does not use quick run.
-If COMPIL, emulate compilation-like behavior for error messages."
+If COMPIL, emulate compilation-like behavior for error messages.
+If SILENT, just run UTIL without messaging and errorflagging.
+If FORCEACC, run makeenv with the -a option."
   (interactive)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier
 			 "verifier")))
@@ -3841,7 +3847,7 @@ If COMPIL, emulate compilation-like behavior for error messages."
 	     (unwind-protect
 		 (cond
 		  (silent 
-		   (let ((excode (mizar-call-util makeenv nil name)))
+		   (let ((excode (mizar-accom makeenv forceacc nil name)))
 		     (if (and (numberp excode) (= 0 excode))
 			 (mizar-call-util util nil "-q" name)
 		       (error "Makeenv error, try mizaring first!"))))
@@ -3854,7 +3860,7 @@ If COMPIL, emulate compilation-like behavior for error messages."
 		     (insert "Running " util " on " fname " ...\n")
 		     (sit-for 0)	; force redisplay
 					; call-process can return string (signal-description)
-		     (let ((excode (mizar-call-util makeenv cbuf name)))
+		     (let ((excode (mizar-accom makeenv forceacc cbuf name)))
 		       (if (and (numberp excode) (= 0 excode))
 			   (mizar-call-util util cbuf "-q" name)))
 		     (other-window 1)))
@@ -3863,18 +3869,18 @@ If COMPIL, emulate compilation-like behavior for error messages."
 		     (message (concat "Running " util " on " fname " ..."))
 		     (if (get-buffer "*mizar-output*")
 			 (kill-buffer "*mizar-output*"))
-		     (let ((excode (mizar-call-util 
-				    makeenv (get-buffer-create "*mizar-output*") name)))
+		     (let* ((mizout (get-buffer-create "*mizar-output*"))
+			    (excode (mizar-accom makeenv forceacc mizout name)))
 		       (if (and (numberp excode) (= 0 excode))
 			   (shell-command (concat 
 					   util (if mizar-allow-long-lines " -q -l " 
 						  " -q ")
 					   (shell-quote-argument name))
-					  "*mizar-output*")
-			 (display-buffer "*mizar-output*")))
+					  mizout)
+			 (display-buffer mizout)))
 		     (message " ... done")))
 		  (t
-		   (let  ((excode (mizar-call-util makeenv nil name)))
+		   (let  ((excode (mizar-accom makeenv forceacc nil name)))
 		     (if (and (numberp excode) (= 0 excode))
 			 (progn
 			   (mizar-new-term-output noqr)
@@ -3904,12 +3910,12 @@ If COMPIL, emulate compilation-like behavior for error messages."
 (defun mizar-irrths ()
 "Call Irrelevant Theorems & Schemes Detector on the article."
   (interactive)
-(mizar-it "irrths"))
+(mizar-it "irrths" nil nil nil t))
 
 (defun mizar-irrvoc ()
 "Call Irrelevant vocabulary Detector on the article."
   (interactive)
-(mizar-it "irrvoc"))
+(mizar-it "irrvoc" nil nil nil t))
 
 (defun mizar-inacc ()
 "Call Inaccessible Items Detector on the article."
