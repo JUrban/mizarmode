@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.41 $
+;; $Revision: 1.42 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2675,8 +2675,9 @@ schemes or complete articles can be queried."
 			 )))
 
 (defvar mizar-error-start "^::>")
+(defvar mizar-error-start-length 3)
 
-(defun mizar-end-error (result pos oldpos)
+(defun mizar-end-error (result pos oldpos &optional prev)
   "Common end for mizar-next-error and mizar-previous-error."
   (if result
       (let ((find (concat "^::>[ \t]*\\(" result ":.*\\)[ \t]*$")))
@@ -2686,7 +2687,8 @@ schemes or complete articles can be queried."
 	(goto-char pos))
     (goto-char oldpos)
     (ding)
-    (message "No more errors!!")
+    (message (concat "No more errors "
+		     (if prev "above!!"  "below!!")))
     nil ))
 
 (defun mizar-next-error ()
@@ -2697,9 +2699,9 @@ Show the error explanation in the minibuffer."
 	(inerrl nil) ;; tells if we start from an error line
 	result pos)
     (beginning-of-line)
-    (if (looking-at mizar-error-start)
+    (if (looking-at (concat mizar-error-start "[^:\n]+$"))
 	(progn
-	  (goto-char (match-end 0))  ;; skip the error start
+	  (forward-char mizar-error-start-length)  ;; skip the error start
 	  (if (< (point) oldpos)     ;; we were on an error or between
 	      (progn
 		(goto-char oldpos)
@@ -2709,8 +2711,11 @@ Show the error explanation in the minibuffer."
 	  (if (looking-at "[0-9]+")
 	    (setq pos (point) result (match-string 0)))))
     (if (and (not result)
-	     (re-search-forward mizar-error-start (point-max) t))
+	     (re-search-forward (concat mizar-error-start "[^:\n]+$") 
+				(point-max) t)) ;; to avoid bottom explanations
 	(progn
+	  (beginning-of-line)
+	  (forward-char mizar-error-start-length)
 	  (skip-chars-forward "\t ,*")
 	  (if (looking-at "[0-9]+")
 	    (setq pos (point) result (match-string 0)))))
@@ -2724,7 +2729,7 @@ Show the error explanation in the minibuffer."
 	(inerrl nil) ;; tells if we start from an error line
 	result pos)
     (beginning-of-line)
-    (if (looking-at mizar-error-start)
+    (if (looking-at (concat mizar-error-start "[^:\n]+$"))
 	(progn
 	  (end-of-line)
 	  (if (> (point) oldpos)     ;; we were on an error or between
@@ -2738,13 +2743,14 @@ Show the error explanation in the minibuffer."
 	      (setq pos (point) result (match-string 0))
 	    (beginning-of-line))))  ; nothing else here
     (if (and (not result)
-	     (re-search-backward mizar-error-start (point-min) t))
+	     (re-search-backward (concat mizar-error-start "[^:\n]+$")  
+				 (point-min) t))
 	(progn
 	  (end-of-line)
 	  (forward-word -1)
 	  (if (looking-at "[0-9]+")
 	    (setq pos (point) result (match-string 0)))))
-    (mizar-end-error result pos oldpos)))
+    (mizar-end-error result pos oldpos t)))
     
 (defun mizar-strip-errors ()
   "Delete all error lines added by Mizar.
@@ -2756,16 +2762,17 @@ These are lines beginning with ::>."
       (replace-match "" nil nil))
     ))
 
-(defun mizar-hide-proofs (&optional beg end reverse)
+(defun mizar-hide-proofs (&optional beg end remove)
   "Put @@ before all proof keywords between BEG and END to disable checking.
-With prefix (REVERSE non-nil) unhide."
+With prefix (C-u, which sets REMOVE non-nil) remove them 
+instead of adding, to enable proof checking again."
   (interactive "r\nP")
   (save-excursion
     (let ((beg (or beg (point-min)))
 	  (end (or end (point-max))))
     (goto-char beg)
     (message "(un)hiding proofs ...")
-    (if reverse
+    (if remove
 	(while (re-search-forward "@proof\\b" end  t)
 	  (replace-match "proof" nil nil))
       (while (re-search-forward "\\bproof\\b" end t)
