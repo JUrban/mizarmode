@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.57 $
+;; $Revision: 1.58 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2154,6 +2154,11 @@ With a numeric prefix ARG, go forward ARG queries."
   :type 'hook
   :group 'mmlquery)
 
+(defcustom mmlquery-underlines-highlited t
+  "If non-nil, the highlited links in gab's are also underlined."
+  :type 'boolean
+  :group 'mizar)
+
 (defvar mmlquery-mode-map nil
   "Keymap for mmlquery minor mode.")
 
@@ -2597,19 +2602,22 @@ mmlquery abstracts.")
 
 
 (defun mmlquery-underline-highlited (start)
-"Add 'underline to 'highlite."
-(save-buffer-state nil
-(save-excursion
-  (goto-char start)
-  (while (not (eobp))
-    (let ((mfprop (get-text-property (point) 'mouse-face))
-	  (next-change
-	   (or (next-single-property-change (point) 'mouse-face 
-					    (current-buffer))
-	       (point-max))))
-      (if (eq mfprop 'highlight)
-	  (put-text-property (point) next-change 'face 'underline))
-      (goto-char next-change))))))
+"Add 'underline to 'highlite.
+Only if `mmlquery-underlines-highlited' is non-nil."
+(if mmlquery-underlines-highlited
+    (save-buffer-state 
+     nil
+     (save-excursion
+       (goto-char start)
+       (while (not (eobp))
+	 (let ((mfprop (get-text-property (point) 'mouse-face))
+	       (next-change
+		(or (next-single-property-change (point) 'mouse-face 
+						 (current-buffer))
+		    (point-max))))
+	   (if (eq mfprop 'highlight)
+	       (put-text-property (point) next-change 'face 'underline))
+	   (goto-char next-change)))))))
 
 (defun mmlquery-underline-in-region (beg end)
   (mmlquery-underline-highlited beg))
