@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.86 $
+;; $Revision: 1.87 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1644,13 +1644,34 @@ Goto column COL, if FORCE, then insert spaces if short."
 	  l)
   ))
 
+
+(defcustom mizar-max-errors-read 1000
+"*The maximal number of errors we take care of.
+Note that setting this too high may slow down displaying
+the errors after the verification."
+:type 'integer
+:group 'mizar-running)
+
+(defvar mizar-max-errline-length 30
+"The maximal length of one line in the error file.")
+
+(defun mizar-max-errfile-size ()
+(* mizar-max-errors-read mizar-max-errline-length))
+
 (defun mizar-get-errors (aname)
 "Return an unsorted table of errors on ANAME or nil."
 (save-excursion
   (let ((errors (concat aname ".err")))
-    (if (file-readable-p errors)
+    (when (file-readable-p errors)
 	(with-temp-buffer           ; sort columns, then lines
-	  (insert-file-contents errors)
+	  (insert-file-contents errors nil 0 (mizar-max-errfile-size))
+	  (goto-char (point-min))
+	  (when (= 0 (forward-line mizar-max-errors-read)) ; deleting
+	    (message "Too many errors, reading only first %d of them!"
+		     mizar-max-errors-read)
+	    (sleep-for 3)
+	    (beginning-of-line)
+	    (delete-region (point) (point-max)))
 	  (buff-to-numtable)
 	  )
       ))))
@@ -4216,9 +4237,10 @@ If UTIL is given, call it instead of the Mizar verifier."
 	  (get-buffer "*mizar-output*"))
 	 (goto-char (point-max))
 	 (delete-blank-lines)
-	 (let ((new-height
+	 (let ((new-height 
 		(min mizar-show-output
-		     (count-lines (point-min) (point-max)))))
+		     (max window-min-height ;; prevent deleting
+			  (count-lines (point-min) (point-max))))))
 ; no sense winemacs behaves strange anyway
 ;	   (if (fboundp 'set-window-text-height)
 ;	       (set-window-text-height (get-buffer-window (current-buffer))
@@ -4411,23 +4433,24 @@ If FORCEACC, run makeenv with the -a option."
 					  mizout)
 			 (display-buffer mizout)))
 		     (message " ... done"))))
-	       (if old-dir (setq default-directory old-dir)))
-	     (unless silent
-	       (if mizar-do-expl
-		   (save-excursion
-		     (remove-text-properties (point-min) (point-max)
-					     '(mouse-face nil expl nil local-map nil))
-		     (mizar-put-bys fname)))
-	       (if compil
-		   (save-excursion
-		     (set-buffer "*compilation*")
-		     (insert (mizar-compile-errors name))
-		     (compilation-mode)
-		     (goto-char (point-min)))
-		 (mizar-do-errors name)
-		 (save-buffer)
-		 (mizar-handle-output)
-		 (mizar-show-errors))
+	       (if old-dir (setq default-directory old-dir))
+	       (unless silent
+		 (if mizar-do-expl
+		     (save-excursion
+		       (remove-text-properties 
+			(point-min) (point-max)
+			'(mouse-face nil expl nil local-map nil))
+		       (mizar-put-bys fname)))
+		 (if compil
+		     (save-excursion
+		       (set-buffer "*compilation*")
+		       (insert (mizar-compile-errors name))
+		       (compilation-mode)
+		       (goto-char (point-min)))
+		   (mizar-do-errors name)
+		   (save-buffer)
+		   (mizar-handle-output)
+		   (mizar-show-errors)))
 	       )))))))
 
 
