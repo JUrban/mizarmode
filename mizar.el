@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.83 $
+;; $Revision: 1.84 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1070,6 +1070,11 @@ skeleton using `mizar-skeleton-items-func', and pretty prints it using
  	 (mizar-skeleton-string 
 	  (funcall mizar-skeleton-items-func
 	   (cadr (mizar-parse-region-fla beg end))))))
+;; remove possible ';' and adjust end
+    (goto-char beg)
+    (while (search-forward ";" end t)
+      (replace-match "")
+      (setq end (- end 1)))
     (goto-char end)
     (insert skel)
     (indent-region end (+ end (length skel)) nil))))
