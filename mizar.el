@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.58 $
+;; $Revision: 1.59 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -344,6 +344,7 @@ MoMM should be installed for this."
   (define-key mizar-mode-map "\C-cg" 'mizar-grep-abs)
   (define-key mizar-mode-map "\C-c\C-g" 'mizar-grep-full)
   (define-key mizar-mode-map "\C-cb" 'mizar-grep-gab)
+  (define-key mizar-mode-map "\C-ci" 'mizar-grep-abs-full-items)
   (define-key mizar-mode-map "\C-c\C-c" 'comment-region)
   (define-key mizar-mode-map "\C-c\C-f" 'mizar-findvoc)
   (define-key mizar-mode-map "\C-c\C-l" 'mizar-listvoc)
@@ -903,6 +904,12 @@ skeleton using `mizar-skeleton-items-func', and pretty prints it using
 
 (defvar mizar-abstr (concat mizfiles "abstr"))
 (defvar mizar-mml (concat mizfiles "mml"))
+(defcustom mizar-item-grep-show-lines nil
+"*If non-nil `mizar-grep-abs-full-items' shows line info too."
+:type 'boolean
+:group 'mizar)
+
+
 
 (defun mizar-toggle-grep-case-sens ()
 "Toggle the case sensitivity of MML grepping."
@@ -939,6 +946,95 @@ The results are shown and clickable in the Compilation buffer. "
       (cd old)
       )))
 
+
+(defun mizar-grep-abs-full-items (exp gab)
+"Grep MML abstracts for regexp EXP, using ';' as record separator.
+If GAB is non-nil, uses the MMLQuery abstracts and '::' as separator
+instead.
+You need to have perl installed and executable for this.
+This gives better results than `mizar-grep-abs', when formulas 
+span several lines in abstracts.
+Variable `mizar-grep-case-sensitive' controls case sensitivity.
+The results are shown in the *Grep Results* buffer.
+By default, the file and line information is not put there, 
+since the mizar tag browsing function `mizar-show-ref' can be used.
+If you want that information, set the variable 
+`mizar-item-grep-show-lines'. Note that in that case, 
+`compilation-minor-mode' will be used, rebinding some keys to go to
+the file positions."
+  (interactive "sregexp: \nP")
+  (or (executable-find "perl")
+      (error "The perl command is not executable on your system!"))
+  (let ((script (if mizar-item-grep-show-lines 
+		    (if gab mizar-gab-items-grep-command-lines
+		      mizar-full-items-grep-command-lines)
+		  (if gab mizar-gab-items-grep-command-nolines
+		    mizar-full-items-grep-command-nolines)))
+	abuffer proc)
+    (unless mizar-grep-case-sensitive
+      (setq script (replace-regexp-in-string 
+		    "placeholder/" "placeholder/i" script)))
+    (setq script (replace-regexp-in-string "placeholder" exp script))
+    (setq script (concat "perl -e " script (if gab " *.gab.raw" " *.abs ")))
+
+    (setq abuffer (get-buffer-create "*Grep Results*"))
+    (set-buffer abuffer)
+    (cd (if gab mmlquery-abstracts mizar-abstr))
+    (erase-buffer)
+    (mizar-mode)
+    (if mizar-item-grep-show-lines (compilation-minor-mode))
+    (insert "cd " default-directory "\n")
+    (goto-char (point-min))
+
+    (setq proc (start-process-shell-command "grep" abuffer script))
+    (set-process-sentinel proc 'compilation-sentinel)
+    (when mizar-item-grep-show-lines 
+      (set-process-filter proc 'compilation-filter))
+
+    (display-buffer abuffer)
+    ))
+
+(defun mizar-grep-gab-full-items (exp)
+(interactive "sregexp: ")
+(mizar-grep-abs-full-items exp t))
+
+(defvar mizar-full-items-grep-command-nolines
+ (concat 
+  " '$/=\";\"; " 
+  "while ($f=shift) {open(IN,$f);while (<IN>) "
+  "{ if(/placeholder/) {s/^\\n+//; print \"\\n\\n$_\"}} "
+  "close(IN)}' ")
+ "Perl one-liner for grepping whole items ended with ';'
+in Mizar abstracts. File names and line numbers are not printed.")
+
+(defvar mizar-gab-items-grep-command-nolines
+ (concat 
+  " '$/=\"::\"; " 
+  "while ($f=shift) {open(IN,$f);while (<IN>) "
+  "{ if(/placeholder/) {s/\\n*(::)?$//; print \"\\n\\n::$_\"}} "
+  "close(IN)}' ")
+ "Perl one-liner for grepping whole items ended with '::'
+in MMLQuery abstracts. File names and line numbers are not printed.")
+
+(defvar mizar-full-items-grep-command-lines
+ (concat 
+  " '$/=\";\"; " 
+  "while ($f=shift) {$ln=1;open(IN,$f);while (<IN>) "
+  "{$j=tr/\\n//; if(/placeholder/) "
+  "{$bef= $`; $add= $bef =~ tr/\\n//; s/^\\n+//; $ln1=$add+$ln; "
+  "print \"\\n\\n$f:$ln1:\\n$_\"}; $ln+=$j}; close(IN)}' ")
+ "Perl one-liner for grepping whole items ended with ';'
+in Mizar abstracts. File names and line numbers are printed.")
+
+(defvar mizar-gab-items-grep-command-lines
+ (concat 
+  " '$/=\"::\"; " 
+  "while ($f=shift) {$ln=1;open(IN,$f);$f=~ s/gab.raw/gab/; "
+  "while (<IN>) {$j=tr/\\n//; if(/placeholder/) "
+  "{$bef= $`; $add= $bef =~ tr/\\n//; s/\\n*(::)?$//; $ln1=$add+$ln; "
+  "print \"\\n\\n$f:$ln1:\\n::$_\"}; $ln+=$j}; close(IN)}' ")
+ "Perl one-liner for grepping whole items ended with '::'
+in MMLQuery abstracts. File names and line numbers are printed.")
 
 (defun mizar-raw-to-gab (start end old-len)
 (save-excursion
@@ -4173,8 +4269,17 @@ if that value is non-nil."
 	    ["Case sensitive" mizar-toggle-grep-case-sens :style
 	     toggle :selected mizar-grep-case-sensitive :active t]
 	    ["Abstracts" mizar-grep-abs t]
-	    ["Full articles" mizar-grep-full t]
-	    ["MML Query abstracts" mizar-grep-gab t])
+	    ["Full articles" mizar-grep-full :active t]
+	    ["MML Query abstracts" mizar-grep-gab t]
+	    ["Show positions for full-item grep" 
+	     (customize-variable 'mizar-item-grep-show-lines)
+	     :style toggle :selected mizar-item-grep-show-lines
+	     :active t]
+	    ["Full items in abstracts" mizar-grep-abs-full-items t]
+	    ["Full items in MML Query abstracts" mizar-grep-gab-full-items 
+	     :active t
+	     :help "Also C-u C-c i"])
+	  
 	  ["Symbol apropos" symbol-apropos t]
 	  ["Bury all abstracts" mizar-bury-all-abstracts t]
 	  ["Close all abstracts" mizar-close-all-abstracts t]
@@ -4223,7 +4328,9 @@ if that value is non-nil."
 				  (uncomment-region (region-beginning)
 						    (region-end))
 				(comment-region (region-beginning)
-						(region-end) '(4))) t]
+						(region-end) '(4))) 
+	   :active t
+	   :help "Also C-u C-c C-c"]
 	  '("Proof checking"
 	    ["proof -> @proof on region" mizar-hide-proofs t]
 	    ["@proof -> proof on region" (mizar-hide-proofs (region-beginning)
