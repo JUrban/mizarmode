@@ -144,6 +144,8 @@
 (require 'executable)
 (require 'term)
 (require 'imenu)
+(require 'speedbar nil t) ;;noerror if not present
+
 
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
@@ -1380,11 +1382,26 @@ functions:
   (setq buffer-offer-save t)
   (setq imenu-case-fold-search nil)
   (setq imenu-generic-expression mizar-imenu-expr)
+  (if (featurep 'speedbar)
+      (progn
+	(speedbar-add-supported-extension ".miz")
+	(setq speedbar-use-imenu-flag t
+	      speedbar-show-unknown-files nil
+	      speedbar-special-mode-expansion-list t
+	      speedbar-tag-hierarchy-method mizar-sb-trim-hack
+;;'(simple-group trim-words)
+;;'('speedbar-trim-words-tag-hierarchy 'trim-words)
+)))
   (run-hooks  'mizar-mode-hook)
 ;  (define-key mizar-mode-map [(C-S-down-mouse-2)]   'hs-mouse-toggle-hiding)
 )
 
-
+(defvar mizar-sb-trim-hack
+(cond ((intern-soft "trim-words") (list (intern "trim-words")))
+      ((intern-soft  "speedbar-trim-words-tag-hierarchy")
+       (list (intern "speedbar-trim-words-tag-hierarchy"))))
+"Hack ensuring proper trimming across various speedbar versions"
+)
 
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
@@ -1533,5 +1550,35 @@ Valid values are 'gnuemacs and 'xemacs.")
 (add-hook 'mizar-mode-hook 'mizar-menu)
 (add-hook 'mizar-mode-hook 'hs-minor-mode)
 (add-hook 'mizar-mode-hook 'imenu-add-menubar-index)
+;; adding this as a hook causes an error when opening
+;; other file via speedbar, so we do it the bad way
+;;(if (featurep 'speedbar)
+;;    (add-hook 'mizar-mode-hook '(lambda () (speedbar 1))))
+(if (featurep 'speedbar)
+    (speedbar 1))
+
+
+;; I want the tags in other window, probably some local machinery 
+;; should be applied instead of a redefinition here
+(defun speedbar-tag-find (text token indent)
+  "For the tag TEXT in a file TOKEN, goto that position.
+INDENT is the current indentation level."
+  (let ((file (speedbar-line-path indent)))
+    (speedbar-find-file-in-frame file)
+    (save-excursion (speedbar-stealthy-updates))
+    ;; Reset the timer with a new timeout when cliking a file
+    ;; in case the user was navigating directories, we can cancel
+    ;; that other timer.
+    (speedbar-set-timer speedbar-update-speed)
+    (switch-to-buffer-other-window (current-buffer))
+    (goto-char token)
+    (run-hooks 'speedbar-visiting-tag-hook)
+    ;;(recenter)
+    (speedbar-maybee-jump-to-attached-frame)
+    ))
+
+
+
+
 
 (provide 'mizar)
