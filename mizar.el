@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.53 $
+;; $Revision: 1.54 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -762,7 +762,7 @@ This function is called for creating assumptions in the function
     (error "Bad qualified segment: %s" (prin1-to-string types)))
 (mapcar '(lambda (x) 
 	   (list "let" 
-		 (replace-regexp-in-string " *, *" "" 
+		 (replace-regexp-in-string "^ *, *" "" 
 					   (mizar-being2be (car x))) ";"))
 	(cdr types)))
 
