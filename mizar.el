@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.60 $
+;; $Revision: 1.61 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -152,6 +152,15 @@ Possible values are none, first, next, previous."
 "The directory where MML is installed"
 :type 'string
 :group 'mizar)
+
+(defcustom mizar-allow-long-lines t 
+"*Makes Mizar verifier and other utilities allow lines longer than 80 chars.
+This is useful when writing an article, however, you should 
+remove long lines before submitting your article to MML."
+:type 'boolean
+:group 'mizar)
+
+
 
 (defcustom mizar-quick-run t 
 "*Speeds up verifier by not displaying its intermediate output.
@@ -1485,14 +1494,15 @@ ATAB is reversed."
 
 (defun mizar-compile-errors (aname)
 "Return string of errors and explanations for ANAME in compile-like format.
-Nil if no errors."
+\"\" if no errors."
   (let ((errors (concat aname ".err")))
     (if (and (file-readable-p errors)
 	     (< 0 (file-size errors)))
 	(let* ((table (mizar-get-errors aname))
 	       (atab (sort-for-errflag table))
 	       (expl (mizar-getmsgs (mizar-err-codes aname table) t)))
-	  (mizar-comp-addmsgs atab expl)))))
+	  (mizar-comp-addmsgs atab expl))
+      "")))
 
 
 ;;;;;;;;;;;;;;; end of errflag ;;;;;;;;;;;;;;;;;;
@@ -3677,6 +3687,13 @@ If UTIL is given, call it instead of the Mizar verifier."
 
 (defvar makeenv "makeenv" "Program used for creating the article environment.")
 
+(defun mizar-call-util (program &optional buffer &rest args)
+"Wrapper around `call-process', handling mizar options.
+Currently only `mizar-allow-long-lines'."
+(if mizar-allow-long-lines
+    (apply 'call-process program nil buffer nil "-l" args)
+  (apply 'call-process program nil buffer nil args)))
+
 (defun mizar-it (&optional util noqr compil silent)
 "Run mizar verifier on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
@@ -3709,10 +3726,9 @@ If COMPIL, emulate compilation-like behavior for error messages."
 	     (unwind-protect
 		 (cond
 		  (silent 
-		   (let ((excode (call-process makeenv nil nil nil "-l"  
-					       name)))
+		   (let ((excode (mizar-call-util makeenv nil name)))
 		     (if (and (numberp excode) (= 0 excode))
-			 (call-process util nil nil nil "-q" "-l" name)
+			 (mizar-call-util util nil "-q" name)
 		       (error "Makeenv error, try mizaring first!"))))
 		  ((and compil (not noqr))
 		   (if (get-buffer "*compilation*") ; to have launch-dir
@@ -3723,24 +3739,27 @@ If COMPIL, emulate compilation-like behavior for error messages."
 		     (insert "Running " util " on " fname " ...\n")
 		     (sit-for 0)	; force redisplay
 					; call-process can return string (signal-description)
-		     (let ((excode (call-process makeenv nil cbuf nil "-l" name)))
+		     (let ((excode (mizar-call-util makeenv cbuf name)))
 		       (if (and (numberp excode) (= 0 excode))
-			   (call-process util nil cbuf nil "-q" "-l" name)))
+			   (mizar-call-util util cbuf "-q" name)))
 		     (other-window 1)))
 		  ((and mizar-quick-run (not noqr))
 		   (save-excursion
 		     (message (concat "Running " util " on " fname " ..."))
 		     (if (get-buffer "*mizar-output*")
 			 (kill-buffer "*mizar-output*"))
-		     (let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil "-l" name)))
+		     (let ((excode (mizar-call-util 
+				    makeenv (get-buffer-create "*mizar-output*") name)))
 		       (if (and (numberp excode) (= 0 excode))
-			   (shell-command (concat util " -q -l " 
-						  (shell-quote-argument name))
+			   (shell-command (concat 
+					   util (if mizar-allow-long-lines " -q -l " 
+						  " -q ")
+					   (shell-quote-argument name))
 					  "*mizar-output*")
 			 (display-buffer "*mizar-output*")))
 		     (message " ... done")))
 		  (t
-		   (let  ((excode (call-process makeenv nil nil nil "-l" name)))
+		   (let  ((excode (mizar-call-util makeenv nil name)))
 		     (if (and (numberp excode) (= 0 excode))
 			 (progn
 			   (mizar-new-term-output noqr)
