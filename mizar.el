@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.98 $
+;; $Revision: 1.99 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4434,6 +4434,9 @@ Nil iff nothing is processed right now, serves also as a state variable.")
   (mizar-show-errors))
 )
 
+(defun mizar-buf-verifiable-p (&optional buffer)
+"Simple precheck if verifier can be run on BUFFER."
+(string-match "[.]miz$" (buffer-file-name buffer)))
 
 (defun mizar-it-noqr (&optional util forceacc)
 "Run mizar in terminal on the text in the current .miz buffer.
@@ -5008,7 +5011,7 @@ if that value is non-nil."
 	    ["Close all abstracts" mizar-close-all-abstracts t]
 	    )
 	  '("MoMM"
-	    ["Use MoMM (Not Mizar 6.2. yet!)" mizar-toggle-momm :style toggle
+	    ["Use MoMM (needs to be installed)" mizar-toggle-momm :style toggle
 	     :selected mizar-use-momm  :active t]
 	    ["Load theorems only"  (setq mizar-momm-load-tptp
 					 (not mizar-momm-load-tptp))
@@ -5105,8 +5108,8 @@ if that value is non-nil."
 	  ["View theorems" make-theorem-summary t]
 	  ["Reserv. before point" make-reserve-summary t]
 	  "-"
-	  ["Run Mizar" mizar-it t]
-	  ["Mizar Compile" mizar-compile t]
+	  ["Run Mizar" mizar-it (mizar-buf-verifiable-p)]
+	  ["Mizar Compile" mizar-compile (mizar-buf-verifiable-p)]
 	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active (eq mizar-emacs 'gnuemacs)]
 	  (list "Show output"
 		["none" (mizar-toggle-show-output "none") :style radio :selected (equal mizar-show-output "none") :active t]
@@ -5126,15 +5129,15 @@ if that value is non-nil."
 		["Listvoc" mizar-listvoc t]
 		["Constr" mizar-constr t])
 	  (list "Irrelevant Utilities"	    
-	    ["Irrelevant Premises" mizar-relprem t]
-	    ["Irrelevant Inferences" mizar-relinfer t]
-	    ["Irrelevant Iterative Steps" mizar-reliters t]
-	    ["Irrelevant Labels" mizar-chklab t]
-	    ["Inaccessible Items" mizar-inacc t]
-	    ["Trivial Proofs" mizar-trivdemo t]
+	    ["Irrelevant Premises" mizar-relprem (mizar-buf-verifiable-p)]
+	    ["Irrelevant Inferences" mizar-relinfer (mizar-buf-verifiable-p)]
+	    ["Irrelevant Iterative Steps" mizar-reliters (mizar-buf-verifiable-p)]
+	    ["Irrelevant Labels" mizar-chklab (mizar-buf-verifiable-p)]
+	    ["Inaccessible Items" mizar-inacc (mizar-buf-verifiable-p)]
+	    ["Trivial Proofs" mizar-trivdemo (mizar-buf-verifiable-p)]
 	    (list "Environmental Utils"
-		  ["Irrelevant Theorems" mizar-irrths t]
-		  ["Irrelevant Vocabularies" mizar-irrvoc t]
+		  ["Irrelevant Theorems" mizar-irrths (mizar-buf-verifiable-p)]
+		  ["Irrelevant Vocabularies" mizar-irrvoc (mizar-buf-verifiable-p)]
 		  )
 	    )
 	  '("Other Utilities"
@@ -5143,7 +5146,7 @@ if that value is non-nil."
 	    ["Ratproof" (mizar-it "ratproof") t])
 	  "-"
 	  ["Insert proof skeleton" mizar-insert-skeleton 
-	   :active t
+	   :active (mizar-buf-verifiable-p)
 	   :help "Formula being proved has to be selected"]
 	  ["Comment region" comment-region t]
 ;; uncomment-region is not present in older Emacs
