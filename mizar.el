@@ -1747,7 +1747,7 @@ is nonil  (used to get rid of the output while MoMM loading)"
 (if (not mizar-momm-accept-output)
     (let ((l (length res)) (i 0))
       (while (< i l)  
-	(if (eq (aref res i) 35)      ; # - now serves as loaded-info
+	(if (eq (aref res i) 35)      ; 35 = # - now serves as loaded-info
 	    (setq mizar-momm-accept-output t
 		  i l)
 	  (setq i (+ 1 i))))))	  
@@ -1777,7 +1777,9 @@ is nonil  (used to get rid of the output while MoMM loading)"
 	    (insert (concat (upcase (match-string 1 res))
 			    ":" (match-string 3 res) "
 ")))
-	   ((string-equal "2" type)
+	   ((or (string-equal "2" type)    ; normal def theorem
+		(string-equal "3" type)    ; func property
+		(string-equal "4" type))   ; pred property
 	    (insert (concat (upcase (match-string 1 res))
 			    ":def " (match-string 3 res) "
 ")))
@@ -1931,7 +1933,7 @@ mizar-momm-add-files possible."
 
 (defun mizar-run-momm-full ()
 "Fast load MoMM with the full theorems db, this takes now 
-about 200M"
+about 200M (improved to about 120M in MoMM 0.2)"
 (interactive)
 (mizar-run-momm1 (list mizar-mommall-tt) 
 		 (list (concat mizar-mommall-db ".cb"))
@@ -1996,7 +1998,31 @@ then the MoMM db."
   (message "Loading %d files ..." i)
   (process-send-string mommpr mizar-momm-finished)
 ))
+
+(defun mizar-pos-at-point ()
+  "Return the momm position at the point."
+  (save-excursion
+    (skip-chars-backward "^ \t\n,;")
+    (if (looking-at "pos[(] *\\([^,]+\\), *\\([^,]+\\), *\\([^,]+\\), *\\([^,]+\\), *\\([^,]+\\)")
+	(let ((article (match-string 1))
+	      (line    (string-to-number (match-string 4)))
+	      (col     (string-to-number (match-string 5))))
+	  (list article line col)))))
       
+(defun mizar-momm-find-pos ()
+  "Finds the position at point in other window" 
+(interactive)
+(let ((pos (mizar-pos-at-point)))
+  (if pos
+      (let ((line (cadr pos))
+	    (col  (car (last pos)))
+	    (f (concat  mizar-mml "/" (car pos) ".miz")))
+	(save-excursion
+	  (find-file-other-window f)
+	  (set-buffer (get-file-buffer f))
+	  (goto-line line)
+	  (move-to-column (- col 1))))
+  (message "No position at point"))))
 
 ;;;;;;;;;;;;;;;;;;;;; Mizar TWiki  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar mizar-twiki-url "http://alioth.uwb.edu.pl/twiki/bin/view/Mizar/")
