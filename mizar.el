@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.61 $
+;; $Revision: 1.62 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -116,18 +116,48 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
   "Major mode for authoring Mizar articles"
   :group 'languages)
 
+(defgroup mizar-running nil
+  "Running the Mizar utilities"
+  :group 'mizar)
 
-(defcustom mizar-launch-speedbar t
-"*Launch speedbar upon entering mizar-mode for the first time.
-Speedbar can be (de)activated later by running the command `speedbar'."
-:type 'boolean
-:group 'mizar)
+(defgroup mizar-files nil
+  "Files and paths settings in the Mizar mode"
+  :group 'mizar)
+
+(defgroup mizar-grep nil
+  "Grepping in the Mizar mode"
+  :group 'mizar)
+
+(defgroup mizar-constructor-explanations nil
+  "Constructor explanations for the Mizar mode"
+  :group 'mizar)
+
+(defgroup mizar-mml-query nil
+  "Support for MML Query in the Mizar mode"
+  :group 'mizar)
+
+(defgroup mizar-proof-advisor nil
+  "Mizar Proof Advisor settings"
+  :group 'mizar)
+
+(defgroup mizar-skeletons nil
+  "Skeleton settings for the Mizar mode"
+  :group 'mizar)
+
+(defgroup mizar-speedbar nil
+  "Speedbar support for the Mizar mode"
+  :group 'mizar)
 
 (defcustom mizar-indent-width 2 
 "*Indentation width for Mizar articles."
 :type 'integer
 :group 'mizar)
 
+(defcustom mizar-launch-speedbar t
+"*Launch speedbar upon entering mizar-mode for the first time.
+Speedbar can be (de)activated later by running the command `speedbar'."
+:type 'boolean
+:group 'mizar-speedbar)
 
 (defcustom mizar-show-output 10
 "*Determines the size of the output window after processing.
@@ -136,7 +166,7 @@ Possible values: none, 4, 10, all."
 	       (const :tag "all output" all)
 	       (const :tag "4 lines" 4)
 	       (const :tag "10 lines" 10))
-:group 'mizar)
+:group 'mizar-running)
 
 (defcustom mizar-goto-error "next"
 "*What error to move to after processing.
@@ -145,20 +175,20 @@ Possible values are none, first, next, previous."
 	       (const :tag "first error in the article" "first")
 	       (const :tag "first error before point" "previous")
 	       (const :tag "no movement" "none"))
-:group 'mizar)
+:group 'mizar-running)
 
 (defcustom mizfiles 
 (file-name-as-directory  (substitute-in-file-name "$MIZFILES"))
 "The directory where MML is installed"
 :type 'string
-:group 'mizar)
+:group 'mizar-files)
 
 (defcustom mizar-allow-long-lines t 
 "*Makes Mizar verifier and other utilities allow lines longer than 80 chars.
 This is useful when writing an article, however, you should 
 remove long lines before submitting your article to MML."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-running)
 
 
 
@@ -167,23 +197,23 @@ remove long lines before submitting your article to MML."
 Can be toggled from the menu, however the nil value is no
 longer supported and may be deprecated (e.g. on Windows)."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-running)
 
 (defcustom mizar-grep-case-sensitive t
 "*Tells if MML grepping is case sensitive or not."
 :type 'boolean
-:group 'mizar
+:group 'mizar-grep
 )
 
 (defcustom mizar-sb-in-abstracts t
   "Tells if we use speedbar for Mizar abstracts."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-speedbar)
 
 (defcustom mizar-sb-in-mmlquery t
   "Tells if we use speedbar for MMLQuery abstracts."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-speedbar)
 
 (defcustom mizar-do-expl nil
 "*Use constructor explanations.
@@ -191,7 +221,7 @@ Put constructor format of 'by' items as properties after verifier run.
 The constructor representation can then be displayed 
 (according to the value of `mizar-expl-kind') and queried."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-constructor-explanations)
 
 (defcustom mizar-expl-kind 'sorted
 "*Variable controlling the display of constructor representation of formulas.
@@ -211,20 +241,20 @@ not use them to get constructor explanatios."
 	       (const :tag "translated formula" translate)
 	       (const :tag "nontranslated (raw) formula" raw)
 	       (const :tag "raw formula with expanded clusters" expanded))
-:group 'mizar)
+:group 'mizar-constructor-explanations)
 
 (defcustom mizar-underline-expls nil
 "*If t, the clickable explanation spots in mizar buffer are underlined.
 Has effect iff `mizar-do-expl' is non-nil."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-constructor-explanations)
 
 (defcustom byextent 1 
 "Size of the clickable constructor explanation region.
 `mizar-do-expl' has to be non-nil for this.
 When `mizar-underline-expls' is non-nil, it is also underlined."
 :type 'integer
-:group 'mizar)
+:group 'mizar-constructor-explanations)
 
 (defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/")
 (defvar megrez-url "http://megrez.mizar.org/cgi-bin/")
@@ -232,50 +262,55 @@ When `mizar-underline-expls' is non-nil, it is also underlined."
 (defcustom query-url megrez-url
 "*URL for the MMLQuery html browser."
 :type 'string
-:group 'mizar)
+:group 'mizar-mml-query)
 
 (defcustom query-text-output nil
 "If non-nil, text output is required from MML Query."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-mml-query)
 
 (defcustom mizar-query-browser nil
 "*Browser for MML Query, we allow 'w3 or default."
 :type 'symbol
-:group 'mizar)
+:group 'mizar-mml-query)
 
 (defcustom mmlquery-abstracts (concat mizfiles "gab/")
   "*Directory containing the mmlquery abstracts for browsing."
 :type 'string
-:group 'mizar)
-
+:group 'mizar-files
+:group 'mizar-mml-query)
 
 ;; (defcustom advisor-url "http://lipa.ms.mff.cuni.cz/cgi-bin/mycgi1.cgi"
 ;; "*URL for the Mizar Proof Advisor."
 ;; :type 'string
-;; :group 'mizar)
+;; :group 'mizar-proof-advisor)
 
-(defvar advisor-server "lipa.ms.mff.cuni.cz"
-"*Server for the Mizar Proof Advisor.")
+(defcustom advisor-server "lipa.ms.mff.cuni.cz"
+"Server for the Mizar Proof Advisor."
+:type 'string
+:group 'mizar-proof-advisor)
 
-(defvar advisor-cgi "/cgi-bin/mycgi1.cgi"
-"Path to the advisor cgi script on `advisor-server'.")
+
+(defcustom advisor-cgi "/cgi-bin/mycgi1.cgi"
+"Path to the advisor cgi script on `advisor-server'."
+:type 'string
+:group 'mizar-proof-advisor)
 
 (defcustom advisor-limit 30
 "*The number of hits you want Mizar Proof Advisor to send you."
 :type 'integer
-:group 'mizar)
+:group 'mizar-proof-advisor)
 
 (defcustom mizar-use-momm nil
 "*If t, errors *4 are clickable, trying to get MoMM's hints.
 MoMM should be installed for this."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-running)
 
 (defcustom mizar-momm-dir (concat mizfiles "MoMM/")
 "*Directory containing the MoMM distribution."
 :type 'string
-:group 'mizar)
+:group 'mizar-files)
 
 
 
@@ -428,6 +463,10 @@ Used for exact completion.")
 (defun file-size (fname)
 "Size of a file FNAME."
 (elt (file-attributes fname) 7))
+
+(defun file-mtime (fname)
+"Modification time of a file FNAME."
+(elt (file-attributes fname) 5))
 
 ;; returns sublist satisfying test
 ;; loop without recursion probably better than previous
@@ -768,7 +807,7 @@ See `mizar-default-assume-items' for an example.
 This function is called for creating assumptions in the function
 `mizar-default-skeleton-items'."
 :type 'function
-:group 'mizar)
+:group 'mizar-skeletons)
 
 (defun mizar-being2be (txt)
 "Replace \"being\" with \"be\" in TXT."
@@ -854,7 +893,7 @@ See `mizar-default-skeleton-items' for an example.
 This function is called in the interactive function
 `mizar-insert-skeleton'."
 :type 'function
-:group 'mizar)
+:group 'mizar-skeletons)
 
 (defun mizar-insert-skeleton (beg end)
 "Insert a proof skeleton for formula starting at BEG after point END.
@@ -920,30 +959,93 @@ skeleton using `mizar-skeleton-items-func', and pretty prints it using
 
 (defvar mizar-abstr (concat mizfiles "abstr"))
 (defvar mizar-mml (concat mizfiles "mml"))
+(defcustom mizar-grep-in-mml-order nil
+"If non-nil, grepping is attempted in the MML processing order.
+This is usually adventageous, because the more basic facts and 
+definitions are found first. The MML processing order is taken
+from the file `mizar-mml-lar', and prepended with 
+`mizar-mml-prepend'."
+:type 'boolean
+:group 'mizar-grep)
+
 (defcustom mizar-item-grep-show-lines nil
 "*If non-nil `mizar-grep-abs-full-items' shows line info too."
 :type 'boolean
-:group 'mizar)
+:group 'mizar-grep)
 
+(defcustom mizar-mml-lar (concat mizfiles "mml.lar")
+"The list of Mizar articles in MML processing order.
+This is used e.g. for grepping in the MML order, if the
+variable `mizar-grep-in-mml-order' is set."
+:type 'string
+:group 'mizar-files
+:group 'mizar-grep)
 
+(defcustom mizar-mml-prepend (list "hidden" "tarski")
+"Additional files prepended to those from `mizar-mml-lar'.
+This is used e.g. for grepping if `mizar-grep-in-mml-order' is non-nil."
+:type '(repeat string)
+:group 'mizar-files
+:group 'mizar-grep)
 
 (defun mizar-toggle-grep-case-sens ()
 "Toggle the case sensitivity of MML grepping."
 (interactive)
 (setq mizar-grep-case-sensitive (not mizar-grep-case-sensitive)))
 
+(defvar mizar-mml-order-var-name "MML_GREPPING_LIST"
+"Name of the environment variable passed to grep tools.
+This variable changes according to what extension we are grepping.
+We do this not to mess the process buffer with a long list,
+and because shell-expansion is difficult across various shells an OSs.")
+
+(defvar mizar-mml-order-list nil
+"Holds list of mml files in mml order, read from `mizar-mml-lar'.
+If initialized, also contains the size and modifications time of
+`mizar-mml-lar', which are checked before using it.")
+
+(defun mizar-init-mml-order ()
+"Initialize `mizar-mml-order-list' if necessary. Return it."
+(when (file-readable-p mizar-mml-lar)
+  (let ((nsize (file-size mizar-mml-lar)) (ntime (file-mtime mizar-mml-lar)))
+    (if (and mizar-mml-order-list
+	     (= nsize (car mizar-mml-order-list))
+	     (equal ntime (cadr mizar-mml-order-list)))
+	mizar-mml-order-list
+      (with-temp-buffer
+	(insert-file-contents mizar-mml-lar)
+	(goto-char (point-min))
+	(setq mizar-mml-order-list 
+	      (list nsize ntime (delete "" (split-string (buffer-string) "\n")))))))))
+
+(defun mizar-grep-prepare-flist (ext)
+"Return a string of files ending with EXT for grep.
+Check if want and can grep in MML order.
+Print diagnostic message if we want, but cannot."
+(let ((flist (concat " *." ext)))
+  (when mizar-grep-in-mml-order
+    (if (null (mizar-init-mml-order))
+	(message "%s not readable, grepping in alphabetical order" mizar-mml-lar)
+      (let ((l1 (append mizar-mml-prepend (third mizar-mml-order-list))))
+	(setenv mizar-mml-order-var-name  
+		(mapconcat '(lambda (x) (concat x "." ext)) l1 " "))
+	(setq flist (if (eq mizar-emacs 'winemacs) 
+			(concat "%" mizar-mml-order-var-name "%")
+		      (concat "$" mizar-mml-order-var-name))))))
+  flist))
+
 (defun mizar-grep-abs (exp)
 "Grep MML abstracts for regexp EXP.
 Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer. "
   (interactive "sregexp: ")
-  (let ((old default-directory))
+  (let ((old default-directory) (flist (mizar-grep-prepare-flist "abs")))
     (unwind-protect
 	(progn
 	  (cd mizar-abstr)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "grep -n -e \"" exp "\" *.abs"))
-	    (grep (concat "grep -i -n -e \"" exp "\" *.abs"))))
+	      (grep (concat "grep -n -e \"" exp "\" " flist))
+	    (grep (concat "grep -i -n -e \"" exp "\" " flist))))
       (cd old)
     )))
 
@@ -952,13 +1054,13 @@ The results are shown and clickable in the Compilation buffer. "
 Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer. "
   (interactive "sregexp: ")
-  (let ((old default-directory))
+  (let ((old default-directory) (flist (mizar-grep-prepare-flist "miz")))
     (unwind-protect
 	(progn
 	  (cd mizar-mml)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "grep -n -e \"" exp "\" *.miz"))
-	    (grep (concat "grep -i -n -e \"" exp "\" *.miz"))))
+	      (grep (concat "grep -n -e \"" exp "\" " flist))
+	    (grep (concat "grep -i -n -e \"" exp "\" " flist))))
       (cd old)
       )))
 
@@ -986,12 +1088,13 @@ the file positions."
 		      mizar-full-items-grep-command-lines)
 		  (if gab mizar-gab-items-grep-command-nolines
 		    mizar-full-items-grep-command-nolines)))
+	(flist (mizar-grep-prepare-flist (if gab "gab.raw" "abs ")))
 	abuffer proc)
     (unless mizar-grep-case-sensitive
       (setq script (replace-regexp-in-string 
 		    "placeholder/" "placeholder/i" script)))
-    (setq script (replace-regexp-in-string "placeholder" exp script))
-    (setq script (concat "perl -e " script (if gab " *.gab.raw" " *.abs ")))
+    (setq script (replace-regexp-in-string "placeholder" exp script t t))
+    (setq script (concat "perl -e " script flist))
 
     (setq abuffer (get-buffer-create "*Grep Results*"))
     (set-buffer abuffer)
@@ -1078,14 +1181,14 @@ in MMLQuery abstracts. File names and line numbers are printed.")
 Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer. "
   (interactive "sregexp: ")
-  (let ((olddir default-directory)
+  (let ((olddir default-directory) (flist (mizar-grep-prepare-flist "gab.raw"))
 	(compilation-process-setup-function 'mizar-gab-compilation-setup))
     (unwind-protect
 	(progn
 	  (cd mmlquery-abstracts)	  
 	  (if mizar-grep-case-sensitive
-	      (compile (concat "grep -n -e \"" exp "\" *.gab.raw"))
-	    (compile (concat "grep -i -n -e \"" exp "\" *.gab.raw"))))
+	      (compile (concat "grep -n -e \"" exp "\" " flist))
+	    (compile (concat "grep -i -n -e \"" exp "\" " flist))))
       (cd olddir)
     )))
 
@@ -2298,7 +2401,7 @@ With a numeric prefix ARG, go forward ARG queries."
 (defcustom mmlquery-underlines-highlited t
   "If non-nil, the highlited links in gab's are also underlined."
   :type 'boolean
-  :group 'mizar)
+  :group 'mizar-mml-query)
 
 (defvar mmlquery-mode-map nil
   "Keymap for mmlquery minor mode.")
@@ -4322,6 +4425,10 @@ if that value is non-nil."
 	  '("Grep"
 	    ["Case sensitive" mizar-toggle-grep-case-sens :style
 	     toggle :selected mizar-grep-case-sensitive :active t]
+	    ["Grep in MML processing order" 
+	     (customize-variable 'mizar-grep-in-mml-order)
+	     :style toggle :selected mizar-grep-in-mml-order
+	     :active t]
 	    ["Abstracts" mizar-grep-abs t]
 	    ["Full articles" mizar-grep-full :active t]
 	    ["MML Query abstracts" mizar-grep-gab t]
