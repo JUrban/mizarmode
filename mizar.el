@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.42 $
+;; $Revision: 1.43 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -571,7 +571,7 @@ shows the symbol's completions."
 
 (defun mizar-mouse-direct-symbol-def ()
   "\\<mizar-mode-map>\\[mizar-mouse-direct-symbol-def] is bound to this function.
-Goes directly to the best match of the symbol under the mouse click."
+Goes directly to the first match of the symbol under the mouse click."
   (interactive)
   (mouse-set-point last-input-event)
   (mizar-symbol-def  t))
@@ -1087,6 +1087,7 @@ Used to keep tables up-to-date.")
 (make-variable-buffer-local 'constr-table-date)
 
 (defun cstr-idx (kind)  ; just a position
+"Return nil if KIND not in `constrstring', otherwise its position."
 (let ((res 0))
   (while (and (< res cstrlen) (/= kind (aref constrstring res)))
     (setq res (+ res 1)))
@@ -1146,6 +1147,20 @@ Uses the global tables `cstrnames' and `cstrnrs'."
       (concat kind (int-to-string nr))
       )))
 
+(defvar mizartoken2human
+  (let ((table (make-vector 256 0))
+	(i 0))
+    (while (< i 256) (aset table i (char-to-string i)) (incf i))
+    (aset table 38 "and ")
+    (aset table 170 "not ")
+    (aset table 157 "for ")
+    (aset table 144 "is ")
+    (aset table 37 "verum ")
+    (aset table 63 "unknown ")
+    table)
+"Table translating internal tokens for formula kinds")
+
+
 (defun frmrepr (frm &optional cstronly)
 "Absolute repr of a formula FRM.
 If CSTRONLY, only list of constructors,
@@ -1155,7 +1170,7 @@ The clusters inside FRM must already be expanded here."
     (while (< cur end)
       (let* ((tok (aref frm1 cur))
 	     (nonv (= tok 87))   ; W
-	     (idx (if nonv (cstr-idx 86) ; V
+	     (idx (if nonv (cstr-idx 86) ; V - we put the "non" back below
 		    (cstr-idx tok))))
 	(if idx
 	    (let* ((cur1 (+ cur 1))
@@ -1173,7 +1188,7 @@ The clusters inside FRM must already be expanded here."
 		      (concat res (if nonv "non " "") tok))))
 	  (setq cur (+ 1 cur))
 	  (if (not cstronly)
-	      (setq res (concat res (char-to-string tok)))))))
+	      (setq res (concat res (aref mizartoken2human tok)))))))
     res))
 
 (defun expfrmrepr (frm &optional cstronly)
@@ -1259,7 +1274,9 @@ Possible values are now
 'expanded for expansion of clusters,
 'translate for expanded formula in absolute notation,
 'constructors for list of constructors in absolute notation,
-'sorted for sorted list of constructors in absolute notation.")
+'sorted for sorted list of constructors in absolute notation.
+The values 'raw and 'expanded are for debugging only, do
+not use them to get constructor explanatios.")
 
 (defvar cstrregexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
 "Description of the constr format we use, see idxrepr.")
@@ -1412,7 +1429,7 @@ keyboard bindings can be used to view the suggested references.
     (shell-command command advisor-output)
     (let ((abuffer (get-buffer advisor-output)))
       (if abuffer
-	  (progn (set-buffer abuffer)
+	  (progn (switch-to-buffer-other-window abuffer)
 		 (mizar-mode))
 	(message "No references advised")))
     ))
@@ -1547,13 +1564,13 @@ With a numeric prefix ARG, go back ARG queries."
 	   (insert (ring-ref query-squery-ring query-squery-ring-index))))))
 
 (defun query-next-squery (arg)
-  "Cycle forwards through comment history.
+  "Cycle forward through comment history.
 With a numeric prefix ARG, go forward ARG queries."
   (interactive "*p")
   (query-previous-squery (- arg)))
 
 (defun query-squery-search-reverse (str)
-  "Search backwards through squery history for substring match of STR."
+  "Search backward through squery history for substring match of STR."
   (interactive "sPrevious query matching (regexp): ")
   (if (string= str "")
       (setq str query-last-squery-match)
@@ -2302,7 +2319,7 @@ longer supported and may be deprecated (e.g. on Windows).")
 "*If non-nil, verifier and other programs are called from here.
 Can be set from menu.
 Set this to parent directory, if you use
-private vocanulary file residing in ../dict/ , 
+private vocabulary file residing in ../dict/ , 
 otherwise Mizar *will not* find it.")
 
 (defvar mizar-show-output 10
@@ -2350,7 +2367,7 @@ See the documentation for the variable `mizar-goto-error'."
 (defun mizar-set-launch-dir ()
 "Set the directory, where the verifier is launched.
 This must be set to parent directory, if you use
-private vocanulary file residing in ../dict/ ."
+private vocabulary file residing in ../dict/ ."
 (interactive)
 (let ((ld (or mizar-launch-dir "none"))
       pdefault default dir)
@@ -2657,7 +2674,7 @@ some Mizar theorem or definition."
 			 
 
 (defun mizar-listvoc ()
-  "List vocabularies."
+  "List vocabulary."
   (interactive)
   (shell-command (concat "listvoc "
 			 (read-string  (concat "listvoc  VocNames (Default: " (current-word) "): " )
@@ -2665,8 +2682,8 @@ some Mizar theorem or definition."
 			 )))
 
 (defun mizar-constr ()
-"Show required constructors directives.
-Directives needed for Mizar theorems, definitions, 
+"Show required constructors files.
+Constructor files needed for Mizar theorems, definitions, 
 schemes or complete articles can be queried."
   (interactive)
   (shell-command (concat "constr "
@@ -3072,12 +3089,12 @@ if that value is non-nil."
 	    ["translated formula" (mizar-toggle-cstr-expl 'translate)
 	     :style radio :selected
 	     (and mizar-do-expl (eq mizar-expl-kind 'translate)) :active t]
-	    ["expanded formula" (mizar-toggle-cstr-expl 'expanded)
-	     :style radio :selected
-	     (and mizar-do-expl (eq mizar-expl-kind 'expanded)) :active t]
-	    ["raw formula" (mizar-toggle-cstr-expl 'raw)
-	     :style radio :selected
-	     (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]
+;; 	    ["expanded formula" (mizar-toggle-cstr-expl 'expanded)
+;; 	     :style radio :selected
+;; 	     (and mizar-do-expl (eq mizar-expl-kind 'expanded)) :active t]
+;; 	    ["raw formula" (mizar-toggle-cstr-expl 'raw)
+;; 	     :style radio :selected
+;; 	     (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]
 	    )
 	    ["Underline explanation points"
 	     (setq mizar-underline-expls
