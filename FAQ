@@ -1,0 +1,45 @@
+Frequently Asked Questions about Mizar Mode
+
+Q: I have a private dictionary (*.voc file), and it can't be found
+   when calling Mizar from the Mizar Mode.
+
+A: Usually, you need to use "Toggle launch-dir" in the menu to set 
+   the working directory one level up. 
+   This works, if you have your article in the "text" directory and 
+   private dictionaries in the "dict" directory, and "text" and "dict"
+   are at the same level. 
+   If you have "dict" in some nonstandard place, set the working
+   directory (using "Toggle launch-dir") accordingly.
+
+
+Q: What is the quick-run thing?
+
+A: It is a workaround for the slow display in the Emacs
+   term-mode. Mizar output is redirected to the *.out file, and the
+   file is searched for Mizar errors afterwards.
+
+
+Q: The normal (non quick-run) Mizar processing seems broken.
+
+A: Check that the term-mode is OK. In some older versions of Emacs
+   this might be the problem.
+
+
+Q: Nothing works!
+
+A: Try running Mizar in shell (using the "mizf" script). If no
+   success, read the README for Mizar distribution.
+
+
+Q: Some things in the Hide/Show menu do not work as they should.
+
+A: Get the latest hideshow.el from 
+   http://www.glug.org/people/ttn/software/hideshow/
+
+
+Q: Various things seem broken in XEmacs.
+
+A: Yes, it should not be much work to make it XEmacs compatible.
+   Care to do some?
+
+
