@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.43 $
+;; $Revision: 1.44 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1224,6 +1224,7 @@ The clusters inside FRM must already be expanded here."
 			[(shift mouse-3)])))
     (set-keymap-parent map mizar-mode-map)
     (define-key map button_kword 'mizar-show-constrs-other-window)
+    (define-key map "\M-;"     'mizar-show-constrs-kbd)
     map)
 "Keymap used at explanation points.")
 
@@ -1383,6 +1384,30 @@ Commands:
   (use-local-map mizar-cstr-map)
   (goto-char (point-min))
   (switch-to-buffer-other-window cbuf)))
+
+
+(defun mizar-show-constrs-kbd (&optional pos)
+  "Show constructors of the inference at point.
+The constructors are translated according to the variable 
+`mizar-expl-kind', and shown in the buffer *Constructors list*.
+The variable `mizar-do-expl' should be non-nil."
+  (interactive)
+  (let ((pos (or pos (point))))
+    (interactive)
+    (save-excursion
+    (let ((frm (get-text-property pos 'expl)))
+      (if frm
+	  (let ((res
+		 (cond ((eq mizar-expl-kind 'raw) frm)
+		       ((eq mizar-expl-kind 'expanded) (fix-pre-type frm))
+		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm))
+		       ((eq mizar-expl-kind 'constructors)
+			(prin1-to-string (expfrmrepr frm t)))
+		       ((eq mizar-expl-kind 'sorted)
+			(prin1-to-string (sort (unique (expfrmrepr frm t)) 'string<)))
+		       (t ""))))
+	    (goto-char pos)
+	    (mizar-intern-constrs-other-window res)))))))
 
 
 
