@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.78 $
+;; $Revision: 1.79 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -154,6 +154,10 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
 
 (defgroup mizar-speedbar nil
   "Speedbar support for the Mizar mode"
+  :group 'mizar)
+
+(defgroup mizar-education nil
+  "Options for nonstandard Mizaring used when teaching Mizar"
   :group 'mizar)
 
 (defcustom mizar-indent-width 2 
@@ -4090,6 +4094,15 @@ If UTIL is given, call it instead of the Mizar verifier."
 
 (defvar makeenv "makeenv" "Program used for creating the article environment.")
 
+(defcustom mizar-forbid-accommodation nil
+"*The Mizar accomodator is not called under any circumstances.
+This is used for teaching purposes, when the article environment
+was produced by the teacher, and it is not desirable that the 
+students experimented with acommodating.
+Normal users should not change this option."
+:type 'boolean
+:group 'mizar-education)
+
 (defun mizar-call-util (program &optional buffer &rest args)
 "Wrapper around `call-process', handling mizar options.
 Currently only `mizar-allow-long-lines'."
@@ -4098,8 +4111,9 @@ Currently only `mizar-allow-long-lines'."
   (apply 'call-process program nil buffer nil args)))
 
 (defun mizar-accom (accomname force buffer article)
+(if mizar-forbid-accommodation 0
   (if force (mizar-call-util accomname buffer "-a" article)
-    (mizar-call-util accomname buffer article)))
+    (mizar-call-util accomname buffer article))))
 
 (defun mizar-noqr-sentinel (process signal)
   (if (memq (process-status process) '(exit signal))
@@ -4144,7 +4158,8 @@ If FORCEACC, run makeenv with the -a option."
 		makeenv (concat mizfiles makeenv))))
     (cond ((not (string-match "miz$" (buffer-file-name)))
 	   (error "Not in .miz file!!"))
-	  ((not (executable-find makeenv))
+	  ((and (not mizar-forbid-accommodation)
+		(not (executable-find makeenv)))
 	   (error (concat makeenv " not found or not executable!!")))
 	  ((not (executable-find util))
 	   (error (concat util " not found or not executable!!")))
@@ -4194,7 +4209,8 @@ If FORCEACC, run makeenv with the -a option."
 		makeenv (concat mizfiles makeenv))))
     (cond ((not (string-match "miz$" (buffer-file-name)))
 	   (error "Not in .miz file!!"))
-	  ((not (executable-find makeenv))
+	  ((and (not mizar-forbid-accommodation)
+		(not (executable-find makeenv)))
 	   (error (concat makeenv " not found or not executable!!")))
 	  ((not (executable-find util))
 	   (error (concat util " not found or not executable!!")))
