@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.55 $
+;; $Revision: 1.56 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -343,6 +343,7 @@ MoMM should be installed for this."
   (define-key mizar-mode-map "\C-c\C-d" 'mizar-hide-proofs)
   (define-key mizar-mode-map "\C-cg" 'mizar-grep-abs)
   (define-key mizar-mode-map "\C-c\C-g" 'mizar-grep-full)
+  (define-key mizar-mode-map "\C-cb" 'mizar-grep-gab)
   (define-key mizar-mode-map "\C-c\C-c" 'comment-region)
   (define-key mizar-mode-map "\C-c\C-f" 'mizar-findvoc)
   (define-key mizar-mode-map "\C-c\C-l" 'mizar-listvoc)
@@ -938,6 +939,32 @@ The results are shown and clickable in the Compilation buffer. "
       (cd old)
       )))
 
+
+(defun mizar-raw-to-gab (start end old-len)
+(save-excursion
+  (goto-char start)
+  (while (re-search-forward "\.gab\.raw" end t)
+    (replace-match ".gab"))))
+
+(defun mizar-gab-compilation-setup ()
+  (make-local-variable 'after-change-functions)
+  (add-to-list 'after-change-functions 'mizar-raw-to-gab))
+
+(defun mizar-grep-gab (exp)
+"Grep MML Query abstracts for regexp EXP.
+Variable `mizar-grep-case-sensitive' controls case sensitivity.
+The results are shown and clickable in the Compilation buffer. "
+  (interactive "sregexp: ")
+  (let ((olddir default-directory)
+	(compilation-process-setup-function 'mizar-gab-compilation-setup))
+    (unwind-protect
+	(progn
+	  (cd mmlquery-abstracts)	  
+	  (if mizar-grep-case-sensitive
+	      (compile (concat "grep -n -e \"" exp "\" *.gab.raw"))
+	    (compile (concat "grep -i -n -e \"" exp "\" *.gab.raw"))))
+      (cd olddir)
+    )))
 
 ;;;;;;;;;;;;;;; imenu and speedbar handling ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar mizar-sb-trim-hack
@@ -4129,7 +4156,8 @@ if that value is non-nil."
 	    ["Case sensitive" mizar-toggle-grep-case-sens :style
 	     toggle :selected mizar-grep-case-sensitive :active t]
 	    ["Abstracts" mizar-grep-abs t]
-	    ["Full articles" mizar-grep-full t])
+	    ["Full articles" mizar-grep-full t]
+	    ["MML Query abstracts" mizar-grep-gab t])
 	  ["Symbol apropos" symbol-apropos t]
 	  ["Bury all abstracts" mizar-bury-all-abstracts t]
 	  ["Close all abstracts" mizar-close-all-abstracts t]
