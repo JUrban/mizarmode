@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.94 $
+;; $Revision: 1.95 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -935,8 +935,9 @@ See `mizar-insert-skeleton' for more."
 	(concat 
 	 "for " (mizar-pp-types (cadr fla))
 	 (if st_occurs (concat "st " (mizar-pp-parsed-fla (fourth fla))) " ")
-	 (if (eq 'holds (car rest)) "holds " "")
-	 (mizar-pp-parsed-fla (cadr rest)))))
+	 (if (eq 'holds (car rest)) 
+	     (concat "holds " (mizar-pp-parsed-fla (cadr rest)))
+	   (mizar-pp-parsed-fla (car rest))))))
    
      (t (error "Unexpected formula: %s" (prin1-to-string fla)))
      ))))
