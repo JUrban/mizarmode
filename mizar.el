@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.77 $
+;; $Revision: 1.78 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -193,6 +193,12 @@ Possible values are none, first, next, previous."
 	       (const :tag "first error in the article" "first")
 	       (const :tag "first error before point" "previous")
 	       (const :tag "no movement" "none"))
+:group 'mizar-running)
+
+(defcustom mizar-verifier "verifier"
+"*The default Mizar verifier used to check Mizar articles.
+This is used in the `mizar-it' function."
+:type 'string
 :group 'mizar-running)
 
 (defcustom mizfiles 
@@ -4130,7 +4136,7 @@ If `mizar-use-momm', run tptpver instead.
 If FORCEACC, run makeenv with the -a option."
   (interactive)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier
-			 "verifier")))
+			 mizar-verifier)))
 	(makeenv makeenv))
     (if (eq mizar-emacs 'winemacs)
 	(progn
@@ -4180,7 +4186,7 @@ If FORCEACC, run makeenv with the -a option."
   (if (or noqr (not mizar-quick-run)) 
       (mizar-it-noqr util forceacc)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier
-			 "verifier")))
+			 mizar-verifier)))
 	(makeenv makeenv))
     (if (eq mizar-emacs 'winemacs)
 	(progn
