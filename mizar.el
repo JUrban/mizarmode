@@ -152,6 +152,7 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
 (require 'easymenu)
 (require 'etags)
 (require 'hideshow)
+(require 'dabbrev)
 (require 'executable)
 (require 'term)
 (require 'imenu)
@@ -253,6 +254,7 @@ Valid values are 'gnuemacs,'xemacs and 'winemacs.")
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
   (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
+  (define-key mizar-mode-map "\M-\C-i"     'mizar-ref-complete)
   (define-key mizar-mode-map "\C-c\C-q" 'query-start-entry)
   (if (eq mizar-emacs 'xemacs)
       (progn
@@ -419,6 +421,31 @@ rigidly along with this one (not yet)."
 	(buffer-substring-no-properties (match-beginning 1) (match-end 1))
       (current-word))
     ))
+
+
+;; ref-completion,should be improved for definitions
+(defvar mizar-ref-char-regexp "[A-Za-z0-9:'_]")
+(defun mizar-ref-complete ()
+"Complete the current reference useing dabbrevs from current buffer"
+(interactive)
+(let ((old-check dabbrev-check-other-buffers)
+      (old-regexp dabbrev-abbrev-char-regexp)
+      (old-case dabbrev-case-fold-search))
+
+
+  (unwind-protect
+      (progn
+	(setq dabbrev-check-other-buffers nil
+	      dabbrev-abbrev-char-regexp mizar-ref-char-regexp
+	      dabbrev-case-fold-search nil)
+;	      dabbrev-abbrev-skip-leading-regexp ".* *")
+;;	(fset 'dabbrev--abbrev-at-point 
+;;	      (symbol-function 'mizar-abbrev-at-point))
+	(dabbrev-completion))
+    (setq dabbrev-check-other-buffers old-check
+	  dabbrev-abbrev-char-regexp old-regexp
+	  dabbrev-case-fold-search old-case)
+  )))
 
 
 ;;;;;;;;;;; grepping ;;;;;;;;;;;;;;;;;;;;;
@@ -727,10 +754,16 @@ tabs"
 				  (< (cadr x) (cadr y)))))
 	)))
 
+
+
 (defun mizar-error-flag (aname &optional table)
-"Insert error flags into main mizar buffer (like errflag)."
+"Insert error flags into main mizar buffer (like errflag).
+If mizar-use-momm is nonnil, puts the 'pos property into *4 errors too."
 (interactive "s")
-(let (lline (atab (sort-for-errflag (or table (mizar-get-errors aname)))))
+(let (lline 
+      (atab (sort-for-errflag (or table (mizar-get-errors aname))))
+      (props (list 'mouse-face 'highlight 
+		   local-map-kword mizar-momm-err-map)))
   (if atab
       (save-excursion	  
 	(setq lline (goto-line (caar atab)))
@@ -754,6 +787,11 @@ tabs"
 		  ))
 	    (let* ((snrstr (number-to-string snr))
 		   (snrl (length snrstr)))
+	      (if (and mizar-use-momm (eq snr 4))  ; add momm stuff
+		  (progn
+		    (add-text-properties 0 1 props snrstr) 
+		    (put-text-property 0 1 'pos (list sline (cadr srec))
+				       snrstr)))
 	      (if (> scol cpos)              ; enough space
 		  (progn
 		    (setq cpos scol)
@@ -1173,6 +1211,10 @@ the clusters inside frm must already be expanded here"
     map)
 "keymap used at explanation points")
 
+(defconst local-map-kword
+  (if (eq mizar-emacs 'xemacs) 'keymap 'local-map)
+  "Xemacs vs. Emacs local-map")
+
 (defun mizar-put-bys (aname)
 "puts the constr. repr. of bys as text properties into the 
 mizar buffer, underlines and mouse-highlites the places"
@@ -1185,12 +1227,9 @@ mizar buffer, underlines and mouse-highlites the places"
   (let ((bys (mizar-getbys aname))
 	(oldhook after-change-functions)
 	(map mizar-expl-map)
-	map_kword props)
+	props)
     (setq after-change-functions nil)
-    (if (eq mizar-emacs 'xemacs) 
-	(setq map_kword 'keymap)
-      (setq map_kword 'local-map))
-    (setq props (list 'mouse-face 'highlight map_kword map))
+    (setq props (list 'mouse-face 'highlight local-map-kword map))
     (if mizar-underline-expls 
 	(setq props (append props '(face underline))))
     (while bys
@@ -1498,6 +1537,466 @@ the value of query-entry-mode-hook.
 	   (query-next-squery (- n query-squery-ring-index)))
 	  (t (error "Not found")))))
 
+
+
+;;;;;;;;;;;;;;;;;;;;; MoMM ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar mizar-use-momm nil 
+"If t, errors *4 are clickable, trying to get MoMM's hints.")
+
+
+(defvar mizar-momm-compressed t
+"If t, the distribution files (except from the typ directory)
+are gzipped to save space") 
+
+(defvar mizar-momm-max-start-time 20
+"How long we wait for the MoMM process to start to exist;
+loading can take longer, we just need the process")
+
+(defvar mizar-momm-load-tptp t
+"If t, the simple justification clause bases are loaded into MoMM too")
+
+(defconst mizar-fname-regexp  "[A-Za-z0-9_]+"
+"Allowed characters for mizar filenames")
+
+(defvar mizar-momm-dir (substitute-in-file-name 
+		       "$MIZFILES/MoMM/")
+"Directory with MoMM")
+(defvar mizar-mommths (concat mizar-momm-dir "ths/")
+  "Directory with articles' .ths files")
+(defvar mizar-mommtyp (concat mizar-momm-dir "typ/")
+  "Directory with articles' .typ files")
+(defvar mizar-mommtptp (concat mizar-momm-dir "tptp/") 
+  "Directory with articles' .tptp files")
+(defvar mizar-mommall-tt (concat mizar-momm-dir "all.typ") 
+  "Complete type table to be loaded into MoMM")
+(defvar mizar-mommall-db (concat mizar-momm-dir "all.ths") 
+  "The MoMM database to load, .tb and .cb will be appended to get
+the termbank and clausebank.")
+(defvar mizar-momm-binary (concat mizar-momm-dir "MoMM")
+  "Path to the MoMM binary")
+(defvar mizar-momm-verifier (concat mizar-momm-dir "tptpver")
+  "The verifier used for creating tptp problems to be sent to MoMM
+from unsuccessful simple justifications")
+(defvar mizar-momm-exporter (concat mizar-momm-dir "tptpexp")
+  "The exporter used for creating tptp problems form articles, 
+to be loaded into MoMM on  startup")
+(defvar mizar-relcprem (concat mizar-momm-dir "relcprem")
+  "The detector of irrelevant local constants, necessary for 
+MoMM exporter")
+
+(defvar mizar-momm-rant "Please process clauses now, I beg you, great shining CSSCPA, wonder of the world, most beautiful program ever written.
+"
+  "The rant sequence to overcome CLIB input buffering.")
+
+(defvar mizar-momm-finished (concat mizar-momm-rant " state: "
+				    mizar-momm-rant)
+  "The sequence to send at the end of innitial data, 
+to get the 'loaded' response from MoMM.")
+
+(defvar mizar-momm-accept-output t 
+"Used to suppress output during MoMM loading")
+
+(defvar mizar-momm-verbosity 'translate
+"Possible values are now 'raw, 'translate")
+
+
+(defun mizar-toggle-momm ()
+"Check that MoMM is installed first"
+(interactive)
+(if (and (not mizar-use-momm)
+	 (not (file-executable-p mizar-momm-verifier)))
+    (error "MoMM is not installed!"))
+(setq mizar-use-momm (not mizar-use-momm)))
+
+(defvar mizar-momm-err-map
+  (let ((map (make-sparse-keymap))
+	(button_kword (if (eq mizar-emacs 'xemacs) [(shift button3)]
+			[(shift down-mouse-3)])))
+    (set-keymap-parent map mizar-mode-map)
+    (define-key map button_kword 'mizar-ask-momm)
+    map)
+"Keymap used at MoMM-sendable errors.")
+
+
+(defconst directivenbr 8
+"Tells how many kinds of directive there are (in .evl), see env_han.pas"
+)
+; Following is order of directives in .evl, see env_han.pas
+(defconst voc-dir-order 0)
+(defconst not-dir-order 1)
+(defconst def-dir-order 2)
+(defconst the-dir-order 3)
+(defconst sch-dir-order 4)
+(defconst clu-dir-order 5)
+(defconst con-dir-order 6)
+(defconst req-dir-order 7)
+
+(defvar evl-table nil "The table of environment directives")
+(defvar evl-table-date -1 
+"Set to last accommodation date, after creating the table,
+ to keep tables up-to-date")
+
+(make-variable-buffer-local 'evl-table)
+(make-variable-buffer-local 'evl-table-date)
+
+
+(defun get-directive (directives start count )
+"Directives is a  list created from .evl, get count of them
+beginning at the start position"
+  (let ((counter 0) (result ()))
+    (while (< counter count)
+      (setq result (append result (list (elt directives (+ start (* 2 counter))))))
+      (setq counter (+ counter 1)))  
+    result))
+
+
+(defun get-evl (aname)
+"Returns a directivenbr-long list of directives for the article
+created from its .evl file"
+(let ((evlname (concat aname ".evl")))
+  (or (file-readable-p evlname)
+	(error "File unreadable: %s, run accomodator first" evlname))
+  (let ((evldate (cadr (nth 5 (file-attributes evlname)))))
+    (if (/= evl-table-date evldate)
+	(let ((decl (with-temp-buffer 
+		      (insert-file-contents evlname)
+		      (split-string (buffer-string) "[\n]")))
+	      (d ()) (i 0) (start 0) (count 0))
+	  (while  (< i directivenbr)
+	    (setq count (string-to-number (elt decl start)))
+	    (setq d (append d (list (get-directive 
+				     decl (+ start 1) count))))
+	    (setq start (+ start 1 (* 2 count)))
+	    (setq i (+ 1 i)))
+	  (setq  evl-table-date evldate
+		 evl-table d)))
+    evl-table)))
+
+(defun get-theorem-dir (aname)
+"Return list of theorem directives"
+  (elt (get-evl aname) the-dir-order))
+
+(defun get-all-dirs (aname)
+"Return list of all names occuring in some directive"
+(let ((d (get-evl aname))
+      res (i 0))
+  (while  (< i directivenbr)
+    (setq res (append (elt d i) res)
+	  i   (+ 1 i)))
+  (unique res)))
+
+(defun get-all-dirs-rec (aname)
+"Return list of all names occuring in some directive, 
+plus transitive hull of constructors"
+(get-sgl-table aname)
+(unique (append cstrnames (get-all-dirs aname))))
+
+(defun mizar-get-momm-input (aname pos)
+"Search file aname.tptp for problems generated for given pos, 
+return list of them"
+(let* ((problems (concat aname ".tptp"))
+       (linestr (number-to-string (car pos)))
+       (colstr (number-to-string (cadr pos)))
+       (searchstr (concat "^ninscheck: pos(" mizar-fname-regexp
+			  ", 0, 0, " linestr ", " colstr ", .*"))
+       res b e)
+  (or (file-readable-p problems)
+      (error "File %s not readable, run tptpver first!"))
+  (with-temp-buffer
+    (insert-file-contents problems)
+    (goto-char (point-min))
+    (while (re-search-forward searchstr (point-max) t)
+      (setq b (match-beginning 0))
+      (setq e (search-forward "." (point-max))) ; error if not found
+      (setq res (cons (buffer-substring-no-properties b e) res))))
+  (nreverse res)))
+
+(defun mizar-ask-momm (event)
+  "Ask MoMM for hints on an error."
+  (interactive "e")
+  (select-window (event-window event))
+  (save-excursion
+    (let ((mommpr (get-process "MoMM"))
+	  (pos (get-text-property (event-point event) 'pos)))
+      (if (not mommpr) (error "Start MoMM first!"))
+      (if (not pos) (error "No semantic error here, perhaps you did not run tptpver?"))
+      (let ((in (mizar-get-momm-input 
+		 (file-name-sans-extension 
+		  (file-name-nondirectory (buffer-file-name)))
+		 pos))
+	    (cbuf (get-buffer-create "*MoMM's Hints*")))
+	(if (not in) 
+	    (error "No data for MoMM found, use the right verifier!"))
+	(set-buffer cbuf)
+	(erase-buffer)
+	(setq mizar-momm-accept-output t)
+	(while in
+	  (process-send-string mommpr (car in))
+	  (process-send-string mommpr " ")
+	  (process-send-string mommpr mizar-momm-rant)
+	  (accept-process-output mommpr 2)
+	  (setq in (cdr in)))
+	(process-send-string mommpr mizar-momm-rant)
+	(switch-to-buffer-other-window cbuf)
+	(goto-char (event-point event))))))
+
+
+(defun mizar-momm-hints-filter (res)
+"Puts the hints in buffer *MoMM's Hints* if mizar-momm-accept-output
+is nonil  (used to get rid of the output while MoMM loading)"
+(if (not mizar-momm-accept-output)
+    (let ((l (length res)) (i 0))
+      (while (< i l)  
+	(if (eq (aref res i) 35)      ; # - now serves as loaded-info
+	    (setq mizar-momm-accept-output t
+		  i l)
+	  (setq i (+ 1 i))))))	  
+(if mizar-momm-accept-output
+    (let ((cbuf (get-buffer-create "*MoMM's Hints*")))
+      (set-buffer cbuf)
+      (cond 
+       ((string-match "^# CSSCPAState" res)  ; now serves as loaded-info
+	(insert "MoMM loaded
+")
+	(message " ... MoMM loaded"))
+       ((eq 'raw mizar-momm-verbosity)
+	(insert res))
+       ((string-match "^1" res)
+	(insert "Tautology
+"))
+       ((string-match "^2" res)
+	(insert "No match
+"))
+       ((string-match "^0" res)
+	(insert "Unhandled by MoMM yet
+"))
+       ((string-match "^pos[(] *\\([^,]+\\), *\\([^,]+\\), *\\([^,]+\\), *\\([^,]+\\), *\\([^,]+\\)" res)
+	(let ((type (match-string 2 res)))
+	  (cond
+	   ((string-equal "1" type)
+	    (insert (concat (upcase (match-string 1 res))
+			    ":" (match-string 3 res) "
+")))
+	   ((string-equal "2" type)
+	    (insert (concat (upcase (match-string 1 res))
+			    ":def " (match-string 3 res) "
+")))
+	   (t (insert (concat (match-string 0 res) ")
+")))))))
+       
+      
+;  (mizar-highlight-constrs)
+;  (use-local-map mizar-cstr-map)
+;  (goto-char (point-min))
+;  (switch-to-buffer-other-window cbuf)))
+)))
+
+(defun mizar-momm-process-filter (proc str)
+(mizar-momm-hints-filter str))
+
+(defun mizar-run-momm1 (typetables tlist &optional tb raw filter)
+"Start momm  interactively in background. 
+Tlist is the list of files to load, tb is optional termbank.
+If multiple typetables, hey have to be appended into temporary file.
+If raw is nonnil, process-filter filter is used if given, otherwise none.
+Input: (process-send-string (dfg-for-article aticle))
+       (ask-spass-prover formula timelimit references) "
+(interactive)
+(if (get-process "MoMM") (kill-process "MoMM"))
+(if (get-buffer "*MoMM*") (kill-buffer "*MoMM*"))
+(sit-for 1)
+(let* ((tt (cond 
+	    ((cdr typetables)     ; have to create tmp
+	     (let ((t (make-temp-name 
+		       (concat default-directory "tmptt")))
+		 (t1 typetables))
+	       (with-temp-file t
+		 (while t1
+		   (insert-file-contents (car t))
+		  (setq t1 (cdr t1))))
+	       t))
+	    (typetables (car typetables))
+	    (t nil)))
+       (args tlist) compr (i 0))
+  (if mizar-momm-compressed
+      (while args 
+	(if (equal (file-name-extension (car args)) "gz")
+	    (setq compr (cons (car args) compr)
+		  tlist (delete (car args) tlist)))
+	(setq args (cdr args))))
+  (setq mizar-momm-accept-output nil)
+  (cond
+   (compr       
+    (setq compr (concat "(gzip -dc " 
+			(mapconcat 'identity compr " ")
+			"; cat)| ")	  
+	  args (concat compr mizar-momm-binary " -s "
+		       (if tt (concat " -y " tt " ") "")
+		       (if tb (concat " -b " tb " ") "")
+		       (if tlist (mapconcat 'identity tlist " ")
+			 "")))
+    (start-process-shell-command "MoMM" "*MoMM*" args))
+   (t
+    (setq args (append (list "MoMM" "*MoMM*" mizar-momm-binary "-s")
+		       (if tt (list "-y" tt))
+		       (if tb (list "-b" tb))
+		       tlist (list "-")))
+;  (apply 'make-comint args)
+    (apply 'start-process args)))
+
+  (while (and (not (get-process "MoMM")) 
+	      (< i mizar-momm-max-start-time))
+    (sit-for 1)
+    (setq i (+ 1 i)))
+  (or (get-process "MoMM")
+      (error "MoMM not started, try increasing mizar-momm-max-start-time"))
+  (if raw
+      (set-process-filter (get-process "MoMM") filter)
+    (set-process-filter (get-process "MoMM") 
+			'mizar-momm-process-filter))
+  (process-send-string (get-process "MoMM") 
+		       mizar-momm-finished)
+  (if (cdr typetables) 
+      (message "Temporary typetable %s created" tt))
+  (message "Loading MoMM data...")
+))
+
+(defun verify-file-readable (f)
+  (or (file-readable-p f) 
+      (error "File %s not readable" f)))
+
+(defun mizar-momm-get-default-files (aname &optional thsdirs tptp)
+"Get default files for running MoMM for article aname, pair
+(not found, absolute names) is returned"
+(let* ((args (if thsdirs (copy-alist (get-theorem-dir aname))
+	       (get-all-dirs-rec aname)))
+       res no f f1)
+  (while args
+    (setq f (concat mizar-mommths 
+		    (downcase (car args)) 
+		    (if mizar-momm-compressed ".ths.cb.gz" ".ths.cb"))
+	  f1 (concat mizar-mommtptp 
+		     (downcase (car args)) 
+		     (if mizar-momm-compressed ".tptp.cb.gz" 
+		       ".tptp.cb")))
+    (if (file-readable-p f) (setq res (cons f res))
+      (setq no (cons f no)))
+    (if tptp 
+	(if (file-readable-p f1) 
+	    (setq res (cons f1 res))
+	  (setq no (cons f1 no))))
+    (setq args (cdr args)))
+  (list no (nreverse res))
+))
+
+(defun mizar-run-momm ()
+"Get type, clause and termbank files for running MoMM and run
+it with the default process filter. Verify that the argument
+files exist first."
+(interactive)
+(let* ((aname (file-name-sans-extension 
+	       (file-name-nondirectory (buffer-file-name))))
+       (args (cadr (mizar-momm-get-default-files aname nil 
+						 mizar-momm-load-tptp)))
+       tt tb)
+  (setq args (mapconcat 'identity args " "))
+  (setq tts (split-string 
+	    (read-string  "Typetable(s): " mizar-mommall-tt)
+	    "[, \f\t\n\r\v]+")
+	args (split-string 
+	      (read-string  "Clause file(s): " args)
+	      "[, \f\t\n\r\v]+")
+	tb  (let ((s (read-string  
+		      "Termbank (Default: none): ")))
+		(if (string-equal "" s) nil s)))
+;  (mapcar 'verify-file-readable tts)
+;  (mapcar 'verify-file-readable args)
+;  (if tb (verify-file-readable tb))
+  (mizar-run-momm1 tts args tb)))
+
+
+
+(defun mizar-run-momm-default (&optional aname thsdirs tptp)
+"Run MoMM, loading theorems from all its directive filenames,
+if thsdirs, use the theorem directive only. Complete typetable 
+is loaded, which makes later on demand loading with 
+mizar-momm-add-files possible."
+(interactive)
+(let* ((aname (or aname
+		  (file-name-sans-extension 
+		   (file-name-nondirectory (buffer-file-name)))))
+       (res (mizar-momm-get-default-files aname thsdirs tptp)))
+  (mizar-run-momm1 (list mizar-mommall-tt) (cadr res))))
+
+
+(defun mizar-run-momm-full ()
+"Fast load MoMM with the full theorems db, this takes now 
+about 200M"
+(interactive)
+(mizar-run-momm1 (list mizar-mommall-tt) 
+		 (list (concat mizar-mommall-db ".cb"))
+		 (concat mizar-mommall-db ".tb")))
+
+(defun mizar-momm-get-file (f dir ext)
+"Find the momm file, possibly with extension and in dir"
+(cond 
+ ((file-readable-p f) f)
+ ((file-readable-p (concat f ext)) (concat f ext))
+ ((file-readable-p (concat f ext ".cb")) (concat f ext ".cb"))
+ ((and mizar-momm-compressed 
+       (file-readable-p (concat f ext ".cb.gz")))
+  (concat f ext ".cb.gz"))
+ ((file-readable-p (concat dir f)) (concat dir f))
+ ((file-readable-p (concat dir f ext)) (concat dir f ext))
+ ((file-readable-p (concat dir f ext ".cb")) (concat dir f ext ".cb"))
+ ((and mizar-momm-compressed 
+       (file-readable-p (concat dir f ext ".cb.gz")))
+  (concat dir f ext ".cb.gz"))
+ (t nil)))
+
+(defun mizar-momm-add-files (tlist &optional tptp)
+"Add .ths files from tlist into running MOMM, the type-table
+must be loaded on start (e.g. by running MoMM with all.typ).
+If tptp, load tptp files too. Current directory is searched first,
+then the MoMM db."
+(interactive "sarticles: ")
+(let ((mommpr (get-process "MoMM"))
+      (tptp (or tptp mizar-momm-load-tptp))
+      (i 0))
+  (if (not mommpr) (error "Start MoMM first!"))
+  (if (stringp tlist)
+      (setq tlist (split-string tlist "[(), \f\t\n\r\v]+")))
+  (setq mizar-momm-accept-output nil)
+  (while tlist
+    (let ((f (mizar-momm-get-file (car tlist) mizar-mommths ".ths"))
+	  (f1 (if tptp 
+		  (mizar-momm-get-file  (car tlist) 
+					mizar-mommtptp ".tptp"))))       
+      (if f
+	  (with-temp-buffer 
+	    (if (and mizar-momm-compressed 
+		     (equal (file-name-extension f) "gz"))
+		(let ((excode (call-process "gzip" f t nil "-dc"))
+		   (if (or (stringpp excode) (/= 0 excode))
+		       (error "Error in decompressing %s" f))))
+	      (insert-file-contents f))
+	    (process-send-string mommpr (buffer-string))
+	    (setq i (+ 1 i))))
+      (if (and f1 (not (equal f f1)))
+	  (with-temp-buffer 
+	    (if (and mizar-momm-compressed 
+		     (equal (file-name-extension f1) "gz"))
+		(let ((excode (call-process "gzip" f1 t nil "-dc"))
+		   (if (or (stringpp excode) (/= 0 excode))
+		       (error "Error in decompressing %s" f1))))
+	      (insert-file-contents f1))
+	    (process-send-string mommpr (buffer-string))
+	    (setq i (+ 1 i))))
+      (setq tlist (cdr tlist))))
+  (message "Loading %d files ..." i)
+  (process-send-string mommpr mizar-momm-finished)
+))
+      
 
 ;;;;;;;;;;;;;;;;;;;;; Mizar TWiki  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar mizar-twiki-url "http://alioth.uwb.edu.pl/twiki/bin/view/Mizar/")
@@ -1883,10 +2382,12 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 
 (defun mizar-it (&optional util noqr compil)
   "Run mizar on the text in the current .miz buffer;
-if util given, runs it instead of mizf, if noqr, does not 
+if util given, runs it instead of verifier, if mizar-use-momm,
+run tptpver instead; if noqr, does not 
 use quick run, if compil, emulate compilation-like behavior"
   (interactive)
-  (let ((util (or util "verifier"))
+  (let ((util (or util (if mizar-use-momm mizar-momm-verifier 
+			 "verifier")))
 	(makeenv "makeenv"))
     (if (eq mizar-emacs 'winemacs)
 	(progn
@@ -2431,6 +2932,27 @@ functions:
 	  "-"
 	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
+	  '("MoMM"
+	    ["Use MoMM" mizar-toggle-momm :style toggle 
+	     :selected mizar-use-momm  :active t]
+	    ["Load theorems only"  (setq mizar-momm-load-tptp 
+					 (not mizar-momm-load-tptp)) 
+	     :style toggle :selected (not mizar-momm-load-tptp)  
+	     :active mizar-use-momm]
+	    ["Run MoMM for current article" 
+	     (mizar-run-momm-default nil nil mizar-momm-load-tptp)
+	     mizar-use-momm]
+	    ["Load additional files in MoMM" mizar-momm-add-files
+	     mizar-use-momm]
+	    ["Run MoMM with parameters" mizar-run-momm mizar-use-momm]
+	    ["Run MoMM with all.ths (200M!)" mizar-run-momm-full 
+	     mizar-use-momm]
+	    ["MoMM export current article" 
+	     (progn 
+	       (mizar-it mizar-relcprem)
+	       (mizar-it mizar-momm-exporter))
+	     mizar-use-momm]
+	    )
 	  '("Mizar TWiki"
 	    ["Browse Mizar Twiki" (browse-url mizar-twiki-url) t]
 	    ["Ask Mizar question" (browse-url mizar-twiki-questions) t]	
