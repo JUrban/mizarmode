@@ -1,10 +1,12 @@
+;; August 31 2000 ... theorem and reservation summary added, MIZTAGS for schemes changed a litle
+;; April 18 2000 ... small adjustment to Mizar Version 6.0.07, miz1 and miz3 files no longer needed
 ;; April 6 2000 ... some more features added
 ;; April 3 2000, modified by Josef Urban (urban@kti.ms.mff.cuni.cz)
 ;; for use with Mizar  Version 6.0.01 (Linux/FPC)
 ;; some parts might also work with dos-emacs and dos mizar
 ;;
 ;; to use it, put it where your .el files are, and add following to to your
-;; .emacs file ; see further instructions for the "miz1","miz3" and "MIZTAGS" files
+;; .emacs file ; see further instructions for the  "MIZTAGS" files
 
 ;;;;;;;;;;;;;; start of .emacs ;;;;;;;;;;;;;;;;;;;;;
 
@@ -21,7 +23,7 @@
 ;                             .emacs file to enable it
 ;      basic indentation 
 ;      C-c C-m or C-c RET.. runs Mizar on current .miz buffer, refreshes it
-;                           and goes to first error found, needs file miz1 (see further) in path
+;                           and goes to first error found
 ;      C-c C-n ............ goes to next error and displays its explanation
 ;                           in minibuffer
 ;      C-c C-p ............ goes to previous error and displays its explanation
@@ -43,15 +45,23 @@
 ;      C-c C-t ............ interface to thconstr
 ;      C-c C-s ............ interface to scconstr
 ;      C-c C-h ............ runs irrths on current buffer, refreshes it 
-;                           and goes to firts error found, needs file miz3 in path (see further)
+;                           and goes to firts error found
 ;      C-c C-i or C-c TAB.. runs relinfer on current buffer, refreshes it 
-;                           and goes to firts error found, needs file miz3 in path (see further)
+;                           and goes to firts error found 
 ;      C-c C-y ............ runs relprem on current buffer, refreshes it 
-;                           and goes to firts error found, needs file miz3 in path (see further)
+;                           and goes to firts error found 
 ;      C-c C-v ............ runs irrvoc on current buffer, refreshes it 
-;                           and goes to firts error found, needs file miz3 in path (see further)
+;                           and goes to firts error found 
 ;      C-c C-a ............ runs inacc on current buffer, refreshes it 
-;                           and goes to firts error found, needs file miz3 in path (see further)
+;                           and goes to firts error found
+
+;;; added 31.8. 2000:
+;      C-c C-r ............ shows all reservations before current point
+;      C-c C-z ............ makes summary of theorems in current article
+
+
+
+
        
 
 
@@ -60,68 +70,10 @@
 ; It needs to be executed in the disrectory $MIZFILES/abstr
 
 ;;;;;;;;; start of MIZTAGS file ;;;;;;;;;;;;;;;;;;;;;;;;;; 
-; etags --language=none --regex='/scheme[ \n]*\([^ {]*\)[ \n]*{/\1/' --regex='/.*:: \([^ \n:]+\):\([0-9]+\)/\1:\2/' --regex='/.*:: \([^ \n:]+\):def *\([0-9]+\)/\1:def \2/' *.abs
+; etags --language=none --regex='/ *scheme[ \n]*\([^ {]*\)[ \n]*{/\1/' --regex='/.*:: \([^ \n:]+\):\([0-9]+\)/\1:\2/' --regex='/.*:: \([^ \n:]+\):def *\([0-9]+\)/\1:def \2/' *.abs
 ;;;;;;;;; end of MIZTAGS file   ;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
 
-; this is file miz3 needed for various Irrelevant ( :-) ) Utilities. Needs to be executable 
-; and in the bin directory of the distribution.
-
-;;;;;;;;; start of miz3 file ;;;;;;;;;;;;;;;;;;;;;;;;;; 
-; #!/bin/sh
-; $1 $2
-; errflag $2
-; addfmsg $2 $MIZFILES/mizar
-;;;;;;;;; end of miz3 file   ;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-; this is file miz1 needed for C-c C-m, you get it by replacing all references to
-; "text/$1" by just "$1" in the shell script mizf, in the bin dir of the 
-; 6.0.01 (Linux/FPC) distributuiion. It needs to be executable.  
-
-;;;;;;;;; start of miz1 file ;;;;;;;;;;;;;;;;;;;;;;;;;;
-; #!/bin/sh
-; #
-; #          Mizar Verifier, example shell command
-; #
-
-; mizf_exit()
-; {
-;  if test -e "$1.err"
-;   then rm "$1.err"
-;  fi
-;  if test -e $1.'$$$'
-;   then rm $1.'$$$'
-;  fi
-; }
-
-; accomodate()
-; {
-; makeenv "$1"
-; if test ! -s "$1.err" && test -e "$1.err"
-;  then
-;   verify "$1"
-;  else
-;   errflag "$1"
-;   addfmsg "$1" $MIZFILES/mizar
-; fi
-; }
-
-; verify()
-; {
-; verifier "$1"
-; errflag "$1"
-; addfmsg "$1" $MIZFILES/mizar
-; }
-
-; if test -z "$1"
-;  then
-;   echo '> Error : Missing parameter'
-;  else
-;   accomodate "$1"
-;   mizf_exit "$1"
-; fi
-;;;;;;;;;;;;;;;;;;; end of miz1 file ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; to do: better indentation,
 ;           show references using tags and M-. (in another buffer?) ... done in version 1.1.
@@ -132,10 +84,6 @@
           
 
 
-
-
-
-    
 ;;;;;;;;;;;;;;;;;;;; start of original info ;;;;;;;;;;;;;;;;;
 ;; emacs lisp hack for mizar
 ;; Copyright (C) Bob Beck, Department of Computing Science
@@ -242,7 +190,8 @@
   (define-key mizar-mode-map "\C-c\C-i" 'mizar-relinfer)
   (define-key mizar-mode-map "\C-c\C-y" 'mizar-relprem)
   (define-key mizar-mode-map "\C-c\C-a" 'mizar-inacc)
-
+  (define-key mizar-mode-map "\C-c\C-z" 'make-theorem-summary)
+  (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
   (define-key mizar-mode-map "\M-." 'mizar-show-ref)
   (mizar-mode-commands mizar-mode-map))
 
@@ -366,11 +315,34 @@ rigidly along with this one (not yet)."
 
 
 
-(defconst mizar-error-regexp "\\*\\([0-9]+\\)" "regexp used to locate error messages in a mizar text")
+(defconst mizar-error-regexp "\\(\\*\\|::>,\\)\\([0-9]+\\)" "regexp used to locate error messages in a mizar text")
 
 (defvar mizar-region-count 0  "number of regions on mizar-region-stack")
 
 (defvar mizar-mode-map nil "keymap used by mizar mode..")
+
+
+
+(defun make-theorem-summary ()
+  "Make a summary of theorems in the buffer *Theorem-Summary*.
+  Previous contents of that buffer are killed first."
+  (interactive)
+  (message "Making theorem summary...")
+  ;; This puts a description of bindings in a buffer called *Help*.
+  (setq result (make-theorems-string))
+  (with-output-to-temp-buffer "*Theorem-Summary*"
+    (save-excursion
+      (let ((cur-mode "mizar"))
+	(set-buffer standard-output)
+	(mizar-mode)
+	(erase-buffer)
+	(insert result))      
+      (goto-char (point-min))))
+  (message "Making theorem summary...done"))
+
+
+
+
 
 
 (defun mizar-it (&optional whole-exp)
@@ -380,7 +352,8 @@ rigidly along with this one (not yet)."
  	 (message "Not in .miz file!!"))
 	(t 
 	 (save-buffer)
-	 (setq mizarg (substring (buffer-name) 0 (string-match ".miz" (buffer-name))  ))
+;	 (setq buff (current-buffer))
+	 (setq mizarg (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))  ))
 	 (cond ((get-buffer "*mizar-output*") 
 		(display-buffer "*mizar-output*"))
 	       (t
@@ -389,7 +362,7 @@ rigidly along with this one (not yet)."
 		  (rename-buffer "*mizar-output*"))
 		(display-buffer "*mizar-output*")))
 	 (progn
-	   (term-exec "*mizar-output*" "run-mizar" "miz1" nil (list mizarg))
+	   (term-exec "*mizar-output*" "run-mizar" "mizf" nil (list mizarg))
 	   (end-of-buffer-other-window 0)
 	   (while  (term-check-proc "*mizar-output*") 
 	     (sit-for 5))
@@ -411,7 +384,7 @@ rigidly along with this one (not yet)."
  	 (message "Not in .miz file!!"))
 	(t 
 	 (save-buffer)
-	 (setq mizarg (substring (buffer-name) 0 (string-match ".miz" (buffer-name))  ))
+	 (setq mizarg (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))  ))
 	 (cond ((get-buffer "*mizar-output*") 
 		(display-buffer "*mizar-output*"))
 	       (t
@@ -420,10 +393,20 @@ rigidly along with this one (not yet)."
 		  (rename-buffer "*mizar-output*"))
 		(display-buffer "*mizar-output*")))
 	 (progn
-	   (term-exec "*mizar-output*" util "miz3" nil (list util mizarg))
+	   (term-exec "*mizar-output*" util util  nil (list  mizarg))
 	   (end-of-buffer-other-window 0)
 	   (while  (term-check-proc "*mizar-output*") 
 	     (sit-for 5))
+	   (if (file-exists-p (concat mizarg ".err"))
+	       (progn (term-exec "*mizar-output*" "errflag" "errflag"  nil (list  mizarg))
+		      (end-of-buffer-other-window 0)
+		      (while  (term-check-proc "*mizar-output*") 
+			(sit-for 1))
+		      (term-exec "*mizar-output*" "addfmsg" "addfmsg"  nil (list  mizarg (substitute-in-file-name "$MIZFILES/mizar")))
+		      (end-of-buffer-other-window 0)
+		      (while  (term-check-proc "*mizar-output*") 
+			(sit-for 1)))
+	     t)	     
 	   (revert-buffer t t t)
 	   (setq pos (point)) 
 	   (goto-char (point-min))
@@ -466,6 +449,47 @@ rigidly along with this one (not yet)."
 				       nil nil      (current-word))
 			 )))
 
+;;;;;;;;;;;; not done yet, seems quite complicated if we have e.g. 
+;;;;;;;;;;;; reserve A for set reserve F for Function of A,B
+; (defun mizar-show-type (&optional whole-exp)
+;   "show last type reserved for a variable"
+;   (interactive "p")
+;   (save-excursion
+;     (setq var (read-string  (concat "reserved type of (Default: " (current-word) "): " )
+; 				       nil nil      (current-word)))
+;     (while
+;  	(and
+; 	 (re-search-backward "^ *reserve" (point-min) t)
+; 	 (setq pos (match-beginning 0))
+; 	 (re-search-forward (concat "[, \n]" var "[, \n]") " *\\([;]\\|by\\|proof\\)" (point-max) t))
+
+
+(defun make-reserve-summary ()
+  "Make a summary of type reservations before current point in the 
+  buffer *Reservation-Summary*.
+  Previous contents of that buffer are killed first."
+  (interactive)
+  (message "Making reservation summary...")
+  ;; This puts a description of bindings in a buffer called *Help*.
+  (setq result (make-reservations-string))
+  (with-output-to-temp-buffer "*Reservations-Summary*"
+    (save-excursion
+      (let ((cur-mode "mizar"))
+	(set-buffer standard-output)
+	(mizar-mode)
+	(erase-buffer)
+	(insert result))      
+      (goto-char (point-min))))
+  (message "Making reservations summary...done"))
+
+
+
+			 
+
+
+
+
+
 (defun mizar-listvoc (&optional whole-exp)
   "list vocabularies"
   (interactive "p")
@@ -493,16 +517,15 @@ rigidly along with this one (not yet)."
 
 
 
-
 (defun mizar-next-error ()
   "Go to the next error in a mizar text"
   (interactive)
   (progn (goto-char (+ (point) 1))	; incase we just did previous-error
 	 (cond ((re-search-forward mizar-error-regexp (point-max) t)
-		(match-string 1)
+		(match-string 2)
 		(setq pos (point)) 
 		(goto-char (point-max))
-		(setq find (concat "^::> *\\(" (match-string 1) ":.*\\) *$"))
+		(setq find (concat "^::> *\\(" (match-string 2) ":.*\\) *$"))
 		(re-search-backward find (point-min) t)
 		(message (match-string 1))
 		(goto-char pos))
@@ -520,10 +543,10 @@ rigidly along with this one (not yet)."
     (goto-char (- (point) 1))
     (while (looking-at "[0-9]") (backward-char 1)) ;incase we just did next-error
     (cond ((re-search-backward mizar-error-regexp (point-min) t)
-	   (match-string 1)
+	   (match-string 2)
 	   (setq pos (point)) 
 	   (goto-char (point-max))
-	   (setq find (concat "^::> *\\(" (match-string 1) ":.*\\) *$"))
+	   (setq find (concat "^::> *\\(" (match-string 2) ":.*\\) *$"))
 	   (re-search-backward find (point-min) t)
 	   (message (match-string 1))
 	   (goto-char pos))
@@ -543,6 +566,44 @@ rigidly along with this one (not yet)."
     (while (re-search-forward "^::>.*\n" nil t)
       (replace-match "" nil nil))
     ))
+
+
+(defun make-theorems-string ()
+  "Make string of all theorems"
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (setq result "")
+    (while
+ 	(and
+	 (re-search-forward "^ *\\(theorem[^s]\\)" (point-max) t)
+	 (setq pos (match-beginning 1))
+	 (re-search-forward " *\\([;]\\|by\\|proof\\)" (point-max) t))
+      (progn 
+	(setq result1 (buffer-substring-no-properties pos (match-beginning 0)))
+	 (if  (string-match "\n$" result1) 
+	     (setq result (concat result result1 "\n" ))
+	   (setq result (concat result result1 "\n\n" )))))
+    result))
+
+(defun make-reservations-string ()
+  "Make string of all reservations before point"
+  (interactive)
+  (save-excursion
+    (setq maxp (point))
+    (goto-char (point-min))
+    (setq result "")
+    (while
+ 	(and
+	 (re-search-forward "^ *\\(reserve\\)" maxp t)
+	 (setq pos (match-beginning 1))
+	 (re-search-forward ";" maxp t))
+      (progn 
+	(setq result1 (buffer-substring-no-properties pos (match-end 0)))
+	 (if  (string-match "\n$" result1) 
+	     (setq result result1 )
+	   (setq result (concat result result1 "\n" )))))
+    result))
 
 
 
@@ -708,7 +769,10 @@ functions:
       C-c C-v ............ runs irrvoc on current buffer, refreshes it 
                             and goes to firts error found, needs file miz3 in path 
       C-c C-a ............ runs inacc on current buffer, refreshes it 
-                            and goes to firts error found, needs file miz3 in path "
+                            and goes to firts error found, needs file miz3 in path 
+      C-c C-r ............ shows all reservations before current point
+      C-c C-z ............ makes summary of theorems in current article "
+
 
   (interactive)
   (kill-all-local-variables)
@@ -730,6 +794,8 @@ functions:
 	    ["Previous error" mizar-previous-error t]
 	    ["Remove error lines" mizar-strip-errors t])
 	  ["Show reference" mizar-show-ref t]
+	  ["View theorems" make-theorem-summary t]
+	  ["Reserv. before point" make-reserve-summary t]
 	  ["Run Mizar" mizar-it t]
 	  "-"
 	  (list "Voc. & Constr. Utilities"
@@ -784,6 +850,6 @@ Valid values are 'gnuemacs and 'xemacs.")
 
 (add-hook 'mizar-mode-hook 'mizar-menu)
 
-(visit-tags-table (substitute-in-file-name "$MIZFILES/abstr"))
+; (visit-tags-table (substitute-in-file-name "$MIZFILES/abstr"))
 
 (provide 'mizar)
