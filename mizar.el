@@ -1908,7 +1908,7 @@ use quick run, if compil, emulate compilation-like behavior"
 		  (if (and (numberp excode) (= 0 excode))
 		      (shell-command (concat util " -q " name) 	
 				     "*mizar-output*")
-		    (switch-to-buffer-other-window "*mizar-output*")))
+		    (display-buffer "*mizar-output*")))
 		(message " ... done")))
 	     (t
 	      (let  ((excode (call-process makeenv nil nil nil name)))
@@ -2148,6 +2148,25 @@ if found end on the first number of the error"
 	(replace-match "@proof" nil nil)))
     (message "... Done")
     )))
+
+(defun mizar-move-then (&optional beg end reverse)
+  "Put @ before all proof keywords to disable checking, with prefix 
+   unhide;"
+  (interactive "r\nP")
+  (save-excursion
+    (let ((beg (or beg (point-min)))
+	  (end (or end (point-max))))
+    (goto-char beg)
+    (message "moving then ...")
+    (if reverse
+	(while (re-search-forward "; *\n\\( *\\)then " end t)
+	  (replace-match "; then\n\\1 " nil nil))
+      (while (re-search-forward "; *then *[\n]\\( *\\)" end  t)
+	(replace-match ";\n\\1then " nil nil)))      
+    (message "... Done")
+    )))
+
+
 
 (defun make-theorems-string ()
   "Make string of all theorems"
@@ -2499,6 +2518,15 @@ functions:
 							   (point-max)) t]
 	    ["@proof -> proof on buffer" (mizar-hide-proofs (point-min)
 							   (point-max) t) t]
+	    )
+	  '("Then placement"
+	    ["start of lines on region" mizar-move-then t]
+	    ["end of lines on region" (mizar-move-then (region-beginning)
+							  (region-end) t) t]
+	    ["start of lines on buffer" (mizar-move-then (point-min)
+							  (point-max)) t]
+	    ["end of lines on buffer" (mizar-move-then (point-min)
+							  (point-max) t) t]
 	    )
 	  "-"
 	  '("Indent"
