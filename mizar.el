@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.52 $
+;; $Revision: 1.53 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -360,6 +360,7 @@ MoMM should be installed for this."
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
   (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
   (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
+  (define-key mizar-mode-map "\C-cs" 'mizar-insert-skeleton)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
   (define-key mizar-mode-map "\M-\C-i"     'mizar-ref-complete)
   (define-key mizar-mode-map "\C-c\C-q" 'query-start-entry)
@@ -516,6 +517,349 @@ Used for exact completion.")
 
 ;;;;;;;;;;;;;;;;  end of indentation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;; skeletons ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Special lisp parser "lisppars" is used for this
+
+;;; TODO:
+;; * Have some language for specifying skeleton-creating 
+;;   functions, to allow users (and machines) to define their 
+;;   own custom skeletons.
+;;
+;; * Our parsing ends at the level of atomic formulas now, both because 
+;;   it is much easier to implement within the current Mizar parser, 
+;;   and because it simplifies the pretty printing in Emacs. 
+;;   So we should extend it to full parsing eventually.
+;; 
+;; * Add e.g. definitional expansions, when the full parsing is done.
+;; * Handle thesis in cases, when it is not explicit - e.g. correctness
+;;   conditions.
+;;
+;; * When both the macro language and the full parsing is done,
+;;   do machine learning of optimal skeletons on MML, and be adaptive.
+
+(defvar mizar-binary-connectives '(iff implies or &))
+(defvar mizar-quantifiers '(for ex))
+(defvar mizar-logical-constants '(thesis contradiction \?))
+
+(defvar mizar-connectives 
+(append mizar-binary-connectives mizar-quantifiers mizar-logical-constants
+'(st holds not))
+"Symbols for Mizar logical connectives")
+	
+(defun parse-fla-with (fla connectives)
+"CONNECTIVES come from the lowest priority here, i.e. 'iff first."
+(if connectives
+    (let* (tmp (conn1 (car connectives)) (restconn (cdr connectives))
+	       (fla (parse-fla-with fla restconn))
+	       (beg (car fla)) (conn (cadr fla)))
+      (if (eq conn conn1)
+	  (progn 
+	    (setq beg (cons conn (list beg))
+		  fla (cdr fla))
+	    (while (eq conn conn1)
+	      (setq tmp (parse-fla-with (cdr fla) restconn)
+		    beg (append beg (list (car tmp)))
+		    fla (cdr tmp)
+		    conn (if fla (car fla) nil)))
+	    (cons beg fla))
+	fla))
+  (get-first-formula fla)))
+ 
+(defun get-first-formula (fla)
+"Parse the first quantified, atomic, bracketed or negated fla into a list.
+Return list of the rest unparsed, with added car being the parsed first."
+(let ((beg (car fla)))
+  (cond 
+   ((listp beg) fla)
+
+   ((or (stringp beg) (memq beg mizar-logical-constants))
+    (cons (list beg) (cdr fla)))
+
+   ((eq 'not beg)
+   (let ((cont (get-first-formula (cdr fla))))
+     (cons (list 'not (car cont)) (cdr cont))))
+
+   ((eq 'ex beg)
+   (let ((tmp (parse-formula (cdddr fla))))
+     (cons (list 'ex (cadr fla) 'st (car tmp)) (cdr tmp))))
+
+   ((eq 'for beg)
+   (let (rest (start (list 'for (cadr fla))))
+     (if (eq 'st (third fla))
+	 (setq fla (parse-formula (cdddr fla))
+	       start (nconc start (list 'st (car fla)))
+	       rest (cdr fla))
+       (setq rest (cddr fla)))
+     (if (eq 'holds (car rest))
+	 (setq start (nconc start (list 'holds))
+	       rest (cdr rest)))
+     (setq rest (parse-formula rest))
+     (cons (nconc start (list (car rest))) (cdr rest))))
+
+   (t (error "Bad formula: %s" (prin1-to-string fla))))))
+
+(defun parse-formula (fla)
+"Return the tree of the longest parsable initial segment of FLA.
+The rest is returned as cdr.
+The lists arising from having paranthesis must have already been handled here."
+(let ((res (get-first-formula fla)))
+  (if (cdr res)
+      (parse-fla-with res mizar-binary-connectives)
+    res)))
+
+(defun mizar-parse-protect-brackets (fla)
+"Replace sublists in FLA with parsed sublists beginning with 
+'PAR recursively. Exceptions are sublist starting with 'Q, which
+denote qualified segments."
+(if (or (not (listp fla)) (eq 'Q (car fla))) fla
+  (cons 'PAR (parse-formula (mapcar 'mizar-parse-protect-brackets fla)))))
+    
+(defun mizar-parse-fla (fla)
+"The toplevel function for parsing lisppars output."
+(parse-formula (mapcar 'mizar-parse-protect-brackets fla)))
+
+(defun current-line ()
+  "Return current line number."
+  (+ (count-lines 1 (point))
+     (if (= (current-column) 0) 1 0)))
+
+(defun mizar-tmp-being-hack (txt)
+"Temporary hack, until the be2being fixes to Mizar parser are published."
+(replace-regexp-in-string " +be " " being " txt))
+
+(defun mizar-parse-region-fla (beg end)
+"Call the lisppars utility to parse a Mizar formula starting at BEG.
+BEG must be a start of a top-level sentence, parsing subformulas or 
+definiens formulas is not handled now. 
+END is not needed for parsing but for annotating the result
+with the position, where the skeleton of its proof should start.
+See `mizar-insert-skeleton' for more."
+(interactive "r")
+(save-excursion
+  (goto-char beg)
+  (let (fla (bline (current-line)) (bcol (+ 1 (current-column)))
+	(lspname (concat (file-name-sans-extension (buffer-file-name)) ".lsp" )))
+    (mizar-it  "lisppars" nil nil t)
+    (or (file-readable-p lspname)
+	(error "The lisppars utility failed, unknown error!"))
+    (with-temp-buffer
+	(insert-file-contents lspname)
+	(goto-char (point-min))
+	(unless (re-search-forward (concat "^((pos " (int-to-string bline) " .*")
+				   (point-max) t)
+	  (error "No formula starting at line %d" bline))
+	;; car is position
+	(setq fla (mizar-parse-fla 
+		   (cdr (read (mizar-tmp-being-hack (match-string 0)))))))
+    (goto-char end)
+    (list end (car fla))))) ;; fla is singleton
+    
+(defun mizar-pp-types (types)
+(or (eq 'Q (car types)) 
+    (error "Bad qualified segment: %s" (prin1-to-string types)))
+(mapconcat 'car (cdr types) ""))
+
+(defun mizar-pp-parsed-fla (fla)
+(if (stringp fla) (concat fla " ")
+  (let ((beg (car fla)))
+    (cond
+     ((stringp beg) beg)
+
+     ((eq 'PAR beg)
+      (concat "(" (mizar-pp-parsed-fla (cadr fla)) ")"))
+
+     ((eq 'Q beg)
+      (mizar-pp-types fla))
+
+     ((eq 'not beg) 
+      (concat "not " (mizar-pp-parsed-fla (cadr fla))))
+
+     ((memq beg mizar-logical-constants) (symbol-name beg))
+
+     ((memq beg mizar-binary-connectives)
+      (mapconcat 'mizar-pp-parsed-fla (cdr fla) 
+		 (concat " " (symbol-name beg) " ")))
+
+     ((eq 'ex beg)
+      (concat "ex " (mizar-pp-types (cadr fla)) "st " 
+	      (mizar-pp-parsed-fla (fourth fla))))
+
+     ((eq 'for beg)
+      (let* ((st_occurs (eq 'st (third fla)))
+	     (rest (if st_occurs (cddddr fla) (cddr fla))))
+	(concat 
+	 "for " (mizar-pp-types (cadr fla))
+	 (if st_occurs (concat "st " (mizar-pp-parsed-fla (fourth fla))) " ")
+	 (if (eq 'holds (car rest)) "holds " "")
+	 (mizar-pp-parsed-fla (cadr rest)))))
+   
+     (t (error "Unexpected formula: %s" (prin1-to-string fla)))
+     ))))
+   
+(defun mizar-skelitem-string (item)
+(replace-regexp-in-string 
+ " *; *$" ";" (mapconcat 'mizar-pp-parsed-fla item " ")))
+
+(defun mizar-skeleton-string (skel)
+"Print the proof skeleton for parsed formula FLA into a string.
+The skeleton is a list of of items, each item is a list of either strings 
+or lists containing parsed formulas, which are later handed over to 
+`mizar-pp-parsed-fla'."
+(concat "\nproof\n" 
+	(mapconcat 'mizar-skelitem-string skel "\n")
+	"\nend;\n"))
+
+(defun mizar-default-assume-items (fla)
+"Create the default assumption skeleton for parsed formula FLA. 
+The skeleton is a list of of items, each item is a list of either strings 
+or lists containing parsed formulas, which are later handed over to
+`mizar-pp-parsed-fla'."
+(let ((beg (car fla)))
+  (cond 
+   ((eq '& beg)
+    (mapcan 'mizar-default-assume-items (cdr fla)))
+
+   ((eq 'PAR beg)
+    (mizar-default-assume-items (cadr fla)))
+
+   ((eq 'ex beg)
+    (list (list "given" (cadr fla) "such that")
+	  (list (fourth fla) ";")))
+
+   ((eq 'not beg) 
+    (let ((negfla (cadr fla)))
+    (cond 
+     ((eq 'PAR (car negfla))
+      (mizar-default-assume-items (list 'not (cadr negfla))))
+     ((eq 'not (car negfla))  ;; double negation
+      (mizar-default-assume-items (cadr negfla)))
+     ((eq 'or (car negfla))
+      (mizar-default-assume-items 
+       (cons '& (mapcar '(lambda (x) (list 'not x)) (cdr negfla)))))
+     ((eq 'implies (car negfla))
+      (mizar-default-assume-items 
+       (list '& (second negfla) (list 'not (third negfla)))))
+     (t (list (list "assume" fla ";"))))))
+
+   (t (list (list "assume" fla ";")))
+)))
+
+(defcustom mizar-assume-items-func 'mizar-default-assume-items
+"*The function creating assumption skeletons out of a parsed formula.
+See `mizar-default-assume-items' for an example.
+This function is called for creating assumptions in the function
+`mizar-default-skeleton-items'."
+:type 'function
+:group 'mizar)
+
+(defun mizar-being2be (txt)
+"Replace \"being\" with \"be\" in TXT."
+(replace-regexp-in-string " being " " be " txt))
+
+(defun mizar-skel-generalization (types)
+"Creates a list of generalizations corresonding to TYPES."
+(or (eq 'Q (car types)) 
+    (error "Bad qualified segment: %s" (prin1-to-string types)))
+(mapcar '(lambda (x) 
+	   (list "let" 
+		 (replace-regexp-in-string " *, *" "" 
+					   (mizar-being2be (car x))) ";"))
+	(cdr types)))
+
+(defun mizar-get-type-vars (types)
+"Get the string of variables from TYPES."
+(or (eq 'Q (car types)) 
+    (error "Bad qualified segment: %s" (prin1-to-string types)))
+(mapconcat '(lambda (x)
+	      (replace-regexp-in-string " +\\(being\\|be\\) .*$" "" (car x)))
+	   (cdr types) ""))
+
+(defun mizar-default-skeleton-items (fla)
+"Create the default proof skeleton for parsed formula FLA.
+The skeleton is a list of items, each item is a list of either strings 
+or lists containing parsed formulas, which are later handed over to 
+`mizar-pp-parsed-fla'."
+(let ((beg (car fla)))
+  (cond 
+    ((eq 'PAR beg)
+    (mizar-default-skeleton-items (cadr fla)))
+
+   ((stringp beg) 
+    (list (list "thus" beg ";")))
+
+   ((memq beg mizar-logical-constants)
+    (list (list "thus" (symbol-name beg) ";")))
+
+   ((eq '& beg)
+    (mapcan 'mizar-default-skeleton-items (cdr fla)))
+
+   ((eq 'or beg)
+    (if (not (third fla)) ;; end of or recursion
+	(mizar-default-skeleton-items (cadr fla))
+      (nconc 
+       (funcall mizar-assume-items-func (list 'not (cadr fla)))
+       (mizar-default-skeleton-items (cons 'or (cddr fla))))))
+
+   ((eq 'implies beg)
+    (nconc
+     (funcall mizar-assume-items-func (cadr fla))
+     (mizar-default-skeleton-items (third fla))))
+
+   ((eq 'iff beg)
+    (nconc 
+     (list (list "hereby"))
+     (mizar-default-skeleton-items (list 'implies (cadr fla) (third fla)))
+     (list (list "end;"))
+     (mizar-default-skeleton-items (list 'implies (third fla) (cadr fla)))))
+
+   ((eq 'ex beg)
+    (nconc 
+     (list (list "consider" (cadr fla) ";"))
+     (list (list "take" (mizar-get-type-vars (cadr fla)) ";"))
+     (mizar-default-skeleton-items (fourth fla))))
+	   
+   ((eq 'for beg)
+    (nconc (mizar-skel-generalization (cadr fla))
+	   (if (eq 'st (third fla))
+	       (mizar-default-skeleton-items 
+		(list 'implies (fourth fla) 
+		      (if (eq 'holds (fifth fla)) (sixth fla) (fifth fla))))
+	     (mizar-default-skeleton-items
+	      (if (eq 'holds (third fla)) (fourth fla) (third fla))))))
+   
+   (t (list (list "thus" fla ";")))
+   )))
+
+(defcustom mizar-skeleton-items-func 'mizar-default-skeleton-items
+"*The function creating proof skeletons out of a parsed formula.
+See `mizar-default-skeleton-items' for an example.
+This function is called in the interactive function
+`mizar-insert-skeleton'."
+:type 'function
+:group 'mizar)
+
+(defun mizar-insert-skeleton (beg end)
+"Insert a proof skeleton for formula starting at BEG after point END.
+For normal interactive usage, just select the region containing 
+the formula, and run this function. 
+The lisppars utility needs to be installed for this to work.
+Calls `mizar-parse-region-fla' to parse the formula, Then creates the
+skeleton using `mizar-skeleton-items-func', and pretty prints it using
+`mizar-skeleton-string'."
+(interactive "r")
+(save-excursion
+  (let ((skel
+ 	 (mizar-skeleton-string 
+	  (funcall mizar-skeleton-items-func
+	   (cadr (mizar-parse-region-fla beg end))))))
+    (goto-char end)
+    (insert skel)
+    (indent-region end (+ end (length skel)) nil))))
+	
+
+
+
+;;;;;;;;;;;;;;;;;  parsing references ;;;;;;;;;;;;;;;;;;;
 
 (defun mizar-ref-at-point ()
   "Return the reference at the point."
@@ -527,7 +871,6 @@ Used for exact completion.")
 	(buffer-substring-no-properties (match-beginning 1) (match-end 1))
       (current-word))
     ))
-
 
 ;; ref-completion,should be improved for definitions
 (defvar mizar-ref-char-regexp "[A-Za-z0-9:'_]")
@@ -3157,7 +3500,7 @@ If UTIL is given, call it instead of the Mizar verifier."
 
 (defvar makeenv "makeenv" "Program used for creating the article environment.")
 
-(defun mizar-it (&optional util noqr compil)
+(defun mizar-it (&optional util noqr compil silent)
 "Run mizar verifier on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
 If UTIL is given, run it instead of verifier.
@@ -3173,70 +3516,78 @@ If COMPIL, emulate compilation-like behavior for error messages."
 	  (setq util (concat mizfiles util)
 		makeenv (concat mizfiles makeenv))))
     (cond ((not (string-match "miz$" (buffer-file-name)))
-	   (message "Not in .miz file!!"))
+	   (error "Not in .miz file!!"))
 	  ((not (executable-find makeenv))
-	   (message (concat makeenv " not found or not executable!!")))
+	   (error (concat makeenv " not found or not executable!!")))
 	  ((not (executable-find util))
-	   (message (concat util " not found or not executable!!")))
+	   (error (concat util " not found or not executable!!")))
 	  (t
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
 		  (old-dir (file-name-directory name)))
 	     (cd (concat old-dir "/.."))
 ;;	     (if mizar-launch-dir (cd mizar-launch-dir))
-	     (mizar-strip-errors)
+	     (unless silent (mizar-strip-errors))
 	     (save-buffer)
-	     (cond
-	      ((and compil (not noqr))
-	       (if (get-buffer "*compilation*") ; to have launch-dir
-		    (kill-buffer "*compilation*"))
-	       (let ((cbuf (get-buffer-create "*compilation*")))
-		 (switch-to-buffer-other-window cbuf)
-		 (erase-buffer)
-		 (insert "Running " util " on " fname " ...\n")
-		 (sit-for 0)     ; force redisplay
-; call-process can return string (signal-description)
-		 (let ((excode (call-process makeenv nil cbuf nil "-l" name)))
-		   (if (and (numberp excode) (= 0 excode))
-		       (call-process util nil cbuf nil "-q" "-l" name)))
-		 (other-window 1)))
-	     ((and mizar-quick-run (not noqr))
-	      (save-excursion
-		(message (concat "Running " util " on " fname " ..."))
-		(if (get-buffer "*mizar-output*")
-		    (kill-buffer "*mizar-output*"))
-		(let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil "-l" name)))
-		  (if (and (numberp excode) (= 0 excode))
-		      (shell-command (concat util " -q -l " 
-					     (shell-quote-argument name))
-				     "*mizar-output*")
-		    (display-buffer "*mizar-output*")))
-		(message " ... done")))
-	     (t
-	      (let  ((excode (call-process makeenv nil nil nil "-l" name)))
-		(if (and (numberp excode) (= 0 excode))
-		   (progn
-		     (mizar-new-term-output noqr)
-		     (term-exec "*mizar-output*" util util nil (list name))
-		     (while  (term-check-proc "*mizar-output*")
-		       (sit-for 1)))))))
-	     (if old-dir (setq default-directory old-dir))
-	     (if mizar-do-expl
-		 (save-excursion
-		   (remove-text-properties (point-min) (point-max)
-					   '(mouse-face nil expl nil local-map nil))
-		   (mizar-put-bys fname)))
-	     (if (and compil (not noqr))
-		 (save-excursion
-		   (set-buffer "*compilation*")
-		   (insert (mizar-compile-errors name))
-		   (compilation-mode)
-		   (goto-char (point-min)))
-	       (mizar-do-errors name)
-	       (save-buffer)
-	       (mizar-handle-output)
-	       (mizar-show-errors))
-	     )))))
+	     (unwind-protect
+		 (cond
+		  (silent 
+		   (let ((excode (call-process makeenv nil nil nil "-l"  
+					       name)))
+		     (if (and (numberp excode) (= 0 excode))
+			 (call-process util nil nil nil "-q" "-l" name)
+		       (error "Makeenv error, try mizaring first!"))))
+		  ((and compil (not noqr))
+		   (if (get-buffer "*compilation*") ; to have launch-dir
+		       (kill-buffer "*compilation*"))
+		   (let ((cbuf (get-buffer-create "*compilation*")))
+		     (switch-to-buffer-other-window cbuf)
+		     (erase-buffer)
+		     (insert "Running " util " on " fname " ...\n")
+		     (sit-for 0)	; force redisplay
+					; call-process can return string (signal-description)
+		     (let ((excode (call-process makeenv nil cbuf nil "-l" name)))
+		       (if (and (numberp excode) (= 0 excode))
+			   (call-process util nil cbuf nil "-q" "-l" name)))
+		     (other-window 1)))
+		  ((and mizar-quick-run (not noqr))
+		   (save-excursion
+		     (message (concat "Running " util " on " fname " ..."))
+		     (if (get-buffer "*mizar-output*")
+			 (kill-buffer "*mizar-output*"))
+		     (let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil "-l" name)))
+		       (if (and (numberp excode) (= 0 excode))
+			   (shell-command (concat util " -q -l " 
+						  (shell-quote-argument name))
+					  "*mizar-output*")
+			 (display-buffer "*mizar-output*")))
+		     (message " ... done")))
+		  (t
+		   (let  ((excode (call-process makeenv nil nil nil "-l" name)))
+		     (if (and (numberp excode) (= 0 excode))
+			 (progn
+			   (mizar-new-term-output noqr)
+			   (term-exec "*mizar-output*" util util nil (list name))
+			   (while  (term-check-proc "*mizar-output*")
+			     (sit-for 1)))))))
+	       (if old-dir (setq default-directory old-dir)))
+	     (unless silent
+	       (if mizar-do-expl
+		   (save-excursion
+		     (remove-text-properties (point-min) (point-max)
+					     '(mouse-face nil expl nil local-map nil))
+		     (mizar-put-bys fname)))
+	       (if (and compil (not noqr))
+		   (save-excursion
+		     (set-buffer "*compilation*")
+		     (insert (mizar-compile-errors name))
+		     (compilation-mode)
+		     (goto-char (point-min)))
+		 (mizar-do-errors name)
+		 (save-buffer)
+		 (mizar-handle-output)
+		 (mizar-show-errors))
+	       ))))))
 
 
 (defun mizar-irrths ()
