@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.87 $
+;; $Revision: 1.88 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -489,7 +489,7 @@ Now also the environmental declarations."
 
 (defun mizar-mode-commands (map)
   (define-key map "\t" 'mizar-indent-line)
-  (define-key map "\r" 'newline-and-indent))
+  (define-key map "\r" 'mizar-newline))
 
 
 (if mizar-mode-map
@@ -728,6 +728,18 @@ Used for exact completion.")
   "Indent the entire mizar buffer."
   (interactive )
   ( indent-region (point-min) (point-max) nil))
+
+(defun mizar-newline ()
+  "Terminate the current line with a newline and indent the next."
+  (interactive "*")
+  ;; Remove trailing spaces
+  (delete-horizontal-space)
+  (newline)
+  ;; Indent both the (now) previous and current line first.
+  (save-excursion
+    (previous-line 1)
+    (mizar-indent-line))
+  (mizar-indent-line))
 
 ;;;;;;;;;;;;;;;;  end of indentation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
