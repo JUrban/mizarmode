@@ -1,3 +1,9 @@
+;; Dec 15 2001  
+;; some small additions and fixes: fixed and added some
+;; irrelevant utils, can be run with revf now; some other utils added;
+;; fixed "hereby" and font-lock; added abbrev-table support ... define your
+;; own abbreviations using the abbrev-mode; started attempts at xemacs
+;; compatibility, not done yet
 ;; March 21 2001 ...hide/show minor mode added ... hiding proofs
 ;;               quick-run added ...speeds up verifier execution by about 50%,
 ;;                                  (caused by slow displays), toggle it in menu 
@@ -125,20 +131,28 @@
 (require 'comint)
 (require 'easymenu)
 (require 'etags)
-
+(require 'hideshow)
+(require 'executable)
 
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
 (defvar mizar-mode-map nil)
 
-;; this gets rid of the "Keep current list of tag tables" message
-;; when working with two tag tables
-(custom-set-default 'tags-add-tables nil)
+;; current xemacs has no custom-set-default
+(if (fboundp 'custom-set-default)
+    (progn
+; ;; this gets rid of the "Keep current list of tag tables" message
+; ;; when working with two tag tables
+      (custom-set-default 'tags-add-tables nil)
 
-;; this shows all comment lines when hiding proofs
-(custom-set-default 'hs-hide-comments-when-hiding-all nil)
-;; this prevents the default value, which is hs-hide-initial-comment-block
-(custom-set-default 'hs-minor-mode-hook nil) 
+; ;; this shows all comment lines when hiding proofs
+      (custom-set-default 'hs-hide-comments-when-hiding-all nil)
+; ;; this prevents the default value, which is hs-hide-initial-comment-block
+      (custom-set-default 'hs-minor-mode-hook nil)) 
+  (custom-set-variables 
+   '(tags-add-tables nil)
+   '(hs-hide-comments-when-hiding-all nil)
+   '(hs-minor-mode-hook nil))) 
 
 (font-lock-mode)
 (defvar mizar-indent-width 3)
@@ -172,7 +186,10 @@
   (make-local-variable 'comment-column)
   (setq comment-column 48)
   (make-local-variable 'comment-indent-function)
-  (setq comment-indent-function 'mizar-comment-indent))
+  (setq comment-indent-function 'mizar-comment-indent)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults
+      '(mizar-font-lock-keywords nil nil ((?_ . "w")))))
 
 
 (defun mizar-mode-commands (map)
@@ -191,20 +208,24 @@
   (define-key mizar-mode-map "\C-c\C-f" 'mizar-findvoc)
   (define-key mizar-mode-map "\C-c\C-l" 'mizar-listvoc)
   (define-key mizar-mode-map "\C-c\C-t" 'mizar-constr)
-  (define-key mizar-mode-map "\C-c\C-s" 'mizar-scconstr)
 
   (define-key mizar-mode-map "\C-c\C-h" 'mizar-irrths)
   (define-key mizar-mode-map "\C-c\C-v" 'mizar-irrvoc)
   (define-key mizar-mode-map "\C-c\C-i" 'mizar-relinfer)
+  (define-key mizar-mode-map "\C-c\C-s" 'mizar-reliters)
+  (define-key mizar-mode-map "\C-c\C-b" 'mizar-chklab)
   (define-key mizar-mode-map "\C-c\C-y" 'mizar-relprem)
   (define-key mizar-mode-map "\C-c\C-a" 'mizar-inacc)
   (define-key mizar-mode-map "\C-c\C-z" 'make-theorem-summary)
   (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
   (define-key mizar-mode-map [mouse-3]     'mizar-mouse-symbol-def)
-  (define-key mizar-mode-map [(S-down-mouse-3)]     'mizar-mouse-direct-symbol-def)
-  (define-key mizar-mode-map [(S-down-mouse-1)]     'mizar-mouse-direct-show-ref)
-  (define-key mizar-mode-map [(S-down-mouse-2)]     'mouse-find-tag-history)
+;  (define-key mizar-mode-map [(S-down-mouse-3)]     'mizar-mouse-direct-symbol-def)
+;  (define-key mizar-mode-map [(S-down-mouse-1)]     'mizar-mouse-direct-show-ref)
+;  (define-key mizar-mode-map [(S-down-mouse-2)]     'mouse-find-tag-history)
+    (define-key mizar-mode-map [(shift down-mouse-3)]     'mizar-mouse-direct-symbol-def)
+    (define-key mizar-mode-map [(shift down-mouse-1)]     'mizar-mouse-direct-show-ref)
+  (define-key mizar-mode-map [(shift down-mouse-2)]     'mouse-find-tag-history)
   (define-key mizar-mode-map "\M-."     'mizar-show-ref)
   (mizar-mode-commands mizar-mode-map))
 
@@ -294,7 +315,7 @@ rigidly along with this one (not yet)."
       (let ((empty t) ind more less res)
 	;; See previous indentation
 	(cond ((looking-at "end;") (setq less t))
-	      ((looking-at "\\(proof\\|now\\)") (setq more t)))
+	      ((looking-at "\\(proof\\|now\\|hereby\\)") (setq more t)))
 	(while empty
 	  (forward-line -1)
 	  (beginning-of-line)
@@ -310,7 +331,7 @@ rigidly along with this one (not yet)."
 	(if (and more (= ind 2))
 	    0                           ;proof begins inside theorem
 	  ;; Real mizar code
-	  (cond ((looking-at "\\(proof\\|now\\)")
+	  (cond ((looking-at "\\(proof\\|now\\|hereby\\)")
 		 (setq res (+ ind mizar-indent-width)))
 		((looking-at "\\(definition\\|scheme\\|theorem\\|vocabulary\\|constructors\\|requirements\\|notation\\|clusters\\)")
 		 (setq res (+ ind 2)))
@@ -540,9 +561,20 @@ and you want to get to your editing buffers"
 
 (defvar mizar-quick-run t "speeds up verifier by not displaying its intermediate output")
 
+(defvar mizar-quick-run-temp-ext ".out" "extension of the temp file for quick run")
+
+(defvar mizar-use-revf nil "tells if the script revf is used for running mizar irrelevant utilities")
+
+
 (defun toggle-quick-run ()
 (interactive)
 (setq mizar-quick-run (not mizar-quick-run)))
+
+(defun toggle-use-revf ()
+(interactive)
+(if (or mizar-use-revf (executable-find "revf"))
+    (setq mizar-use-revf (not mizar-use-revf))
+  (error "The revf script not found or not executable!")))
 
 (defun make-theorem-summary ()
   "Make a summary of theorems in the buffer *Theorem-Summary*.
@@ -566,6 +598,7 @@ and you want to get to your editing buffers"
 (let ((buf (find-file-noselect file t)))
   (save-excursion
   (set-buffer buf)
+  (revert-buffer t t t)
   (goto-char (point-max))
   (let* ((chstr   (mizar-search-output "Checker "))
 	 (endstr (buffer-substring-no-properties 
@@ -574,13 +607,15 @@ and you want to get to your editing buffers"
 	 (pastr (mizar-search-output "Parser  ")))
     (concat pastr "\n" anstr "\n" endstr "\n")))))
 
+
 (defun mizar-search-output (what)
 (re-search-backward (concat what ".*$") (point-min) t ) 
 (match-string 0))
 
-(defun mizar-new-term-output ()
-"prepare output buffer if it was destroyed by quick-run"
-(if (not mizar-quick-run)
+(defun mizar-new-term-output (&optional force)
+"prepare output buffer if it was destroyed by quick-run; 
+if force is non nil, do it regardless of the value of mizar-quick-run"
+(if (or force (not mizar-quick-run))
     (let ((buff (get-buffer "*mizar-output*")))
       (if (and  buff 
 		(not (member '(major-mode . term-mode) 
@@ -601,42 +636,44 @@ and you want to get to your editing buffers"
       (message "Verifying %s... %c" fname (aref "/|\\-" (mod count 4))))))
 
 
-(defun mizar-it (&optional whole-exp)
-  "run mizar on the text in the current .miz buffer"
-  (interactive "p")
-  (cond ((not (string-match "miz$" (buffer-file-name)))
- 	 (message "Not in .miz file!!"))
-	(t 
-	 (save-buffer)
+(defun mizar-it (&optional util)
+  "run mizar on the text in the current .miz buffer;
+if util given (eg. miz2prel), runs it instead of mizf"
+  (interactive)
+  (let ((util (if util util "mizf"))) 
+    (cond ((not (string-match "miz$" (buffer-file-name)))
+	   (message "Not in .miz file!!"))
+	  ((not (executable-find util))
+	   (message (concat util " not found or not executable!!")))
+	  (t 
+	   (save-buffer)
 ;	 (setq buff (current-buffer))
-	 (let* ((name (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))  ))
-		(mizarg name)
-		(fname (file-name-nondirectory name)))
-	 (progn
-	     (if mizar-quick-run
+	   (let* ((name (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))  ))
+		  (mizarg name)
+		  (fname (file-name-nondirectory name)))
+	     (progn
+	       (if (and mizar-quick-run (equal util "mizf"))
 		 (save-excursion
-		   (setq mizarg (concat name ">" name ".out"))
+		   (setq mizarg (concat name ">" name mizar-quick-run-temp-ext))
 		   (message (concat "Verifying " fname " "))
 		   (shell-command  (concat "mizf " mizarg "&") "*mizar-output*" )
 		   (let ((mizpr (get-buffer-process "*mizar-output*"))
 			 (ctime (cadr (current-time))))
 		     (while  (eq (process-status mizpr) 'run)
 	 	       (sit-for 1)
- 		       (message "Verifying %s... %d s" fname (- (cadr (current-time)) ctime))))
+ 		       (message "Verifying %s (quick-run) ... %d s" fname (- (cadr (current-time)) ctime))))
 		   (set-buffer "*mizar-output*")
-		   (insert (display-mizar-results (concat name ".out"))))
-	       (mizar-new-term-output)
-	   (term-exec "*mizar-output*" "run-mizar" "mizf" nil (list mizarg))
-	   (while  (term-check-proc "*mizar-output*") 
+		   (insert (display-mizar-results (concat name mizar-quick-run-temp-ext))))
+	       (mizar-new-term-output (not (equal util "mizf")))
+	       (term-exec "*mizar-output*" util util nil (list mizarg))
+	       (while  (term-check-proc "*mizar-output*") 
 		 (sit-for 5)))
-	   (revert-buffer t t t)
-	   (setq pos (point)) 
-	   (goto-char (point-min))
-	   (mizar-next-error)
-	   (if (= (point) (point-min)) (goto-char pos) t)) 
-	   ))))
-
-
+	     (revert-buffer t t t)
+	     (setq pos (point)) 
+	     (goto-char (point-min))
+	     (mizar-next-error)
+	     (if (= (point) (point-min)) (goto-char pos) t)) 
+	   )))))
 
 
 
@@ -647,35 +684,38 @@ and you want to get to your editing buffers"
  	 (message "Not in .miz file!!"))
 	(t 
 	 (save-buffer)
-	 (setq mizarg (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))  ))
-	 (cond ((get-buffer "*mizar-output*") 
-		(display-buffer "*mizar-output*"))
-	       (t
-		(save-window-excursion 
-		  (ansi-term "bash")
-		  (rename-buffer "*mizar-output*"))
-		(display-buffer "*mizar-output*")))
-	 (progn
+	 (setq mizarg (substring (buffer-file-name) 0 (string-match
+						       "\\.miz$"
+						       (buffer-file-name))  )) 
+	 (mizar-new-term-output t)
+	 (if mizar-use-revf
+	     (term-exec "*mizar-output*" "revf" "revf"  nil (list util mizarg))
+	   (term-exec "*mizar-output*" "makeenv" "makeenv"  nil (list  mizarg))
+	   (while  (term-check-proc "*mizar-output*") (sit-for 1))
 	   (term-exec "*mizar-output*" util util  nil (list  mizarg))
 	   (end-of-buffer-other-window 0)
-	   (while  (term-check-proc "*mizar-output*") 
-	     (sit-for 5))
+	   (while  (term-check-proc "*mizar-output*") (sit-for 1))
 	   (if (file-exists-p (concat mizarg ".err"))
-	       (progn (term-exec "*mizar-output*" "errflag" "errflag"  nil (list  mizarg))
+	       (progn (term-exec "*mizar-output*" "errflag"
+				 "errflag"  nil (list  mizarg))
 		      (end-of-buffer-other-window 0)
 		      (while  (term-check-proc "*mizar-output*") 
 			(sit-for 1))
-		      (term-exec "*mizar-output*" "addfmsg" "addfmsg"  nil (list  mizarg (substitute-in-file-name "$MIZFILES/mizar")))
+		      (term-exec "*mizar-output*" "addfmsg"
+				 "addfmsg"  nil (list  mizarg
+						       (substitute-in-file-name "$MIZFILES/mizar")))
+			
 		      (end-of-buffer-other-window 0)
 		      (while  (term-check-proc "*mizar-output*") 
 			(sit-for 1)))
-	     t)	     
-	   (revert-buffer t t t)
-	   (setq pos (point)) 
-	   (goto-char (point-min))
-	   (mizar-next-error)
-	   (if (= (point) (point-min)) (goto-char pos) t)) 
-	 )))
+	     t)
+	   )
+	 (revert-buffer t t t)
+	 (setq pos (point)) 
+	 (goto-char (point-min))
+	 (mizar-next-error)
+	 (if (= (point) (point-min)) (goto-char pos) t)) 
+	 ))
 
 
 
@@ -700,6 +740,14 @@ and you want to get to your editing buffers"
 (defun mizar-relprem (&optional whole-exp)
   (interactive "p")
   (mizar-error-util "relprem"))
+
+(defun mizar-reliters (&optional whole-exp)
+  (interactive "p")
+  (mizar-error-util "reliters"))
+
+(defun mizar-chklab (&optional whole-exp)
+  (interactive "p")
+  (mizar-error-util "chklab"))
 
 
 
@@ -877,13 +925,17 @@ and you want to get to your editing buffers"
     result))
 
 
+;; Abbrevs
+(setq dabbrev-abbrev-skip-leading-regexp "\\(\\sw+\\.\\)+" )
+
+(defvar mizar-mode-abbrev-table nil
+  "Abbrev table in use in Mizar-mode buffers.")
+(define-abbrev-table 'mizar-mode-abbrev-table ())
 
 
-(setq font-lock-defaults
-      '(mizar-font-lock-keywords nil nil ((?_ . "w"))))
+;; Font lock
 
-(make-local-variable 'comment-start)
-(setq comment-start "::")
+
 
 
 (defun mizar-font-lock-keywords ()
@@ -965,14 +1017,14 @@ and you want to get to your editing buffers"
 		 ;;		 1 font-lock-variable-name-face
 		 1 'mizar-builtin-face))
 	      (proofs
-	       '("\\<\\(proof\\|now\\|end\\)"
+	       '("\\<\\(proof\\|now\\|end\\|hereby\\)"
 		 0 'font-lock-keyword-face ))
 	      (comments '("::[^\n]*"  0 'font-lock-comment-face ))
 	      (refs '("\\( by\\|from\\)[^;.]*" 0 'font-lock-type-face))
 	      (extra '("&"  0  'mizar-builtin-face))
 	      (keywords			; directives (queries)
 	       (list
-		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|hereby\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\)\\>" 
+		"\\<\\(and\\|antonym\\|attr\\|as\\|assume\\|be\\|begin\\|being\\|canceled\\|case\\|cases\\|cluster\\|coherence\\|compatibility\\|consider\\|consistency\\|constructors\\|contradiction\\|correctness\\|clusters\\|def\\|deffunc\\|definition\\|definitions\\|defpred\\|environ\\|equals\\|ex\\|existence\\|for\\|func\\|given\\|hence\\|\\|requirements\\|holds\\|if\\|iff\\|implies\\|irreflexivity\\|it\\|let\\|means\\|mode\\|not\\|notation\\|of\\|or\\|otherwise\\|\\|over\\|per\\|pred\\|provided\\|qua\\|reconsider\\|redefine\\|reflexivity\\|reserve\\|scheme\\|schemes\\|signature\\|struct\\|such\\|suppose\\|synonym\\|take\\|that\\|thus\\|then\\|theorems\\|vocabulary\\|where\\|associativity\\|commutativity\\|connectedness\\|irreflexivity\\|reflexivity\\|symmetry\\|uniqueness\\|transitivity\\)\\>" 
 		;;		1 'mizar-builtin-face
 		1 font-lock-variable-name-face))
 
@@ -1057,9 +1109,12 @@ functions:
 					;  (setq local-abbrev-table text-mode-abbrev-table)
   (setq major-mode 'mizar-mode)
   (setq mode-name "mizar")
+  (setq local-abbrev-table mizar-mode-abbrev-table)
   (mizar-mode-variables)
   (setq buffer-offer-save t)
-  (run-hooks  'mizar-mode-hook))
+  (run-hooks  'mizar-mode-hook)
+;  (define-key mizar-mode-map [(C-S-down-mouse-2)]   'hs-mouse-toggle-hiding)
+)
 
 
 
@@ -1082,7 +1137,7 @@ functions:
 	  ["Reserv. before point" make-reserve-summary t]
 	  "-"
 	  ["Run Mizar" mizar-it t]
-	  ["Toggle quick-run" toggle-quick-run t]
+	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active t]
 	  "-"
 	  (list "Voc. & Constr. Utilities"
 		["Findvoc" mizar-findvoc t]
@@ -1090,11 +1145,18 @@ functions:
 		["Constr" mizar-constr t])
 ;		["Scconstr" mizar-scconstr t])	  
 	  '("Irrelevant Utilities"
+	    ["Use revf" toggle-use-revf :style toggle :selected mizar-use-revf  :active t]
 	    ["Irrelevant Theorems" mizar-irrths t]
 	    ["Irrelevant Inferences" mizar-relinfer t]
+	    ["Irrelevant Iterative Steps" mizar-reliters t]
 	    ["Irrelevant Premises" mizar-relprem t]
+	    ["Irrelevant Labels" mizar-chklab t]
 	    ["Irrelevant Vocabularies" mizar-irrvoc t]
 	    ["Inaccessible Items" mizar-inacc t])
+	  '("Other Utilities"
+	    ["Miz2Prel" (mizar-it "miz2prel") t]
+	    ["Miz2Abs" (mizar-it "miz2abs") t]
+	    ["Ratproof" (mizar-it "ratproof") t])
 	  "-"
 	  ["Comment region" comment-region t]
 	  ["Uncomment region" (comment-region (region-beginning) (region-end) -1) t]
@@ -1132,6 +1194,10 @@ Valid values are 'gnuemacs and 'xemacs.")
       (easy-menu-define mizar-menu-map (current-local-map) "" menu))
      )))
 
+
+
+
+
 (defun mizar-hs-forward-sexp (arg)
   "Function used by `hs-minor-mode' for `forward-sexp' in Java mode."
 (let ((both-regexps (concat "\\(" hs-block-start-regexp "\\)\\|\\("
@@ -1160,7 +1226,7 @@ Valid values are 'gnuemacs and 'xemacs.")
   (point)))
 
 
-(let ((mizar-mode-hs-info '(mizar-mode ".*\\b\\(proof\\|now\\)[ \n\r]" "end;" "::+" mizar-hs-forward-sexp mizar-hs-adjust-block-beginning)))
+(let ((mizar-mode-hs-info '(mizar-mode ".*\\b\\(proof\\|now\\|hereby\\)[ \n\r]" "end;" "::+" mizar-hs-forward-sexp mizar-hs-adjust-block-beginning)))
     (if (not (member mizar-mode-hs-info hs-special-modes-alist))
             (setq hs-special-modes-alist
 	                  (cons mizar-mode-hs-info hs-special-modes-alist))))
