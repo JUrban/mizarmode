@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.48 $
+;; $Revision: 1.49 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -32,16 +32,6 @@
 ;; the .emacs file enclosed there to your .emacs.
 ;; Otherwise, the latest version of .emacs is downloadable from
 ;; http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/.emacs .
-;;;;;;;;;;;;;; start of .emacs ;;;;;;;;;;;;;;;;;;;;;
-
-; (global-font-lock-mode t)
-; (autoload 'mizar-mode "mizar" "Major mode for editing Mizar programs." t)
-; (setq auto-mode-alist (append '(  ("\\.miz" . mizar-mode)
-;                                   ("\\.abs" . mizar-mode))
-; 			      auto-mode-alist))
-
-;;;;;;;;;;;;;; end of .emacs    ;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 
 ;;; TODO: 
@@ -120,6 +110,160 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
   (require 'speedbar nil t)) ;;noerror if not present
 
 
+;;;; variables and customization
+
+(defgroup mizar nil
+  "Major mode for authoring Mizar articles"
+  :group 'languages)
+
+
+(defcustom mizar-launch-speedbar t
+"*Launch speedbar upon entering mizar-mode for the first time.
+Speedbar can be (de)activated later by running the command `speedbar'."
+:type 'boolean
+:group 'mizar)
+
+(defcustom mizar-indent-width 2 
+"*Indentation width for Mizar articles."
+:type 'integer
+:group 'mizar)
+
+
+(defcustom mizar-show-output 10
+"*Determines the size of the output window after processing.
+Possible values: none, 4, 10, all."
+:type '(choice (const :tag "no output" none)
+	       (const :tag "all output" all)
+	       (const :tag "4 lines" 4)
+	       (const :tag "10 lines" 10))
+:group 'mizar)
+
+(defcustom mizar-goto-error "next"
+"*What error to move to after processing.
+Possible values are none, first, next, previous."
+:type '(choice (const :tag "next error after point" "next")
+	       (const :tag "first error in the article" "first")
+	       (const :tag "first error before point" "previous")
+	       (const :tag "no movement" "none"))
+:group 'mizar)
+
+(defcustom mizfiles 
+(file-name-as-directory  (substitute-in-file-name "$MIZFILES"))
+"The directory where MML is installed"
+:type 'string
+:group 'mizar)
+
+(defcustom mizar-quick-run t 
+"*Speeds up verifier by not displaying its intermediate output.
+Can be toggled from the menu, however the nil value is no
+longer supported and may be deprecated (e.g. on Windows)."
+:type 'boolean
+:group 'mizar)
+
+(defcustom mizar-grep-case-sensitive t
+"*Tells if MML grepping is case sensitive or not."
+:type 'boolean
+:group 'mizar
+)
+
+(defcustom mizar-sb-in-abstracts t
+  "Tells if we use speedbar for Mizar abstracts."
+:type 'boolean
+:group 'mizar)
+
+(defcustom mizar-sb-in-mmlquery t
+  "Tells if we use speedbar for MMLQuery abstracts."
+:type 'boolean
+:group 'mizar)
+
+(defcustom mizar-do-expl nil
+"*Use constructor explanations.
+Put constructor format of 'by' items as properties after verifier run.
+The constructor representation can then be displayed 
+(according to the value of `mizar-expl-kind') and queried."
+:type 'boolean
+:group 'mizar)
+
+(defcustom mizar-expl-kind 'sorted
+"*Variable controlling the display of constructor representation of formulas.
+Has effect iff `mizar-do-expl' is non-nil.
+Possible values are now 
+
+'sorted for sorted list of constructors in absolute notation.
+'constructors for list of constructors in absolute notation,
+'translate for expanded formula in absolute notation,
+'raw for the internal Mizar representation,
+'expanded for expansion of clusters,
+
+The values 'raw and 'expanded are for debugging only, do
+not use them to get constructor explanatios."
+:type '(choice (const :tag "sorted list of constructors" sorted)
+	       (const :tag "unsorted list of constructors" constructor)
+	       (const :tag "translated formula" translate)
+	       (const :tag "nontranslated (raw) formula" raw)
+	       (const :tag "raw formula with expanded clusters" expanded))
+:group 'mizar)
+
+(defcustom mizar-underline-expls nil
+"*If t, the clickable explanation spots in mizar buffer are underlined.
+Has effect iff `mizar-do-expl' is non-nil."
+:type 'boolean
+:group 'mizar)
+
+(defcustom byextent 1 
+"Size of the clickable constructor explanation region.
+`mizar-do-expl' has to be non-nil for this.
+When `mizar-underline-expls' is non-nil, it is also underlined."
+:type 'integer
+:group 'mizar)
+
+(defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/")
+(defvar megrez-url "http://megrez.mizar.org/cgi-bin/")
+
+(defcustom query-url megrez-url
+"*URL for the MMLQuery html browser."
+:type 'string
+:group 'mizar)
+
+(defcustom query-text-output nil
+"If non-nil, text output is required from MML Query."
+:type 'boolean
+:group 'mizar)
+
+(defcustom mizar-query-browser nil
+"*Browser for MML Query, we allow 'w3 or default."
+:type 'symbol
+:group 'mizar)
+
+(defcustom mmlquery-abstracts (concat mizfiles "gab/")
+  "*Directory containing the mmlquery abstracts for browsing."
+:type 'string
+:group 'mizar)
+
+(defcustom advisor-url "http://lipa.ms.mff.cuni.cz/cgi-bin/mycgi1.cgi"
+"*URL for the Mizar Proof Advisor."
+:type 'string
+:group 'mizar)
+
+(defcustom advisor-limit 30
+"*The number of hits you want Mizar Proof Advisor to send you."
+:type 'integer
+:group 'mizar)
+
+(defcustom mizar-use-momm nil
+"*If t, errors *4 are clickable, trying to get MoMM's hints.
+MoMM should be installed for this."
+:type 'boolean
+:group 'mizar)
+
+(defcustom mizar-momm-dir (concat mizfiles "MoMM/")
+"*Directory containing the MoMM distribution."
+:type 'string
+:group 'mizar)
+
+
+
+
 (defvar mizar-mode-syntax-table nil)
 (defvar mizar-mode-abbrev-table nil)
 (defvar mizar-mode-map nil "Keymap used by mizar mode..")
@@ -140,10 +284,6 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
    '(tags-add-tables nil)
    '(hs-hide-comments-when-hiding-all nil)
    '(hs-minor-mode-hook nil)))
-
-(defvar mizar-indent-width 2 
-"*Indentation width for Mizar articles.
-Customizable from Mizar Mode menu.")
 
 (defun mizar-set-indent-width (to)
 "Set indent width to TO."
@@ -416,10 +556,8 @@ Used for exact completion.")
 ;;;;;;;;;;; grepping ;;;;;;;;;;;;;;;;;;;;;
 ;;; we should do some additional checks for winemacs
 
-(defvar mizar-abstr (substitute-in-file-name "$MIZFILES/abstr"))
-(defvar mizar-mml (substitute-in-file-name "$MIZFILES/mml"))
-(defvar mizar-grep-case-sensitive t
-"*Tells if MML grepping is case sensitive or not.")
+(defvar mizar-abstr (concat mizfiles "abstr"))
+(defvar mizar-mml (concat mizfiles "mml"))
 
 (defun mizar-toggle-grep-case-sens ()
 "Toggle the case sensitivity of MML grepping."
@@ -464,12 +602,6 @@ The results are shown and clickable in the Compilation buffer. "
        (list 'speedbar-trim-words-tag-hierarchy)))
 "Hack ensuring proper trimming across various speedbar versions."
 )
-
-(defvar mizar-sb-in-abstracts t
-  "Tells if we use speedbar for abstracts too.")
-
-(defvar mizar-sb-in-mmlquery t
-  "Tells if we use speedbar for mmlquery abstracts too.")
 
 (defun mizar-setup-imenu-sb ()
 "Speedbar and imenu setup for mizar mode."
@@ -712,9 +844,6 @@ Goto column COL, if FORCE, then insert spaces if short."
 ;;;;;;;;;;;;;;;;;; errflag              ;;;;;;;;;;;;;;;;;;
 ;; error format in *.err: Line Column ErrNbr
 
-
-(defvar mizfiles
-(substitute-in-file-name "$MIZFILES/"))
 
 ;; fixed for xemacs leaving "" in the end
 (defun buff-to-numtable ()
@@ -1076,8 +1205,6 @@ TRANSLATE causes `frmrepr' to be called."
 
 ;;;;;;;;;;;;;;; translation for MML Query ;;;;;;;;;;;;;;;;;;;;;;
 ;; should be improved but mostly works
-(defvar mizar-do-expl nil
-"*Put constructor format of 'by' items as properties after verifier run.")
 (defvar constrstring "KRVMLGU")
 (defvar cstrlen (length constrstring))
 ; (defvar constructors '("K" "R" "V" "M" "L" "G" "U"))
@@ -1222,10 +1349,6 @@ The clusters inside FRM must already be expanded here."
       (nreverse res))))
       
 
-(defvar byextent 1 "Size of the underlined region.")
-(defvar mizar-underline-expls nil
-"*If t, the clickable explanation spots in mizar buffer are underlined.")
-
 (defvar mizar-expl-map
   (let ((map (make-sparse-keymap))
 	(button_kword (if (eq mizar-emacs 'xemacs) [(shift button3)]
@@ -1276,17 +1399,6 @@ Underlines and mouse-highlites the places."
     (setq after-change-functions oldhook)
     nil))))
 	
-(defvar mizar-expl-kind 'sorted
-"*Variable controlling the display of constructor representation of formulas.
-Possible values are now 
-'raw for the internal Mizar representation,
-'expanded for expansion of clusters,
-'translate for expanded formula in absolute notation,
-'constructors for list of constructors in absolute notation,
-'sorted for sorted list of constructors in absolute notation.
-The values 'raw and 'expanded are for debugging only, do
-not use them to get constructor explanatios.")
-
 (defvar cstrregexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
 "Description of the constr format we use, see idxrepr.")
 
@@ -1311,14 +1423,6 @@ constructor queries to MML Query.
 Commands:
 \\{mizar-cstr-map}
 ")
-
-(defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/")
-(defvar megrez-url "http://megrez.mizar.org/cgi-bin/")
-(defvar query-url megrez-url)
-(defvar query-text-output nil
-"If non-nil, text output is required from MML Query.")
-(defvar mizar-query-browser nil
-"*Browser for MML Query, we allow 'w3 or default.")
 
 ; Xemacs vs. Emacs
 (if (not (fboundp 'event-window))
@@ -1464,9 +1568,6 @@ The variable `mizar-do-expl' should be non-nil."
 	    (goto-char (event-point event))
 	    (mizar-intern-constrs-other-window res))))))
 
-(defvar advisor-url "http://lipa.ms.mff.cuni.cz/cgi-bin/mycgi1.cgi")
-(defvar advisor-limit 30
-"*The number of hits you want Mizar proof Advisor to send you.")
 (defvar advisor-output "*Proof Advice*")
 
 (defun mizar-ask-advisor ()
@@ -1987,9 +2088,6 @@ successor list to be forgotten.
 Each element of the history is a list
 (buffer file-name position), if buffer was killed and file-name exists, we re-open the file.")
 
-(defvar mmlquery-abstracts (substitute-in-file-name "$MIZFILES/gab/")
-  "*Directory containing the mmlquery abstracts for browsing.")
-
       
 (defun ring-delete-from (ring index)
 "Delete all RING elements starting from INDEX (including it).
@@ -2226,10 +2324,6 @@ Toggle the flag afterwards."
 ;; want to use it in the meantime, use Mizar 6.1. and previous
 ;; version of mizar.el .
 
-(defvar mizar-use-momm nil
-"*If t, errors *4 are clickable, trying to get MoMM's hints.
-MoMM should be installed for this.")
-
 
 (defvar mizar-momm-compressed t
 "*If t, the distribution files (except from the typ directory)
@@ -2245,9 +2339,6 @@ loading can take longer, we just need the process")
 (defconst mizar-fname-regexp  "[A-Za-z0-9_]+"
 "Allowed characters for mizar filenames.")
 
-(defvar mizar-momm-dir (substitute-in-file-name
-		       "$MIZFILES/MoMM/")
-"*Directory containing the MoMM distribution.")
 (defvar mizar-mommths (concat mizar-momm-dir "ths/")
   "Directory with articles' .ths files.")
 (defvar mizar-mommtyp (concat mizar-momm-dir "typ/")
@@ -2921,29 +3012,12 @@ Show them in the buffer *Constructors List*."
 
 (defvar mizar-region-count 0  "Number of regions on mizar-region-stack.")
 
-(defvar mizar-quick-run t 
-"*Speeds up verifier by not displaying its intermediate output.
-Can be toggled from the menu, however the nil value is no
-longer supported and may be deprecated (e.g. on Windows).")
-
-(defvar mizar-quick-run-temp-ext ".out" "Extension of the temp file for quick run.")
-
 (defvar mizar-launch-dir nil
 "*If non-nil, verifier and other programs are called from here.
 Can be set from menu.
 Set this to parent directory, if you use
 private vocabulary file residing in ../dict/ , 
 otherwise Mizar *will not* find it.")
-
-(defvar mizar-show-output 10
-"*Possible values: none, 4, 10, all.
-Determines the size of the output window after processing. 
-Can be set from menu")
-
-(defvar mizar-goto-error "next"
-"*What error to move to after processing.
-Possible values are none, first, next, previous.
-Can be set from menu")
 
 (defvar mizar-imenu-expr
 '(
@@ -3154,23 +3228,23 @@ If COMPIL, emulate compilation-like behavior for error messages."
 		 (insert "Running " util " on " fname " ...\n")
 		 (sit-for 0)     ; force redisplay
 ; call-process can return string (signal-description)
-		 (let ((excode (call-process makeenv nil cbuf nil  name)))
+		 (let ((excode (call-process makeenv nil cbuf nil "-l" name)))
 		   (if (and (numberp excode) (= 0 excode))
-		       (call-process util nil cbuf nil "-q" name)))
+		       (call-process util nil cbuf nil "-q" "-l" name)))
 		 (other-window 1)))
 	     ((and mizar-quick-run (not noqr))
 	      (save-excursion
 		(message (concat "Running " util " on " fname " ..."))
 		(if (get-buffer "*mizar-output*")
 		    (kill-buffer "*mizar-output*"))
-		(let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil name)))
+		(let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil "-l" name)))
 		  (if (and (numberp excode) (= 0 excode))
-		      (shell-command (concat util " -q " name)
+		      (shell-command (concat util " -q -l " name)
 				     "*mizar-output*")
 		    (display-buffer "*mizar-output*")))
 		(message " ... done")))
 	     (t
-	      (let  ((excode (call-process makeenv nil nil nil name)))
+	      (let  ((excode (call-process makeenv nil nil nil "-l" name)))
 		(if (and (numberp excode) (= 0 excode))
 		   (progn
 		     (mizar-new-term-output noqr)
@@ -3636,6 +3710,7 @@ if that value is non-nil."
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
   '(list  "Mizar"
+	  ["Customize Mizar Mode" (customize-group 'mizar) t]
 	  ["Browse HTML Help" (browse-url html-help-url) t]
 	  ["Visited symbols" mouse-find-tag-history t]
 	  '("Goto errors"
@@ -3861,7 +3936,7 @@ move backward across N balanced expressions."
 ;; other file via speedbar, so we do it the bad way
 ;;(if (featurep 'speedbar)
 ;;    (add-hook 'mizar-mode-hook '(lambda () (speedbar 1))))
-(if (and window-system (featurep 'speedbar))
+(if (and window-system (featurep 'speedbar) mizar-launch-speedbar)
     (speedbar 1))
 
 (provide 'mizar)
