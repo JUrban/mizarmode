@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.67 $
+;; $Revision: 1.68 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -151,6 +151,11 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
 (defcustom mizar-indent-width 2 
 "*Indentation width for Mizar articles."
 :type 'integer
+:group 'mizar)
+
+(defcustom mizar-abstracts-use-view t
+"*View-mode is used for Mizar abstracts."
+:type 'boolean
 :group 'mizar)
 
 (defcustom mizar-launch-speedbar t
@@ -4415,6 +4420,9 @@ if that value is non-nil."
   (mizar-mode-variables)
   (setq buffer-offer-save t)
   (mizar-setup-imenu-sb)
+  (if (and mizar-abstracts-use-view
+	   (buffer-abstract-p (current-buffer)))
+      (view-mode))
   (run-hooks  'mizar-mode-hook)
   )
 
