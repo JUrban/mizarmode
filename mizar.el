@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.103 $
+;; $Revision: 1.104 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2362,8 +2362,8 @@ The clusters inside FRM must already be expanded here."
 (frmrepr-abs (frmrepr prop) cstronly))
 
 (defun mizar-getbys (aname)
-  "Get constructor repr of propositions from the .pre file for ANAME."
-  (let ((prename (concat aname ".pre")))
+  "Get constructor repr of propositions from the .xml file for ANAME."
+  (let ((prename (concat aname ".xml")))
     (or (file-readable-p prename)
 	(error "File unreadable: %s" prename))
     (let (res)
@@ -2382,8 +2382,8 @@ The clusters inside FRM must already be expanded here."
 
 ;; kill after debugging, old pre-xml version
 (defun mizar-getbys-old (aname)
-  "Get constructor repr of bys from the .pre file for ANAME."
-  (let ((prename (concat aname ".pre")))
+  "Get constructor repr of bys from the .xml file for ANAME."
+  (let ((prename (concat aname ".xml")))
     (or (file-readable-p prename)
 	(error "File unreadable: %s" prename))
     (let (res)
@@ -2420,8 +2420,8 @@ The clusters inside FRM must already be expanded here."
 into the mizar buffer ANAME.
 Underlines and mouse-highlites the places."
 (save-excursion
-; check at least for the .pre file, not to exit with error below
-(if (not (file-readable-p (concat aname ".pre")))
+; check at least for the .xml file, not to exit with error below
+(if (not (file-readable-p (concat aname ".xml")))
     (message "Cannot explain constructors, verifying was incomplete")
   (get-sgl-table aname)
 ;  (parse-cluster-table aname)
