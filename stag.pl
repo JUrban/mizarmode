@@ -1,5 +1,9 @@
 #!/usr/bin/perl 
 
+# Dec 14 2001 ... fixed "[pred]" and "dualizing-func", seems OK for MML 3.26.709
+# July 24, 2001 ... correcthidden fixed for Mizar 6.1.04 ... "[." added, still to fix
+#  a bug introduced by "dualizing-func" 
+
 # stag.pl ... create symbol tags for mizar abstracts
 # run it in directory $MIZFILES/abstr on the abstracts you want, usually just
 # "./stag.pl *.abs"
@@ -49,8 +53,8 @@ while ($file = shift) {
       chop($_);
       s/::.*//;                                                  # strip comments
 # beware, more defs can be on one line! ... ok
-	  while(m/\b(func|pred|attr|struct|mode|synonym|antonym)\b/g) {
-	      $found=$1;
+	  while(m/(^| )(func|pred|attr|struct|mode|synonym|antonym)([ (]|$)/g) {
+	      $found=$2;
               # guess synonyms and antonyms            
 	      if (($found eq "synonym")||($found eq "antonym")) { 
 		  if (($bef eq "pred")||($bef eq "attr")) { $j = guesswhat();}
@@ -106,7 +110,7 @@ sub onevoc {
 
 # add builtin symbols for the HIDDEN vocabulary
 sub correcthidden {
-    @Ks=("[", "{"); @Rs=("="); @Ms=("set");
+    @Ks=("[", "{", "]."); @Rs=("="); @Ms=("set");
     unshift  @{$voch{"HIDDEN"}->[0]}, @Ks;
     unshift  @{$voch{"HIDDEN"}->[2]}, @Rs;
     unshift  @{$voch{"HIDDEN"}->[4]}, @Ms;
