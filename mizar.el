@@ -1858,26 +1858,30 @@ use quick run, if compil, emulate compilation-like behavior"
 		 (erase-buffer)
 		 (insert "Running " util " on " fname " ...\n")
 		 (sit-for 0)     ; force redisplay
-		 (if (= 0 (call-process makeenv nil cbuf nil  name))
-		     (call-process util nil cbuf nil "-q" name))
+; call-process can return string (signal-description)
+		 (let ((excode (call-process makeenv nil cbuf nil  name)))
+		   (if (and (numberp excode) (= 0 excode))
+		       (call-process util nil cbuf nil "-q" name)))
 		 (other-window 1)))
 	     ((and mizar-quick-run (not noqr))
 	      (save-excursion
 		(message (concat "Running " util " on " fname " ..."))
 		(if (get-buffer "*mizar-output*")
 		    (kill-buffer "*mizar-output*"))
-		(if (= 0 (call-process makeenv nil (get-buffer-create "*mizar-output*") nil name))
-		    (shell-command (concat util " -q " name) 
-				   "*mizar-output*")
-		  (switch-to-buffer-other-window "*mizar-output*"))
+		(let ((excode  (call-process makeenv nil (get-buffer-create "*mizar-output*") nil name)))
+		  (if (and (numberp excode) (= 0 excode))
+		      (shell-command (concat util " -q " name) 	
+				     "*mizar-output*")
+		    (switch-to-buffer-other-window "*mizar-output*")))
 		(message " ... done")))
 	     (t
-	       (if (= 0 (call-process makeenv nil nil nil name))
+	      (let  ((excode (call-process makeenv nil nil nil name)))
+		(if (and (numberp excode) (= 0 excode))
 		   (progn
 		     (mizar-new-term-output noqr)
 		     (term-exec "*mizar-output*" util util nil (list name))
 		     (while  (term-check-proc "*mizar-output*") 
-		       (sit-for 1))))))
+		       (sit-for 1)))))))
 	     (if old-dir (setq default-directory old-dir))
 	     (if mizar-do-expl 
 		 (save-excursion
