@@ -689,7 +689,17 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 (defun mizar-compile ()
   "compile a mizar file in the traditional way"
   (interactive)
-  (compile (concat "mizfe " (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name))))))
+  (let ((old-dir (mizar-switch-to-ld)))
+    (compile (concat "mizfe " (substring (buffer-file-name) 0 (string-match "\\.miz$" (buffer-file-name)))))
+    (if old-dir (setq default-directory old-dir))))
+
+
+(defun mizar-switch-to-ld ()
+"switch to mizar-launch-dir and return old default-directory if switched"
+  (if mizar-launch-dir
+      (let ((old-dir default-directory))
+	(cd mizar-launch-dir)
+	old-dir)))
 
 (defun mizar-it (&optional util)
   "run mizar on the text in the current .miz buffer;
@@ -704,14 +714,10 @@ if util given (eg. miz2prel), runs it instead of mizf"
 ;	 (setq buff (current-buffer))
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
-		  (temp-fname (concat name mizar-quick-run-temp-ext))
-		  old-dir )
+		  (temp-fname (concat name mizar-quick-run-temp-ext)))
 	     (save-buffer)
 	     (if (and mizar-quick-run (equal util "mizf"))
-		 (progn
-		   (if mizar-launch-dir
-		       (progn (setq old-dir default-directory)
-			      (cd mizar-launch-dir)))
+		 (let ((old-dir (mizar-switch-to-ld)))
 		   (save-excursion
 		     (message (concat "Verifying " fname " "))
 		     (if (file-exists-p temp-fname) (delete-file temp-fname))
@@ -1205,6 +1211,7 @@ functions:
 	  ["Reserv. before point" make-reserve-summary t]
 	  "-"
 	  ["Run Mizar" mizar-it t]
+	  ["Mizar Compile" mizar-compile t]
 	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active t]
 	  ["Toggle launch-dir" mizar-set-launch-dir :style toggle :selected mizar-launch-dir  :active t]
 	  "-"
