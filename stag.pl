@@ -18,8 +18,9 @@ $constrs="KRVMGUL"; # also indexing
 @symb=  ("func", "func", "pred", "attr", "mode", "struct", "sel", "struct");
 
 # create the old miztags, modify into REFTAGS and delete
+
 print "Creating reference tags\n";  
-system "etags   --language=none  --regex='/^ *scheme[ \n]*\\([^ {]*\\)[ \n]*/\\1/'        --regex='/^[^:]*:: \\([^ \n:]+\\):\\([0-9]+\\)/\\1:\\2/'   --regex='/^[^:]*:: \\([^ \n:]+\\):def *\\([0-9]+\\)/\\1:def \\2/' *.abs";
+system "etags   --language=none  --regex='/^[^:]*:: \\([^ \n:]+\\):sch *\\([0-9]+\\)/\\1:sch \\2/'  --regex='/^[^:]*:: \\([^ \n:]+\\):\\([0-9]+\\)/\\1:\\2/'   --regex='/^[^:]*:: \\([^ \n:]+\\):def *\\([0-9]+\\)/\\1:def \\2/' *.abs";
 open(IN, "TAGS");
 open(OUT,'>reftags'); 
 while (<IN>) { s/.*(.*)/$1;$1/; print OUT $_;};
@@ -52,16 +53,15 @@ while ($file = shift) {
     print OUT "\n$file,\n";                                        # tag file header
     while (<IN>) 
     { $l=length($_);                                             # bytes counting
-      chop($_);
       s/::.*//;                                                  # strip comments
 # beware, more defs can be on one line! ... ok
-	  while(m/(^| )(func|pred|attr|struct|mode|synonym|antonym)([ (]|$)/g) {
+	  while(m/(^| )(func|pred|attr|struct|mode|synonym|antonym)([ \n\r(]|$)/g) {
 	      $found=$2;
               # guess synonyms and antonyms            
-	      if (($found eq "synonym")||($found eq "antonym")) { 
-		  if (($bef eq "pred")||($bef eq "attr")) { $j = guesswhat();}
-		  else {$j = $bef}}
-	      else {$bef = $found; $j = $found};
+	      if ($found eq "synonym") 
+	      {$j = guesswhat('func','pred','attr','mode');}
+	      elsif ($found eq "antonym") {$j = guesswhat('pred','attr');}
+	      else {$j = $found};
 	      shiftprint();                                            # shift and print tag
               # for structs, print defined sels if any
 	      if (($found eq "struct") && (defined($selh{$sname})))  {
@@ -226,15 +226,53 @@ sub pushsel {
     $selh{$str}->[1+$#{$selh{$str}}] = $r;
 }
 
-# guesses synonyms amd antonyms
-# if \bis\b inside, then attribute, otherwise pred
+# This is now quite risky guessing for synonyms and antonyms
 sub guesswhat {
-   $g=substr($_,pos);
-   ($g1)=m/([^;]*)/;
-   if ($g1=~m/\bis[ \n\r]/) { return "attr" }
-   else {return "pred"}
-}
+  my @possible_syms = @_;
+  my $g =substr($_,pos);
+  my $p1,$p2, @syms1, @syms2, $max;
+  @syms1 = (); @syms2 = (); $max = 0;
+  while (index($g,';') < 0)    # very nasty, have to read more lines
+  {
+      my $old = $_;
+      my $oldpos = pos;
+      $bytes+= $l;         # increase byte count
+      $_ = <IN>;
+      $l=length($_);
+      s/::.*//; 
+      $_ = $old.$_;
+      pos = $oldpos;
+      $g =substr($_,pos);
+  }
 
+  $g =~ m/([^;]*)[ \r\n]for[ \r\n]([^;]*)/
+    or die "Bad guessing at $fnoext:$.";
+
+  ($p1,$p2)= ($1, $2);    # the patterns hopefully
+  foreach $sym (@possible_syms)
+  {
+      if(($#{$defh{$sym}} > -1) && (index($p1,$defh{$sym}[0]) > -1)) 
+      { 
+	  push(@syms1, $sym);
+	  push(@syms2, $defh{$sym}[0]);
+	  if(length($syms2[$#syms2]) > $max) { $max = length($syms2[$#syms2])};
+      }
+  }
+  if ($#syms1 < 0)  {die "Nothing matched while guessing at $fnoext:$.:$_:$g";}
+  if ($#syms1 == 0) {return $syms1[0]}; # OK, only one matched
+  if ($#syms1 > 0)                    # more than one matched
+  {
+      my @syms3 = ();
+      foreach $i (0 .. $#syms1) 
+      { if(length($syms2[$i]) == $max) { push(@syms3,$syms1[$i])}};
+      
+      if ($#syms3 == 0) {return $syms3[0]}; # only one longest
+
+      die "More than one match at at $fnoext:$.:$p1:".join(',',@syms1).":".
+	  join(',',@syms2);
+  }
+}
+  
 # shifts the array in $defh{$j} and does the tag printing
 sub shiftprint {
     $sname = shift @{$defh{$j}};
