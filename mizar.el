@@ -932,71 +932,85 @@ nil if no errors"
 ; analyzer (or having interactive verifier), we now have only clusters
 ; after accommodation
 
-(defvar cluster-table nil "table of clusters for the article")
+; cluster-table stuff commented now, ver. 6.2. resigned on 
+; collecting; leaving it here since two years from now we will
+; be collecting again :-)
+
+; (defvar cluster-table nil "table of clusters for the article")
 (defvar eclusters nil "table of existential clusters for the article")
 (defvar fclusters nil "table of functor clusters for the article")
 (defvar cclusters nil "table of conditional clusters for the article")
 
-(defvar cluster-table-date -1 
-"now as constr-table-date, but should be updated more often")
+; (defvar cluster-table-date -1 
+; "now as constr-table-date, but should be updated more often")
 (defvar ecl-table-date -1 
 "now as constr-table-date, but should be updated more often")
 
-(make-variable-buffer-local 'cluster-table)
+; (make-variable-buffer-local 'cluster-table)
 (make-variable-buffer-local 'eclusters)
 (make-variable-buffer-local 'fclusters)
 (make-variable-buffer-local 'cclusters)
-(make-variable-buffer-local 'cluster-table-date)
+; (make-variable-buffer-local 'cluster-table-date)
 (make-variable-buffer-local 'ecl-table-date)
 
-(defun parse-cluster-table (aname &optional reload)
-  (let ((cluname (concat aname ".clu")))
-    (or (file-readable-p cluname)
-	(error "File unreadable: %s" cluname))
-    (let ((cludate (cadr (nth 5 (file-attributes cluname)))))
-      (if (or reload (/= cluster-table-date cludate))
-	  (let (tab)
-	    (with-temp-buffer 
-	      (insert-file-contents cluname)
-	      (setq tab
-		    (vconcat '("")
-			     (split-string (buffer-string) " ;[\n]"))))
-	    (setq cluster-table tab
-		  cluster-table-date cludate))))))
+; (defun parse-cluster-table (aname &optional reload)
+;   (let ((cluname (concat aname ".clu")))
+;     (or (file-readable-p cluname)
+; 	(error "File unreadable: %s" cluname))
+;     (let ((cludate (cadr (nth 5 (file-attributes cluname)))))
+;       (if (or reload (/= cluster-table-date cludate))
+; 	  (let (tab)
+; 	    (with-temp-buffer 
+; 	      (insert-file-contents cluname)
+; 	      (setq tab
+; 		    (vconcat '("")
+; 			     (split-string (buffer-string) " ;[\n]"))))
+; 	    (setq cluster-table tab
+; 		  cluster-table-date cludate))))))
 
 
-(defun fix-pre-type (str &optional table)
-  "expand clusters for types using cluster-table, change G for type to L "
-  (let ((table (or table cluster-table))
-	(lend 0)  start  mtch cl clnr typ (res ""))
-    (while  (string-match "V[0-9]+ V\\([0-9]+\\) \\([MGL]\\)" str lend)
-      (setq start (match-beginning 0)
-	    mtch (match-string 1 str)
-	    clnr (string-to-number mtch)
-	    cl (if (< clnr (length table))
-		   (aref table (string-to-number mtch))
-		 (concat "c" mtch))
-	    typ (match-string 2 str)
-	    res (concat res (substring str lend start) cl " "
-			(if (equal typ "G") "L" typ))
-	    lend (match-end 0)))
-    (concat res (substring str lend))))
+(defun fix-pre-type (str) 
+" change G for type to L, this is now based on a shaky assumption
+  that any _real_ G (functor) has at least one field"
+  (let ((start 0) (res (copy-sequence str)))
+    (while  (setq start (string-match "G\\([0-9]+ [;WV]\\)" res start))
+      (aset res start 76)
+      (setq start (match-end 0)))
+    res))
 
 
-(defun expand-incluster (str &optional table)
-  "expand cluster entry in .ecl using cluster-table"
-  (let ((table (or table cluster-table)))
-    (string-match "^.[AW][0-9]+" str)
-    (let* ((clnr (string-to-number (substring str 2 (match-end 0))))
-	   (cl (concat (aref table clnr) ":"))
-	   (result (replace-match cl t t str)))
-      (if (string-match "C\\([0-9]+\\)[ \t]*$" result)
-	  (let* ((clnr2 (string-to-number 
-			 (substring result (match-beginning 1) 
-				    (match-end 1))))
-		 (cl2 (concat ":" (aref table clnr2) )))
-	    (replace-match cl2 t t result))
-	result))))
+; (defun fix-pre-type (str &optional table)
+;   "expand clusters for types using cluster-table, change G for type to L "
+;   (let ((table (or table cluster-table))
+; 	(lend 0)  start  mtch cl clnr typ (res ""))
+;     (while  (string-match "V[0-9]+ V\\([0-9]+\\) \\([MGL]\\)" str lend)
+;       (setq start (match-beginning 0)
+; 	    mtch (match-string 1 str)
+; 	    clnr (string-to-number mtch)
+; 	    cl (if (< clnr (length table))
+; 		   (aref table (string-to-number mtch))
+; 		 (concat "c" mtch))
+; 	    typ (match-string 2 str)
+; 	    res (concat res (substring str lend start) cl " "
+; 			(if (equal typ "G") "L" typ))
+; 	    lend (match-end 0)))
+;     (concat res (substring str lend))))
+
+
+; (defun expand-incluster (str &optional table)
+;   "expand cluster entry in .ecl using cluster-table"
+;   (let ((table (or table cluster-table)))
+;     (string-match "^.[AW][0-9]+" str)
+;     (let* ((clnr (string-to-number (substring str 2 (match-end 0))))
+; 	   (cl (concat (aref table clnr) ":"))
+; 	   (result (replace-match cl t t str)))
+;       (if (string-match "C\\([0-9]+\\)[ \t]*$" result)
+; 	  (let* ((clnr2 (string-to-number 
+; 			 (substring result (match-beginning 1) 
+; 				    (match-end 1))))
+; 		 (cl2 (concat ":" (aref table clnr2) )))
+; 	    (replace-match cl2 t t result))
+; 	result))))
 
 
 (defun parse-clusters (aname &optional reload)
@@ -1004,18 +1018,18 @@ nil if no errors"
 /usually .ecl file/; cluster-table must be loaded"
 (let ((ecldate (cadr (nth 5 (file-attributes (concat aname ".ecl"))))))
   (if (or reload (/= ecl-table-date ecldate))
-      (let (ex func cond (table cluster-table))
+      (let (ex func cond)  ; (table cluster-table))
 	(with-temp-buffer 
 	  (insert-file-contents (concat aname ".ecl"))
 	  (let ((all (split-string (buffer-string) "[\n]")))
 	    (while (eq (aref (car all) 0) 143) ; char 143 is exist code
-	      (setq ex (cons (expand-incluster (car all) table) ex))
+	      (setq ex (cons (car all) ex))
 	      (setq all (cdr all)))
 	    (while (eq (aref (car all) 0) 102) ; char 102 is 'f' 
-	      (setq func (cons (expand-incluster (car all) table) func))
+	      (setq func (cons (car all) func))
 	      (setq all (cdr all)))
 	    (while (eq (aref (car all) 0) 45) ; char 45 is '-' 
-	      (setq cond (cons (expand-incluster (car all) table) cond))
+	      (setq cond (cons (car all) cond))
 	      (setq all (cdr all)))))
 	(setq eclusters (vconcat (nreverse ex))
 	      fclusters (vconcat (nreverse func))
@@ -1051,7 +1065,7 @@ nil if no errors"
 	(insert result))      
       (goto-char (point-min)))))
 
-
+; should be tested for 6.2.!
 (defun parse-show-cluster (&optional translate fname reload)
 (interactive)
 (save-excursion
@@ -1059,7 +1073,7 @@ nil if no errors"
 		(substring (buffer-file-name) 0 
 			   (string-match "\\.miz$"
 					 (buffer-file-name))))))
-  (parse-cluster-table name reload)
+;  (parse-cluster-table name reload)
   (parse-clusters name reload)
   (if translate (get-sgl-table name))
   (show-clusters translate))))
@@ -1175,8 +1189,8 @@ the clusters inside frm must already be expanded here"
 	      (setq res (concat res (char-to-string tok)))))))
     res))
 
-(defun expfrmrepr (frm &optional table cstronly)
-(frmrepr (fix-pre-type frm table) cstronly))
+(defun expfrmrepr (frm &optional cstronly)
+(frmrepr (fix-pre-type frm) cstronly))
 
 (defun mizar-getbys (aname)
   "Gets consructor repr of bys form the .pre file"
@@ -1223,7 +1237,7 @@ mizar buffer, underlines and mouse-highlites the places"
 (if (not (file-readable-p (concat aname ".pre")))
     (message "Cannot explain constructors, verifying was incomplete")
   (get-sgl-table aname)
-  (parse-cluster-table aname)
+;  (parse-cluster-table aname)
   (let ((bys (mizar-getbys aname))
 	(oldhook after-change-functions)
 	(map mizar-expl-map)
@@ -1363,12 +1377,12 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
       (if frm
 	  (let ((res 
 		 (cond ((eq mizar-expl-kind 'raw) frm)
-		       ((eq mizar-expl-kind 'expanded) (fix-pre-type frm cluster-table))
-		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm cluster-table))
+		       ((eq mizar-expl-kind 'expanded) (fix-pre-type frm))
+		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm))
 		       ((eq mizar-expl-kind 'constructors)
-			(prin1-to-string (expfrmrepr frm cluster-table t)))
+			(prin1-to-string (expfrmrepr frm t)))
 		       ((eq mizar-expl-kind 'sorted)
-			(prin1-to-string (sort (unique (expfrmrepr frm cluster-table t)) 'string<)))
+			(prin1-to-string (sort (unique (expfrmrepr frm t)) 'string<)))
 		       (t ""))))
 	    (goto-char (event-point event))
 	    (mizar-intern-constrs-other-window res))))))
@@ -1540,6 +1554,13 @@ the value of query-entry-mode-hook.
 
 
 ;;;;;;;;;;;;;;;;;;;;; MoMM ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Caution, this version of mizar.el is transitory. I have
+;; ported the Constr. Explanations to Mizar 6.2. here, but MoMM 0.2
+;; is still based on Mizar 6.1, so incase you have Mizar 6.2, MoMM
+;; will not work. I hope to port MoMM to Mizar 6.2. shortly. If you
+;; want to use it in the meantime, use Mizar 6.1. and previous 
+;; version of mizar.el .
+
 (defvar mizar-use-momm nil 
 "If t, errors *4 are clickable, trying to get MoMM's hints.")
 
@@ -2184,15 +2205,15 @@ then the MoMM db."
     (if (< (length arr) nr)
 	(error "Maximum for article %s is %d" article (length arr)))
     (get-sgl-table aname)           ;; ensure up-to-date
-    (parse-cluster-table aname)     ;; ensure up-to-date
+;    (parse-cluster-table aname)     ;; ensure up-to-date
     (setq res (copy-sequence (aref arr (- nr 1))))
     (cond ((eq mizar-expl-kind 'raw) res)
-	  ((eq mizar-expl-kind 'expanded) (fix-pre-type res cluster-table))
-	  ((eq mizar-expl-kind 'translate) (expfrmrepr res cluster-table))
+	  ((eq mizar-expl-kind 'expanded) (fix-pre-type res))
+	  ((eq mizar-expl-kind 'translate) (expfrmrepr res))
 	  ((eq mizar-expl-kind 'constructors)
-	   (prin1-to-string (expfrmrepr res cluster-table t)))
+	   (prin1-to-string (expfrmrepr res t)))
 	  ((eq mizar-expl-kind 'sorted)
-	   (prin1-to-string (sort (unique (expfrmrepr res cluster-table t)) 'string<)))
+	   (prin1-to-string (sort (unique (expfrmrepr res t)) 'string<)))
 	  (t ""))))
 
 (defun mizar-show-ref-constrs (&optional ref)
@@ -2959,7 +2980,7 @@ functions:
 	  ["View symbol def" mizar-symbol-def t]
 	  ["Show reference" mizar-show-ref t]
 	  '("MoMM"
-	    ["Use MoMM" mizar-toggle-momm :style toggle 
+	    ["Use MoMM (Not Mizar 6.2. yet!)" mizar-toggle-momm :style toggle 
 	     :selected mizar-use-momm  :active t]
 	    ["Load theorems only"  (setq mizar-momm-load-tptp 
 					 (not mizar-momm-load-tptp)) 
