@@ -1273,7 +1273,8 @@ mizar buffer, underlines and mouse-highlites the places"
 (defvar mizar-cstr-map 
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-m" 'mizar-kbd-ask-query)
-    (define-key map "\M-." 'mizar-kbd-cstr-tag)    
+    (define-key map "\M-." 'mizar-kbd-cstr-tag)
+    (define-key map "\C-c\C-c" 'mizar-ask-advisor)
     (if (eq mizar-emacs 'xemacs)
 	(progn 
 	  (define-key map [button2] 'mizar-mouse-ask-query)
@@ -1283,7 +1284,7 @@ mizar buffer, underlines and mouse-highlites the places"
     map)
 "Keymap used in the buffer *Constructors list* for viewing constructor 
 meanings via symbtags or sending constructor queries to MML Query. 
-Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
+Currently used are:  mouse-2, mouse-3, C-m (or RET), M-. and C-c C-c .")
 
 (defvar alioth-url "http://alioth.uwb.edu.pl/cgi-bin/query/")
 (defvar megrez-url "http://megrez.mizar.org/cgi-bin/")
@@ -1387,6 +1388,26 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 	    (goto-char (event-point event))
 	    (mizar-intern-constrs-other-window res))))))
 
+(defvar advisor-url "http://lipa.ms.mff.cuni.cz/cgi-bin/mycgi1.cgi")
+(defvar advisor-limit "30")
+(defvar advisor-output "*Proof Advice*")
+
+(defun mizar-ask-advisor ()
+  "Send the contents of the Constr. Explanations buffer to Mizar Proof Advisor"
+  (interactive)
+  (let* ((query (concat advisor-url "?Text=1\\&Limit=" advisor-limit
+			"\\&Formula="
+			(query-handle-chars-cgi 
+			 (buffer-substring-no-properties 
+			  (point-min) (point-max)))))
+	 (command (concat "wget -q -O - " query)))
+    (shell-command command advisor-output)
+    (let ((abuffer (get-buffer advisor-output)))
+      (if abuffer
+	  (progn (set-buffer abuffer)
+		 (mizar-mode))
+	(message "No refernces advised")))
+    ))
 
 (defun mizar-toggle-cstr-expl (to)
   (cond ((eq to 'none) (setq  mizar-do-expl nil))
