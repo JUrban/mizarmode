@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+#          Mizar Verifier, emacs edition
+#
+
+makeenv $1
+if test ! -s $1.err && test -e $1.err
+then
+ verifier $1 1> /dev/null 2> /dev/null
+fi
+errp.pl $1  
