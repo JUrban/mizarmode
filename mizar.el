@@ -709,10 +709,12 @@ tabs"
 (defun mizar-error-flag (aname &optional table)
 "Insert error flags into main mizar buffer (like errflag)."
 (interactive "s")
-(let ((atab (sort-for-errflag (or table (mizar-get-errors aname)))))
+(let (lline (atab (sort-for-errflag (or table (mizar-get-errors aname)))))
   (if atab
       (save-excursion	  
-	(if (< 0 (goto-line (caar atab)))
+	(setq lline (goto-line (caar atab)))
+	(if (or (and (eq mizar-emacs 'xemacs) (not lline))
+		(and (not (eq mizar-emacs 'xemacs)) (< 0 lline)))
 	    (error "Main buffer and the error file do not agree, run verifier!"))
 	(end-of-line)
 	(insert "\n::>")
@@ -821,6 +823,332 @@ nil if no errors"
 
 ;;;;;;;;;;;;;;; end of errflag ;;;;;;;;;;;;;;;;;;
 
+;;;;;;; some cluster hacking (also for MMLQuery) ;;;;;;;;;;;;;;;;;;
+;;; this should be improved by outputing the cluster tables after
+; analyzer (or having interactive verifier), we now have only clusters
+; after accommodation
+
+(defvar cluster-table nil "table of clusters for the article")
+(defvar eclusters nil "table of existential clusters for the article")
+(defvar fclusters nil "table of functor clusters for the article")
+(defvar cclusters nil "table of conditional clusters for the article")
+
+(defvar cluster-table-date -1 
+"now as constr-table-date, but should be updated more often")
+(defvar ecl-table-date -1 
+"now as constr-table-date, but should be updated more often")
+
+(make-variable-buffer-local 'cluster-table)
+(make-variable-buffer-local 'eclusters)
+(make-variable-buffer-local 'fclusters)
+(make-variable-buffer-local 'cclusters)
+(make-variable-buffer-local 'cluster-table-date)
+(make-variable-buffer-local 'ecl-table-date)
+
+(defun parse-cluster-table (aname &optional reload)
+(let ((cludate (cadr (nth 5 (file-attributes (concat aname ".clu"))))))
+  (if (or reload (/= cluster-table-date cludate))
+      (let (tab)
+	(with-temp-buffer 
+	  (insert-file-contents (concat aname ".clu"))
+	  (setq tab
+		(vconcat '("")
+			 (split-string (buffer-string) " ;[\n]"))))
+	(setq cluster-table tab
+	      cluster-table-date cludate)))))
+
+
+(defun fix-pre-type (str &optional table)
+  "expand clusters for types using cluster-table, change G for type to L "
+  (let ((table (or table cluster-table))
+	(lend 0)  start  mtch cl clnr typ (res ""))
+    (while  (string-match "V[0-9]+ V\\([0-9]+\\) \\([MGL]\\)" str lend)
+      (setq start (match-beginning 0)
+	    mtch (match-string 1 str)
+	    clnr (string-to-number mtch)
+	    cl (if (< clnr (length table))
+		   (aref table (string-to-number mtch))
+		 (concat "c" mtch))
+	    typ (match-string 2 str)
+	    res (concat res (substring str lend start) cl " "
+			(if (equal typ "G") "L" typ))
+	    lend (match-end 0)))
+    (concat res (substring str lend))))
+
+
+(defun expand-incluster (str &optional table)
+  "expand cluster entry in .ecl using cluster-table"
+  (let ((table (or table cluster-table)))
+    (string-match "^.[AW][0-9]+" str)
+    (let* ((clnr (string-to-number (substring str 2 (match-end 0))))
+	   (cl (concat (aref table clnr) ":"))
+	   (result (replace-match cl t t str)))
+      (if (string-match "C\\([0-9]+\\)[ \t]*$" result)
+	  (let* ((clnr2 (string-to-number 
+			 (substring result (match-beginning 1) 
+				    (match-end 1))))
+		 (cl2 (concat ":" (aref table clnr2) )))
+	    (replace-match cl2 t t result))
+	result))))
+
+
+(defun parse-clusters (aname &optional reload)
+" parse the eclusters, fcluster and cclusters tables  from the file
+/usually .ecl file/; cluster-table must be loaded"
+(let ((ecldate (cadr (nth 5 (file-attributes (concat aname ".ecl"))))))
+  (if (or reload (/= ecl-table-date ecldate))
+      (let (ex func cond (table cluster-table))
+	(with-temp-buffer 
+	  (insert-file-contents (concat aname ".ecl"))
+	  (let ((all (split-string (buffer-string) "[\n]")))
+	    (while (eq (aref (car all) 0) 143) ; char 143 is exist code
+	      (setq ex (cons (expand-incluster (car all) table) ex))
+	      (setq all (cdr all)))
+	    (while (eq (aref (car all) 0) 102) ; char 102 is 'f' 
+	      (setq func (cons (expand-incluster (car all) table) func))
+	      (setq all (cdr all)))
+	    (while (eq (aref (car all) 0) 45) ; char 45 is '-' 
+	      (setq cond (cons (expand-incluster (car all) table) cond))
+	      (setq all (cdr all)))))
+	(setq eclusters (vconcat (nreverse ex))
+	      fclusters (vconcat (nreverse func))
+	      cclusters (vconcat (nreverse cond))
+	      ecl-table-date ecldate)
+	))))
+
+(defun print-vec1 (vec &optional translate)
+"print vector of strings into string, used only for clusters"
+(let ((res "")
+      (l (length vec))
+      (i 0))
+  (while (< i l)
+    (setq res (concat res "\n" 
+		      (if translate (frmrepr (aref vec i)) (aref vec i))))
+    (setq i (+ 1 i)))
+  res))
+  
+  
+(defun show-clusters (&optional translate)
+"show the cluster tables in buffer *Clusters*
+  Previous contents of that buffer are killed first." 
+  (interactive)
+  ;; This puts a description of bindings in a buffer called *Help*.
+  (let ((result (concat (print-vec1 eclusters translate) "\n"
+			(print-vec1 fclusters translate) "\n"
+			(print-vec1 cclusters translate) "\n")))
+		       
+    (with-output-to-temp-buffer "*Clusters*"
+      (save-excursion
+	(set-buffer standard-output)
+	(erase-buffer)
+	(insert result))      
+      (goto-char (point-min)))))
+
+
+(defun parse-show-cluster (&optional translate fname reload)
+(interactive)
+(save-excursion
+(let ((name (or fname
+		(substring (buffer-file-name) 0 
+			   (string-match "\\.miz$"
+					 (buffer-file-name))))))
+  (parse-cluster-table name reload)
+  (parse-clusters name reload)
+  (if translate (get-sgl-table name))
+  (show-clusters translate))))
+
+
+;;;;;;;;;;;;;;; translation for MML Query ;;;;;;;;;;;;;;;;;;;;;;
+;; should be improved but mostly works
+(defvar mizar-do-expl nil 
+"tells to put constructor format of 'by' items as properties after
+verifier run; experimental so default is nil")
+(defvar constrstring "KRVMLGU")
+(defvar cstrlen (length constrstring))
+; (defvar constructors '("K" "R" "V" "M" "L" "G" "U"))
+(defvar ckinds ["func" "pred" "attr" "mode" "struct" "aggr" "sel"])
+(defvar cstrnames [])
+(defvar cstrnrs [])
+(defvar impnr 0)
+(defvar constr-table-date -1 
+"set to last accommodation date, after creating the table,
+ to keep tables up-to-date")
+
+(make-variable-buffer-local 'cstrnames)
+(make-variable-buffer-local 'cstrnrs)
+(make-variable-buffer-local 'impnr)
+(make-variable-buffer-local 'constr-table-date)
+
+(defun cstr-idx (kind)  ; just a position
+(let ((res 0))
+  (while (and (< res cstrlen) (/= kind (aref constrstring res)))
+    (setq res (+ res 1)))
+  (if (< res cstrlen)
+      res)))
+	      
+; (position kind constructors :test 'equal))
+
+(defun make-one-tvect (numvect)
+  (vconcat (mapcar 'string-to-int (split-string numvect))))
+
+(defun get-sgl-table (aname)
+"two vectors created from the .sgl file"
+(let ((sgldate (cadr (nth 5 (file-attributes (concat aname ".sgl"))))))
+  (if (/= constr-table-date sgldate)
+      (let* ((decl (with-temp-buffer 
+		     (insert-file-contents (concat aname ".sgl"))
+		     (split-string (buffer-string) "[\n]")))
+	     (count (string-to-int (car decl)))
+	     (result (cdr decl))
+	     (tail (nthcdr count decl))
+	     (nums (cdr tail))
+	     names)
+	(setcdr tail nil)
+	(setq names (vconcat result (list (upcase aname))))
+	(setq nums (vconcat (mapcar 'make-one-tvect nums)))
+	(list names nums)
+	(setq impnr (- (length names) 1)
+	      cstrnames names
+	      cstrnrs nums
+	      constr-table-date sgldate)
+	))))
+
+(defun idxrepr (idx nr)
+"does the work for tokenrepr, idx is index of constrkind"
+  (let ((artnr 0))
+    (while (and (< artnr impnr)
+		(< (aref (aref cstrnrs artnr) idx) nr))
+      (setq artnr (+ artnr 1)))
+    (if (or (< artnr impnr)
+	    (<= nr (aref (aref cstrnrs artnr) idx)))
+	(setq artnr (- artnr 1)))
+    (concat (aref cstrnames artnr) ":" 
+	    (aref ckinds idx) " "
+	    (int-to-string (- nr (aref (aref cstrnrs artnr) idx))))
+    ))
+
+(defun tokenrepr (kind nr)
+"return absolute name of a lexem if possible (using the global tables
+cstrnames and cstrnrs"
+  (let ((idx (cstr-idx kind))
+	(artnr 0))
+    (if idx (idxrepr idx nr)
+      (concat kind (int-to-string nr))
+      )))
+
+(defun frmrepr (frm &optional cstronly)
+"absolute repr of a formula, if cstronly, only list of constructors,
+the clusters inside frm must already be expanded here"
+  (let* ((frm1 frm) (res (if cstronly nil ""))
+	(cur 0) (end (or (position 39 frm1) (length frm1)))) ;
+    (while (< cur end)
+      (let* ((tok (aref frm1 cur))
+	     (nonv (= tok 87))   ; W
+	     (idx (if nonv (cstr-idx 86) ; V
+		    (cstr-idx tok))))
+	(if idx 
+	    (let* ((cur1 (+ cur 1))
+		   (nr1 "") (cont t) n1)
+	      (while (and cont (< cur1 end)) ;number
+		(setq n1 (aref frm1 cur1))
+		(if (and (< 47 n1) (< n1 58))
+		    (setq nr1 (concat nr1 (char-to-string n1))
+			  cur1 (+ cur1 1))
+		  (setq cont nil)))
+	      (setq tok (idxrepr idx (string-to-int nr1))
+		    cur cur1)
+	      (setq res 
+		    (if cstronly (nconc res (list tok))		      
+		      (concat res (if nonv "non " "") tok))))
+	  (setq cur (+ 1 cur))
+	  (if (not cstronly)
+	      (setq res (concat res (char-to-string tok)))))))
+    res))
+
+(defun expfrmrepr (frm &optional table cstronly)
+(frmrepr (fix-pre-type frm table) cstronly))
+
+(defun mizar-getbys (aname)
+"Gets consructor repr of bys form the .pre file"
+(let (res)
+  (with-temp-buffer 
+    (insert-file-contents (concat aname ".pre"))
+    (goto-char (point-min))
+    (while (re-search-forward 
+	    "e[0-9]+ [0-9]+ [0-9]+ \\(.*\\)['][^;]*; *\\([0-9]+\\) \\([0-9]+\\)" 
+	    (point-max) t)
+      (let ((line (match-string 2))
+	    (col (match-string 3))
+	    (frm (match-string 1)))
+	(setq res (cons (list (string-to-int line) 
+			      (string-to-int col) frm) res)))))
+    (nreverse res)))
+      
+
+(defvar byextent 1 "size of the underlined region")
+(defun mizar-put-bys (aname)
+"puts the constr. repr. of bys as text properties into the 
+mizar buffer, underlines and mouse-highlites the places"
+(save-excursion
+  (get-sgl-table aname)
+  (parse-cluster-table aname)
+  (let ((bys (mizar-getbys aname))
+	(oldhook after-change-functions)
+	(map (make-sparse-keymap)))
+    (setq after-change-functions nil)
+    (define-key map [mouse-2] 'mizar-show-constrs-other-window)
+    (while bys
+      (let* ((rec (car bys))
+	     (line (car rec))
+	     (col (cadr rec))
+	     (frm (third rec))
+	     beg eol end)
+	(goto-line line)
+	(end-of-line)
+	(setq eol (point))
+	(move-to-column col)
+	(setq beg (point)
+	      end (min eol (+ byextent beg)))
+	(add-text-properties beg end '(mouse-face highlight 
+						  face underline))
+	(put-text-property beg end 'expl frm)	
+	(put-text-property beg end 'local-map map)	
+	(setq bys (cdr bys))))
+    (setq after-change-functions oldhook)
+    nil)))
+	
+(defvar mizar-expl-kind 'translate
+"possible values are now 'raw, 'expanded, 'translate, 'constructors")
+
+(defun mizar-show-constrs-other-window (event)
+  "show constr of the inference you click on."
+  (interactive "e")
+  (save-excursion
+    (let ((frm (get-text-property (posn-point (event-end event)) 'expl)))
+      (if frm
+	  (let ((res 
+		 (cond ((eq mizar-expl-kind 'raw) frm)
+		       ((eq mizar-expl-kind 'expanded) (fix-pre-type frm cluster-table))
+		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm cluster-table))
+		       ((eq mizar-expl-kind 'constructors)
+			(prin1-to-string (expfrmrepr frm cluster-table t)))
+		       (t ""))))	    
+	    (goto-char (posn-point (event-end event)))
+	    (with-output-to-temp-buffer "*Constructors list*"
+	      (save-excursion
+		(set-buffer standard-output)
+		(erase-buffer)
+		(insert res)      
+		(goto-char (point-min)))))))))	
+
+
+(defun mizar-toggle-cstr-expl (to)
+  (cond ((eq to 'none) (setq  mizar-do-expl nil))
+	(t (setq  mizar-expl-kind to
+		  mizar-do-expl t))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconst mizar-error-regexp "\\(\\*\\|::>,\\)\\([0-9]+\\)" "regexp used to locate error messages in a mizar text")
 
@@ -1045,7 +1373,8 @@ use quick run, if compil, emulate compilation-like behavior"
 		 (insert "Running " util " on " fname " ...\n")
 		 (sit-for 0)     ; force redisplay
 		 (if (= 0 (call-process makeenv nil cbuf nil  name))
-		     (call-process util nil cbuf nil "-q" name))))
+		     (call-process util nil cbuf nil "-q" name))
+		 (other-window 1)))
 	     ((and mizar-quick-run (not noqr))
 	      (save-excursion
 		(message (concat "Running " util " on " fname " ..."))
@@ -1064,12 +1393,17 @@ use quick run, if compil, emulate compilation-like behavior"
 		     (while  (term-check-proc "*mizar-output*") 
 		       (sit-for 1))))))
 	     (if old-dir (setq default-directory old-dir))
+	     (if mizar-do-expl 
+		 (save-excursion
+		   (remove-text-properties (point-min) (point-max) 
+					   '(mouse-face nil expl nil local-map nil))
+		   (mizar-put-bys fname)))
 	     (if (and compil (not noqr))
-		 (progn
+		 (save-excursion 
+		   (set-buffer "*compilation*")
 		   (insert (mizar-compile-errors name))
 		   (compilation-mode)
-		   (goto-char (point-min))
-		   (other-window 1))
+		   (goto-char (point-min)))
 	       (mizar-do-errors name)
 	       (save-buffer)
 	       (mizar-handle-output)
@@ -1555,6 +1889,21 @@ functions:
 		["first" (mizar-toggle-goto-error "first") :style radio :selected (equal mizar-goto-error "first") :active t]
 		["next" (mizar-toggle-goto-error "next") :style radio :selected (equal mizar-goto-error "next") :active t]
 		["previous" (mizar-toggle-goto-error "previous") :style radio :selected (equal mizar-goto-error "previous") :active t]		
+		)
+	  (list "Constr. Explanations"
+		["none" (mizar-toggle-cstr-expl 'none) :style radio :selected (not mizar-do-expl) :active t]
+		["constructors list" (mizar-toggle-cstr-expl 'constructors) 
+		 :style radio :selected 
+		 (and mizar-do-expl (eq mizar-expl-kind 'constructors)) :active t]
+		["translated formula" (mizar-toggle-cstr-expl 'translate) 
+		 :style radio :selected 
+		 (and mizar-do-expl (eq mizar-expl-kind 'translate)) :active t]
+		["expanded formula" (mizar-toggle-cstr-expl 'expanded) 
+		 :style radio :selected 
+		 (and mizar-do-expl (eq mizar-expl-kind 'expanded)) :active t]	
+		["raw formula" (mizar-toggle-cstr-expl 'raw) 
+		 :style radio :selected 
+		 (and mizar-do-expl (eq mizar-expl-kind 'raw)) :active t]   
 		)
 	  "-"
 	  (list "Voc. & Constr. Utilities"
