@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.63 $
+;; $Revision: 1.64 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1977,9 +1977,12 @@ Underlines and mouse-highlites the places."
   (let ((bys (mizar-getbys aname))
 	(oldhook after-change-functions)
 	(map mizar-expl-map)
+	(help (substitute-command-keys
+	       "\\<mizar-expl-map>\\[mizar-show-constrs-other-window] or \\<mizar-expl-map>\\[mizar-show-constrs-kbd]: display constructor representation"))
 	props)
     (setq after-change-functions nil)
-    (setq props (list 'mouse-face 'highlight local-map-kword map))
+    (setq props (list 'mouse-face 'highlight local-map-kword map
+		      'help-echo help))
     (if mizar-underline-expls
 	(setq props (append props '(face underline))))
     (while bys
@@ -2581,7 +2584,8 @@ the range of text to assign text property SYMBOL with value VALUE "
   (let ((map mmlquery-anchor-map))
     (add-text-properties start end 
 			 (list 'mouse-face 'highlight 'face 'underline 
-			       'fontified t local-map-kword map))
+			       'fontified t local-map-kword map
+			       'help-echo param))
     (list start end 'anchor (intern param))))
 
 (defun mmlquery-decode-definition (start end &optional param)
@@ -2608,6 +2612,10 @@ the range of text to assign text property SYMBOL with value VALUE "
     map)
 "Keymap used at mmlquery properties.")
 
+(defvar mmlquery-property-help
+(substitute-command-keys "\\<mmlquery-property-map>\\[mmlquery-toggle-property-invis-mouse] or \\<mmlquery-property-map>\\[mmlquery-toggle-property-invis]: Hide/Show the property formula")
+"Help displayed at mmlquery properties.")
+
 (defun mmlquery-decode-property (start end &optional param)
   "Decode a 'property property for text between START and END.
 PARAM is a `<p>' found for the property and must be nil.
@@ -2620,7 +2628,8 @@ the range of text to assign text property SYMBOL with value VALUE "
     (let ((prop (match-string 1 text)))
       (add-text-properties start (+ start (length prop))
 			   (list 'mouse-face 'highlight 'face 'underline 
-				 'fontified t local-map-kword map))
+				 'fontified t local-map-kword map
+				 'help-echo mmlquery-property-help))
       (list start end 'mmlquery-property (intern (concat "mmlquery-" prop))))))
 
 
