@@ -20,12 +20,12 @@ $all="KORVMGUL";                        # this is used for indexing
 print "Creating reference tags\n";  
 system "etags   --language=none  --regex='/ *scheme[ \n]*\\([^ {]*\\)[ \n]*{/\\1/'        --regex='/.*:: \\([^ \n:]+\\):\\([0-9]+\\)/\\1:\\2/'   --regex='/.*:: \\([^ \n:]+\\):def *\\([0-9]+\\)/\\1:def \\2/' *.abs";
 open(IN, "TAGS");
-open(OUT,'>REFTAGS'); 
+open(OUT,'>reftags'); 
 while (<IN>) { s/.*(.*)/$1;$1/; print OUT $_;};
 close(IN); 
 close(OUT);
 system "rm TAGS";
-print "REFTAGS done\n";
+print "reftags done\n";
 
 # read in vocabularies into %voch
 print "Reading in vocabulary information\n";
@@ -35,7 +35,7 @@ print "Vocabulary information read\n";
 # the main loop
 print "Creating symbol tags\n";
 sleep 1;
-open(OUT,'>SYMBTAGS');
+open(OUT,'>symbtags');
 while ($file = shift) {
     ($fnoext) = split(/\./,$file);
     print "$fnoext\n";
@@ -73,7 +73,7 @@ while ($file = shift) {
     close(IN);                                                         
 }
 
-print "SYMBTAGS tags done\n";
+print "symbtags  done\n";
 # end of main loop
 
 # this reads the vocs form mml into the global hash %voch
