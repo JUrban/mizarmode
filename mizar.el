@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.79 $
+;; $Revision: 1.80 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -893,6 +893,29 @@ or lists containing parsed formulas, which are later handed over to
 	(mapconcat 'mizar-skelitem-string skel "\n")
 	"\nend;\n"))
 
+(defcustom mizar-skeleton-labels nil
+"*If set, skeleton steps produced by `mizar-insert-skeleton' are labeled."
+:type 'boolean
+:group 'mizar-skeletons)
+
+(defcustom mizar-default-label-name "Z"
+"*Default name of labels inserted when `mizar-skeleton-labels' is set.
+This is appended with a label number."
+:type 'string
+:group 'mizar-skeletons)
+
+(defvar mizar-next-sk-label 0
+"Global var used for numbering skeleton steps.")
+
+(defun mizar-next-sk-label ()
+"Returns next free label usable in proof skeletons."
+(let ((res ""))
+  (when mizar-skeleton-labels
+    (setq res (concat mizar-default-label-name 
+		      (int-to-string mizar-next-sk-label) ":"))
+    (incf mizar-next-sk-label))
+  res))
+    
 (defun mizar-default-assume-items (fla)
 "Create the default assumption skeleton for parsed formula FLA. 
 The skeleton is a list of of items, each item is a list of either strings 
@@ -923,9 +946,9 @@ or lists containing parsed formulas, which are later handed over to
      ((eq 'implies (car negfla))
       (mizar-default-assume-items 
        (list '& (second negfla) (list 'not (third negfla)))))
-     (t (list (list "assume" fla ";"))))))
+     (t (list (list "assume" (mizar-next-sk-label) fla ";"))))))
 
-   (t (list (list "assume" fla ";")))
+   (t (list (list "assume" (mizar-next-sk-label) fla ";")))
 )))
 
 (defcustom mizar-assume-items-func 'mizar-default-assume-items
@@ -1022,10 +1045,13 @@ This function is called in the interactive function
 :type 'function
 :group 'mizar-skeletons)
 
-(defun mizar-insert-skeleton (beg end)
+(defun mizar-insert-skeleton (beg end &optional labnr)
 "Insert a proof skeleton for formula starting at BEG after point END.
 For normal interactive usage, just select the region containing 
 the formula, and run this function. 
+If `mizar-skeleton-labels' is set, prompts additionaly for the
+first starting label number LABNR. The labels are then generated
+using the `mizar-default-label-name' string.
 The lisppars utility needs to be installed for this to work -
 it is distributed with Mizar since version 6.4, and the
 formula has to be accessible in the article to the Mizar parser -
@@ -1034,6 +1060,11 @@ Calls `mizar-parse-region-fla' to parse the formula, Then creates the
 skeleton using `mizar-skeleton-items-func', and pretty prints it using
 `mizar-skeleton-string'."
 (interactive "r")
+(or labnr (not mizar-skeleton-labels)
+    (setq labnr (string-to-number
+		 (read-string "First skeleton label: " 
+			      (int-to-string mizar-next-sk-label)))))
+(if labnr (setq mizar-next-sk-label labnr))
 (save-excursion
   (let ((skel
  	 (mizar-skeleton-string 
