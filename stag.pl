@@ -19,7 +19,7 @@ $constrs="KRVMGUL"; # also indexing
 
 # create the old miztags, modify into REFTAGS and delete
 print "Creating reference tags\n";  
-system "etags   --language=none  --regex='/ *scheme[ \n]*\\([^ {]*\\)[ \n]*{/\\1/'        --regex='/.*:: \\([^ \n:]+\\):\\([0-9]+\\)/\\1:\\2/'   --regex='/.*:: \\([^ \n:]+\\):def *\\([0-9]+\\)/\\1:def \\2/' *.abs";
+system "etags   --language=none  --regex='/ *scheme[ \n]*\\([^ {]*\\)[ \n]*{/\\1/'        --regex='/^[^:]*:: \\([^ \n:]+\\):\\([0-9]+\\)/\\1:\\2/'   --regex='/^[^:]*:: \\([^ \n:]+\\):def *\\([0-9]+\\)/\\1:def \\2/' *.abs";
 open(IN, "TAGS");
 open(OUT,'>reftags'); 
 while (<IN>) { s/.*(.*)/$1;$1/; print OUT $_;};
