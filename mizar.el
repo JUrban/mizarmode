@@ -761,8 +761,9 @@ tabs"
 			  (setq currerrln (concat currerrln str))))
 		    (setq currerrln (concat currerrln "*" snrstr)))
 		(setq currerrln (concat currerrln "," snrstr)))
-	      (setq cpos (+ cpos snrl)))
-	      ))))))
+	      (setq cpos (+ cpos snrl))))
+	  (insert currerrln "\n")  ; the first line
+	      )))))
 
 
 (defvar mizar-err-msgs (substitute-in-file-name "$MIZFILES/mizar.msg")
