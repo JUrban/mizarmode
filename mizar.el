@@ -1120,9 +1120,9 @@ mizar buffer, underlines and mouse-highlites the places"
     (setq after-change-functions nil)
     (if (eq mizar-emacs 'xemacs) 
 	(setq map_kword 'keymap
-	      button_kword [button2])
+	      button_kword [(shift button3)])
       (setq map_kword 'local-map
-	      button_kword [mouse-2]))
+	      button_kword [(shift mouse-3)]))
     (define-key map button_kword 'mizar-show-constrs-other-window)
     (setq props (list 'mouse-face 'highlight map_kword map))
     (if mizar-underline-expls 
@@ -2203,8 +2203,8 @@ functions:
 	     ["Alioth" (setq query-url alioth-url) :style radio :selected (equal query-url alioth-url) :active mizar-do-expl]
 	     )
 	    ("MML Query browser" 
-	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active mizar-do-exp]
-	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active mizar-do-exp]
+	     ["Emacs W3" (setq mizar-query-browser 'w3) :style radio :selected  (eq mizar-query-browser 'w3) :active mizar-do-expl]
+	     ["Default" (setq mizar-query-browser nil) :style radio :selected  (eq mizar-query-browser nil) :active mizar-do-expl]
 	     )	    
 	    ["Underline explanation points" 
 	     (setq mizar-underline-expls 
