@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.39 $
+;; $Revision: 1.40 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2484,7 +2484,7 @@ If UTIL is given, call it instead of the Mizar verifier."
 	   (mizar-previous-error))
 	  (t pos))))
 
-(defvar makeenv "makeenv" "Program used for creating the aticle envionment.")
+(defvar makeenv "makeenv" "Program used for creating the article envionment.")
 
 (defun mizar-it (&optional util noqr compil)
 "Run mizar verifier on the text in the current .miz buffer.
