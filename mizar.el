@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.75 $
+;; $Revision: 1.76 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -248,6 +248,10 @@ Possible values are now
 
 'sorted for sorted list of constructors in absolute notation.
 'constructors for list of constructors in absolute notation,
+'mmlquery behaves as 'sorted, but constructors are inserted
+          directly into the *mmlquery* input buffer.
+          The mmlquery interpreter has to be installed for this,
+          see `mmlquery-program-name'.
 'translate for expanded formula in absolute notation,
 'raw for the internal Mizar representation,
 'expanded for expansion of clusters,
@@ -256,6 +260,7 @@ The values 'raw and 'expanded are for debugging only, do
 not use them to get constructor explanatios."
 :type '(choice (const :tag "sorted list of constructors" sorted)
 	       (const :tag "unsorted list of constructors" constructor)
+	       (const :tag "mmlquery input" mmlquery)
 	       (const :tag "translated formula" translate)
 	       (const :tag "nontranslated (raw) formula" raw)
 	       (const :tag "raw formula with expanded clusters" expanded))
@@ -2113,21 +2118,21 @@ Underlines and mouse-highlites the places."
     (setq after-change-functions oldhook)
     nil))))
 	
-(defvar cstrregexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
-"Description of the constr format we use, see idxrepr.")
+(defvar res-regexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
+"Description of the mmlquery resource format we use, see idxrepr.")
 
 (defvar mizar-cstr-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\C-m" 'mizar-kbd-cstr-mmlquery)
+    (define-key map "\C-m" 'mizar-kbd-res-mmlquery)
     (define-key map "\C-\M-m" 'mizar-kbd-ask-query)
     (define-key map "\M-." 'mizar-kbd-cstr-tag)
     (define-key map "\C-c\C-c" 'mizar-ask-advisor)
     (if (eq mizar-emacs 'xemacs)
 	(progn
-	  (define-key map [button2] ' mizar-mouse-cstr-mmlquery)
+	  (define-key map [button2] ' mizar-mouse-res-mmlquery)
 	  (define-key map [(shift button2)] 'mizar-mouse-ask-query)
 	  (define-key map [button3] 'mizar-mouse-cstr-tag))
-      (define-key map [mouse-2] 'mizar-mouse-cstr-mmlquery)
+      (define-key map [mouse-2] 'mizar-mouse-res-mmlquery)
       (define-key map [(shift mouse-2)] 'mizar-mouse-ask-query)
       (define-key map [mouse-3] 'mizar-mouse-cstr-tag))
     map)
@@ -2154,91 +2159,148 @@ Commands:
 (interactive "s")
 (mizar-ask-query (concat query-url "emacs_search?entry=" cstr)))
 
-(defun mizar-cstr-at-point (pos &optional agg2str)
-"Get the constructor around POS, if AGG2STR, replace aggr by struct."
+(defun mizar-res-at-point (pos &optional agg2str)
+"Get the mmlquery resource around POS, if AGG2STR, 
+replace aggr by struct."
 (save-excursion
   (goto-char pos)
   (skip-chars-backward ":.a-zA-Z_0-9")
-  (if (looking-at cstrregexp)
+  (if (looking-at res-regexp)
       (let ((res (match-string 0)))
 	(if (and agg2str (equal "aggr" (match-string 2)))
 	    (concat (match-string 1) ":struct." (match-string 3))
 	  res)))))
 
 (defun mizar-mouse-ask-query (event)
-"Ask MML Query about the constructor we clicked on."
+"Ask MML Query about the mmlquery resource we clicked on."
   (interactive "e")
   (select-window (event-window event))
-  (let ((cstr (mizar-cstr-at-point (event-point event))))
+  (let ((cstr (mizar-res-at-point (event-point event))))
     (if cstr (mizar-ask-meaning-query cstr)
-      (message "No constructor at point"))))
+      (message "No mmlquery resource at point"))))
 
 (defun mizar-kbd-ask-query (pos)
-"Ask MML Query about the constructor at position POS."
+"Ask MML Query about the mmlquery resource at position POS."
   (interactive "d")
-  (let ((cstr (mizar-cstr-at-point pos)))
+  (let ((cstr (mizar-res-at-point pos)))
     (if cstr (mizar-ask-meaning-query cstr)
-      (message "No constructor at point"))))
+      (message "No mmlquery resource at point"))))
 
 
-(defun mizar-mouse-cstr-mmlquery (event)
-"Find the definition of the constructor we clicked on in its
+(defun mizar-mouse-res-mmlquery (event)
+"Find the definition of the mmlquery resource we clicked on in its
 MMLQuery abstract."
   (interactive "e")
   (select-window (event-window event))
-  (let ((cstr (mizar-cstr-at-point (event-point event))))
-    (if cstr (mmlquery-goto-symdef (intern cstr) t)
-      (message "No constructor at point"))))
+  (let ((cstr (mizar-res-at-point (event-point event))))
+    (if cstr (mmlquery-goto-resdef (intern cstr) t)
+      (message "No mmlquery resource at point"))))
 
-(defun mizar-kbd-cstr-mmlquery (pos)
-"Find the definition of the constructor at position POS in its
+(defun mizar-kbd-res-mmlquery (pos)
+"Find the definition of the mmlquery resource at position POS in its
 MMLQuery abstract."
   (interactive "d")
-  (let ((cstr (mizar-cstr-at-point pos)))
-    (if cstr (mmlquery-goto-symdef (intern cstr) t)
-      (message "No constructor at point"))))
+  (let ((cstr (mizar-res-at-point pos)))
+    (if cstr (mmlquery-goto-resdef (intern cstr) t)
+      (message "No mmlquery resource at point"))))
 
 
 
 (defun mizar-kbd-cstr-tag (pos)
-"Find the definition of the constructor at position POS."
+"Find the definition of the mmlquery resource at position POS."
   (interactive "d")
-  (let ((cstr (mizar-cstr-at-point pos t)))
+  (let ((cstr (mizar-res-at-point pos t)))
     (if cstr (mizar-symbol-def t cstr t)
-      (message "No constructor at point"))))
+      (message "No mmlquery resource at point"))))
 
 (defun mizar-mouse-cstr-tag (event)
-"Find the definition of the constructor we clicked on."
+"Find the definition of the mmlquery resource we clicked on."
   (interactive "e")
   (select-window (event-window event))
-  (let ((cstr (mizar-cstr-at-point (event-point event) t)))
+  (let ((cstr (mizar-res-at-point (event-point event) t)))
     (if cstr (mizar-symbol-def t cstr t)
-      (message "No constructor at point"))))
+      (message "No mmlquery resource at point"))))
 
 
 (defun mizar-highlight-constrs ()
 (save-excursion
   (goto-char (point-min))
   (let ((props (list 'mouse-face 'highlight 'face 'underline)))
-  (while (re-search-forward cstrregexp (point-max) t)
+  (while (re-search-forward res-regexp (point-max) t)
     (add-text-properties (match-beginning 0) (match-end 0) props)))))
 
+(defun mizar-set-mmlquery-properties (res)
+"Set up the text property for mmlquery resource RES, in the same way
+as used by the mmlquery browsing format.
+Strings not matching `res-regexp' are just returned, while dot 
+is replaced by space in matching."
+(if (not (string-match res-regexp res))
+    res
+  (let ((map mmlquery-anchor-map)
+	(res1 (replace-regexp-in-string "[.]" " " res)))
+    (add-text-properties 0 (length res1)
+			 (list 'mouse-face 'highlight 'face 'underline 
+			       'fontified t local-map-kword map
+			       'help-echo res
+			       'anchor (intern res))
+			   res1)
+    res1)))
+
 (defun mizar-intern-constrs-other-window (res)
-"Display the constructors RES in buffer *Constructors list* in other window and highlight."
-(let ((cbuf (get-buffer-create "*Constructors list*")))
-  (set-buffer cbuf)
-  (erase-buffer)
-  (insert res)
-  (mizar-highlight-constrs)
-  (use-local-map mizar-cstr-map)
-  (goto-char (point-min))
+"Display the constructors RES in buffer *Constructors list*  
+or *mmlquery* if `mizar-expl-kind' is 'mmlquery
+in other window and highlight."
+(let (cbuf)
+  (cond 
+   ((eq mizar-expl-kind 'mmlquery)
+    (setq cbuf (get-buffer "*mmlquery*"))
+    (unless (and cbuf (get-buffer-process cbuf))
+      (mizar-run-mmlquery))
+    (setq cbuf (get-buffer "*mmlquery*"))
+    (set-buffer cbuf)
+    (comint-kill-input)
+    (insert res))
+   (t
+    (setq cbuf (get-buffer-create "*Constructors list*"))
+    (set-buffer cbuf)
+    (erase-buffer)
+    (insert res)
+    (mizar-highlight-constrs)
+    (use-local-map mizar-cstr-map)
+    (goto-char (point-min))))
   (switch-to-buffer-other-window cbuf)))
 
+(defvar mmlquery-default-list-query-kw "atleast"
+"The mmlquery keyword used as a default for creating a query for
+a list of resources.")
+
+(defun mizar-default-query-for-list (syms)
+"Create the default query from a list of mmlquery resources SYMS."
+ (concat mmlquery-default-list-query-kw "("
+	 (mapconcat 'identity syms ",") ");"))
+
+(defun mizar-transl-frm (frm)
+"Translate FRM according to `mizar-expl-kind'."
+(cond 
+ ((eq mizar-expl-kind 'raw) frm)
+ ((eq mizar-expl-kind 'expanded) (fix-pre-type frm))
+ ((eq mizar-expl-kind 'translate) (expfrmrepr frm))
+ ((eq mizar-expl-kind 'constructors)
+  (prin1-to-string (expfrmrepr frm t)))
+ ((eq mizar-expl-kind 'sorted)
+  (prin1-to-string (sort (unique (expfrmrepr frm t)) 'string<)))
+ ((eq mizar-expl-kind 'mmlquery)
+  (mizar-default-query-for-list
+;;   (mapcar 'mizar-set-mmlquery-properties
+   (mapcar '(lambda (x) (replace-regexp-in-string "[.]" " " x))
+	   (sort (unique (expfrmrepr frm t)) 'string<))))
+ (t "")))
 
 (defun mizar-show-constrs-kbd (&optional pos)
   "Show constructors of the inference at point.
 The constructors are translated according to the variable 
-`mizar-expl-kind', and shown in the buffer *Constructors list*.
+`mizar-expl-kind', and shown in the buffer *Constructors list*
+or *mmlquery* if `mizar-expl-kind' is 'mmlquery.
 The variable `mizar-do-expl' should be non-nil."
   (interactive)
   (let ((pos (or pos (point))))
@@ -2246,39 +2308,22 @@ The variable `mizar-do-expl' should be non-nil."
     (save-excursion
     (let ((frm (get-text-property pos 'expl)))
       (if frm
-	  (let ((res
-		 (cond ((eq mizar-expl-kind 'raw) frm)
-		       ((eq mizar-expl-kind 'expanded) (fix-pre-type frm))
-		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm))
-		       ((eq mizar-expl-kind 'constructors)
-			(prin1-to-string (expfrmrepr frm t)))
-		       ((eq mizar-expl-kind 'sorted)
-			(prin1-to-string (sort (unique (expfrmrepr frm t)) 'string<)))
-		       (t ""))))
+	  (let ((res (mizar-transl-frm frm)))
 	    (goto-char pos)
 	    (mizar-intern-constrs-other-window res)))))))
-
-
 
 (defun mizar-show-constrs-other-window (event)
   "Show constructors of the inference you click on.
 The constructors are translated according to the variable 
-`mizar-expl-kind', and shown in the buffer *Constructors list*.
+`mizar-expl-kind', and shown in the buffer *Constructors list*
+or *mmlquery* if `mizar-expl-kind' is 'mmlquery.
 The variable `mizar-do-expl' should be non-nil."
   (interactive "e")
   (select-window (event-window event))
   (save-excursion
     (let ((frm (get-text-property (event-point event) 'expl)))
       (if frm
-	  (let ((res
-		 (cond ((eq mizar-expl-kind 'raw) frm)
-		       ((eq mizar-expl-kind 'expanded) (fix-pre-type frm))
-		       ((eq mizar-expl-kind 'translate) (expfrmrepr frm))
-		       ((eq mizar-expl-kind 'constructors)
-			(prin1-to-string (expfrmrepr frm t)))
-		       ((eq mizar-expl-kind 'sorted)
-			(prin1-to-string (sort (unique (expfrmrepr frm t)) 'string<)))
-		       (t ""))))
+	  (let ((res (mizar-transl-frm frm)))		
 	    (goto-char (event-point event))
 	    (mizar-intern-constrs-other-window res))))))
 
@@ -2445,13 +2490,15 @@ the value of query-entry-mode-hook."
   "Send the contents of the current buffer to the local mmlquery
 server, start it if not running."
   (interactive)
-  (ring-insert query-squery-ring (buffer-string))
-  (unless (get-buffer "*mmlquery*")
-    (mizar-run-mmlquery))
-  (let ((mbuf (get-buffer "*mmlquery*")))
-    (process-send-string (get-process "mmlquery") 
-			 (concat (buffer-string) "\n"))
-    (pop-to-buffer mbuf)))
+  (let ((query (buffer-string)))
+    (ring-insert query-squery-ring query)
+    (unless (get-buffer "*mmlquery*")
+      (mizar-run-mmlquery)
+      (sleep-for 0.5))
+    (let ((mbuf (get-buffer "*mmlquery*")))
+      (process-send-string (get-process "mmlquery") 
+			   (concat query "\n"))
+      (pop-to-buffer mbuf))))
 
 (defun query-previous-squery (arg)
   "Cycle backwards through query-squery history.
@@ -2518,10 +2565,13 @@ With a numeric prefix ARG, go forward ARG queries."
 (defcustom mmlquery-program-name "/nfs/megrez/bin/mmlquery"
   "Path to the mmlquery prgram."
   :type 'string
-  :group 'mmlquery)
+  :group 'mizar-mml-query)
 
+(defvar mmlquery-prompt-regexp "^mmlquery> *")
 (defvar inferior-mmlquery-mode-map nil)
 (defvar inferior-mmlquery-mode-syntax-table nil)
+(defvar mmlquery-output-buffer "*MMLQuery Output*")
+
 
 (if inferior-mmlquery-mode-syntax-table
     ()
@@ -2529,9 +2579,32 @@ With a numeric prefix ARG, go forward ARG queries."
     (modify-syntax-entry ?_ "w" table)
     (setq inferior-mmlquery-mode-syntax-table table)))
 
+(defvar mmlquery-pending-output "")
+
 (defun inferior-mmlquery-mode-variables ()
   (set-syntax-table inferior-mmlquery-mode-syntax-table)
+  (setq mmlquery-pending-output "")
 )
+
+(defun mmlquery-finished (str)
+(string-match mmlquery-prompt-regexp str))
+
+(defun mmlquery-handle-output (str)
+  (cond 
+   ((mmlquery-finished str)
+    (save-excursion
+      (set-buffer (get-buffer-create mmlquery-output-buffer))
+      (erase-buffer)
+      (insert mmlquery-pending-output)
+      (setq mmlquery-pending-output "")
+      (insert str)
+      (kill-line -1)  ;; remove the prompt
+      (mmlquery-decode (point-min) (point-max))
+      (display-buffer mmlquery-output-buffer))
+    "mmlquery> ")
+   (t
+    (setq mmlquery-pending-output (concat mmlquery-pending-output str))
+    "")))
 
 ;; reserved for mmlquery-specific bindings
 (defun inferior-mmlquery-mode-commands (map) 
@@ -2563,7 +2636,7 @@ Return not at end copies rest of line to end and sends it.
   (comint-mode)
   (setq major-mode 'inferior-mmlquery-mode
 	mode-name "Inferior Mmlquery"
-	comint-prompt-regexp "^mmlquery> *")
+	comint-prompt-regexp mmlquery-prompt-regexp)
   (inferior-mmlquery-mode-variables)
   (if inferior-mmlquery-mode-map nil
     (setq inferior-mmlquery-mode-map (copy-keymap comint-mode-map))
@@ -2579,7 +2652,8 @@ Return not at end copies rest of line to end and sends it.
       (error "Mmlquery is not executable: %s" mmlquery-program-name))
   (switch-to-buffer 
    (make-comint "mmlquery" mmlquery-program-name 
-		nil "--input" "--present" ))
+		nil "--present=emacs" ))
+  (add-hook 'comint-preoutput-filter-functions 'mmlquery-handle-output)
   (inferior-mmlquery-mode))
 
 ;;;;;;;;;;; MMLQuery browsing
@@ -2713,7 +2787,6 @@ Commands:
 	     (mmlquery-underline-highlited 0)
 	     (mmlquery-default-invisibility)
 	     (easy-menu-add mmlquery-mode-menu) ; for xemacs only
-
 	     (run-hooks 'mmlquery-mode-hook)))
     (set-buffer-modified-p mod)
     (force-mode-line-update)))
@@ -2748,6 +2821,7 @@ Commands:
 		   (mmlquery-decode-definition "l")
 		   (mmlquery-decode-constructor "c")
 		   (mmlquery-decode-property     "r")
+		   (mmlquery-decode-query "q")
 		   (mmlquery-decode-hidden "h")) ; generic hidden
     (read-only     (t           "x-read-only"))
     (unknown       (nil         format-annotate-value))
@@ -2839,11 +2913,11 @@ the range of text to assign text property SYMBOL with value VALUE "
 ))
 
 
-(defun get-mmlquery-symbol-article (sym)
-"Extract the article name from a symbol, append '.gab'."
+(defun get-mmlquery-resource-article (sym)
+"Extract the article name from a mmlquery resource SYM, append '.gab'."
   (let ((sname (symbol-name sym)))
     (unless (string-match "\\([A-Z_0-9]+\\):.*" sname)
-      (error "Bad article name %s in symbol %S" sname sym))
+      (error "Bad article name %s in mmlquery resource %S" sname sym))
     (concat (downcase (match-string 1 sname)) ".gab")))
 
 
@@ -2855,14 +2929,21 @@ the range of text to assign text property SYMBOL with value VALUE "
 (let ((sym (intern param)))
 ;; The first def in its article is the 'true' original for us 
   (if (and (not (get sym 'constructor))
-	   (equal (get-mmlquery-symbol-article sym)
+	   (equal (get-mmlquery-resource-article sym)
 		  (file-name-nondirectory (buffer-file-name (current-buffer)))))      	   
       (put sym 'constructor start)
-;; otherwise it is stored among redefinitions
+;; otherwise it is stored among redefinitions - this is unused now
     (put sym 'constructor-redef (cons start (get sym 'constructor-redef))))
   (list start end 'definition sym)))
 
 
+(defun mmlquery-decode-query (start end &optional param)
+  "Decode a query property for text between START and END.
+PARAM is a `<p>' found for the property.
+Value is a list `(START END SYMBOL VALUE)' with START and END denoting
+the range of text to assign text property SYMBOL with value VALUE "
+(let ((query param))
+  (list start end 'query query)))
 
 (defun mmlquery-next-annotation ()
   "Find and return next text/mmlquery annotation.
@@ -2905,6 +2986,13 @@ Return value is \(begin end name positive-p), or nil if none was found."
 				'mmlquery-next-annotation)
       (point-max))))
 
+
+(defun mmlquery-abstract-p (x)
+"Non nil if buffer X is mmlquery abstract."
+(let ((name  (buffer-file-name x)))
+  (and (stringp name)
+       (string-match "\.gab$" name))))
+
 ;;;; The browsing functions
 
 (defvar mmlquery-history-size 512
@@ -2940,35 +3028,42 @@ return the new RING length."
 
 
 (defun mmlquery-goto-def (&optional pos)
-"Goto the definition of the constructor at point or POS if given."
+"Goto the definition of the mmlquery resource at point or POS if given."
   (interactive "d")
   (let* ((anch (get-text-property (or pos (point)) 'anchor)))
     (unless anch (error "No mmlquery reference at point!"))
-    (mmlquery-goto-symdef anch t)))
+    (mmlquery-goto-resdef anch t)))
 
 (defun mmlquery-goto-def-mouse (event)
-"Goto to the definition of the constructor we clicked on."
+"Goto to the definition of the mmlquery resource we clicked on."
   (interactive "e")
   (select-window (event-window event))
   (let* ((anch (get-text-property (event-point event) 'anchor)))
     (unless anch (error "No mmlquery reference at point!"))
-    (mmlquery-goto-symdef anch t)))
+    (mmlquery-goto-resdef anch t)))
 
 
-(defun mmlquery-goto-symdef (anch &optional push)
+(defun mmlquery-goto-resdef (anch &optional push)
 "Go to the definition of ANCH. 
 If PUSH, push positions onto the mmlquery-history."
-  (let ((afile (concat mmlquery-abstracts 
-		       (get-mmlquery-symbol-article anch)))
-	(defpos (get anch 'constructor))
-	(oldbuf (current-buffer))
-	(oldfile (buffer-file-name (current-buffer)))
-	(oldpos (point)))
+  (let*
+      ((aname (get-mmlquery-resource-article anch))
+       (afile (concat mmlquery-abstracts aname))
+       (defpos (or (get anch 'constructor) 
+		   (get anch 'mmlquery-definition)))
+       (oldbuf (current-buffer))
+       (oldfile (buffer-file-name (current-buffer)))
+       (oldpos (point)))
 ;; Load the article if not yet
     (unless defpos
+      (message "Loading abstract %s ..." aname)
       (find-file-noselect afile)
-      (setq defpos (get anch 'constructor)))
-    (unless defpos (error "No mmlquery definition for symbol %S" anch))
+      (setq defpos (or (get anch 'constructor)
+		       (get anch 'mmlquery-definition))))
+    (unless defpos (error "No mmlquery definition for resource %S" anch))
+;; The abstract may have been killed
+    (unless (get-file-buffer afile)
+      (message "Loading abstract %s ..." aname))
     (find-file afile)
     (goto-char defpos)
     (if push
@@ -3808,14 +3903,7 @@ Files .thl and .eth are used, RELOAD does it unconditionally."
     (get-sgl-table aname)           ;; ensure up-to-date
 ;    (parse-cluster-table aname)     ;; ensure up-to-date
     (setq res (copy-sequence (aref arr (- nr 1))))
-    (cond ((eq mizar-expl-kind 'raw) res)
-	  ((eq mizar-expl-kind 'expanded) (fix-pre-type res))
-	  ((eq mizar-expl-kind 'translate) (expfrmrepr res))
-	  ((eq mizar-expl-kind 'constructors)
-	   (prin1-to-string (expfrmrepr res t)))
-	  ((eq mizar-expl-kind 'sorted)
-	   (prin1-to-string (sort (unique (expfrmrepr res t)) 'string<)))
-	  (t ""))))
+    (mizar-transl-frm res)))
 
 (defun mizar-show-ref-constrs (&optional ref)
 "Get the constructors for reference REF (possibly reading from minibuffer).
@@ -4597,7 +4685,7 @@ if that value is non-nil."
   (setq buffer-offer-save t)
   (mizar-setup-imenu-sb)
   (if (and mizar-abstracts-use-view
-	   (buffer-abstract-p (current-buffer)))
+	       (buffer-abstract-p (current-buffer)))
       (view-mode))
   (run-hooks  'mizar-mode-hook)
   )
@@ -4680,6 +4768,9 @@ if that value is non-nil."
 	    ["constructors list" (mizar-toggle-cstr-expl 'constructors)
 	     :style radio :selected
 	     (and mizar-do-expl (eq mizar-expl-kind 'constructors)) :active t]
+	    ["mmlquery input" (mizar-toggle-cstr-expl 'mmlquery)
+	     :style radio :selected
+	     (and mizar-do-expl (eq mizar-expl-kind 'mmlquery)) :active t]
 	    ["translated formula" (mizar-toggle-cstr-expl 'translate)
 	     :style radio :selected
 	     (and mizar-do-expl (eq mizar-expl-kind 'translate)) :active t]
