@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.81 $
+;; $Revision: 1.82 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2159,7 +2159,7 @@ Underlines and mouse-highlites the places."
     (setq after-change-functions oldhook)
     nil))))
 	
-(defvar res-regexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)[.]\\([0-9]+\\)"
+(defvar res-regexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)\\([.]\\)\\([0-9]+\\)"
 "Description of the mmlquery resource format we use, see idxrepr.")
 
 (defvar mizar-cstr-map
@@ -2209,7 +2209,7 @@ replace aggr by struct."
   (if (looking-at res-regexp)
       (let ((res (match-string 0)))
 	(if (and agg2str (equal "aggr" (match-string 2)))
-	    (concat (match-string 1) ":struct." (match-string 3))
+	    (concat (match-string 1) ":struct." (match-string 4))
 	  res)))))
 
 (defun mizar-mouse-ask-query (event)
@@ -2839,7 +2839,13 @@ Commands:
 ;; The .gab files contain anchors and definitions. 
 ;; During parsing, the text properties are set for anchors,
 ;; while definitions are used to save their position as symbol
-;; property 'definition.
+;; property 'mmlquery-definition or 'mmlquery-redef .
+;; Additionaly the mmlquery kind (e.g. pred, prednot, attr, etc.) 
+;; is also kept as the value of the symbol property 'mmlquery-kind .
+;; All the text of definitions also gets the value of its name's
+;; 'mmlquery-kind as a text property, and also its 'invisible text
+;; property gets this 'mmlquery-kind as a value.
+
 
 ;; If the 'definition property is missing from a symbol, we 
 ;; open the .gab file containing the symbol first.
@@ -2860,7 +2866,6 @@ Commands:
     ;; The following are not part of the standard:
     (FUNCTION      (mmlquery-decode-anchor "a")
 		   (mmlquery-decode-definition "l")
-		   (mmlquery-decode-constructor "c")
 		   (mmlquery-decode-property     "r")
 		   (mmlquery-decode-query "q")
 		   (mmlquery-decode-hidden "h")) ; generic hidden
@@ -2895,19 +2900,80 @@ the range of text to assign text property SYMBOL with value VALUE "
 			       'help-echo param))
     (list start end 'anchor (intern param))))
 
-(defun mmlquery-decode-definition (start end &optional param)
+
+(defun get-mmlquery-resource-article (sym)
+"Extract the article name from a mmlquery resource symbol SYM, append '.gab'."
+  (let ((sname (symbol-name sym)))
+    (unless (string-match res-regexp sname)
+      (error "Error: all mmlquery resources are supposed to match %s: %s %S" 
+	     res-regexp sname sym))
+    (concat (downcase (match-string 1 sname)) ".gab")))
+
+(defvar mmlquery-item-starter-map
+  (let ((map (make-sparse-keymap))
+	(button_kword (if (eq mizar-emacs 'xemacs) [button2]
+			[mouse-2])))
+    (set-keymap-parent map mizar-mode-map)
+    (define-key map button_kword 'mmlquery-toggle-item-invis-mouse)
+    (define-key map "\C-m"  'mmlquery-toggle-item-invis)
+    map)
+"Keymap used at mmlquery item starters.")
+
+(defvar mmlquery-item-starter-help
+(substitute-command-keys "\\<mmlquery-item-starter-map>\\[mmlquery-toggle-item-invis-mouse] or \\<mmlquery-item-starter-map>\\[mmlquery-toggle-item-invis]: Hide/Show items of this kind")
+"Help displayed at mmlquery item starters.")
+
+(defun mmlquery-decode-definition (start end &optional param &rest params)
   "Decode a definition property for text between START and END.
 PARAM is a `<p>' found for the property.
 Value is a list `(START END SYMBOL VALUE)' with START and END denoting
-the range of text to assign text property SYMBOL with value VALUE "
-(let (kind (sym (intern param)))
-  (unless (string-match ".*\\:\\([a-z]+\\) .*" param)
-    (error "Error: all dli items are supposed to match \":[a-z]+[ ]\": %s" param))
-  (setq kind (intern (concat "mmlquery-" (match-string 1 param))))
-  (put sym 'mmlquery-definition start)
-  (put sym 'mmlquery-kind kind)
-  (put-text-property start end 'mmlquery-kind kind)
-  (list start end 'invisible kind)))
+the range of text to assign text property SYMBOL with value VALUE .
+The definition text now must start with :: PARAM, with the dot in
+PARAM replaced with space."
+(let ((sym (intern param)) 
+      (dstart (+ start 3 (length param))) ;; 3 = length ":: "
+      (map mmlquery-item-starter-map)
+      (allparams (cons param params))
+      kind name pname)
+  (setq name (buffer-substring-no-properties start dstart))
+  (unless (string-match res-regexp param)
+    (error "Error: all mmlquery resources are supposed to match %s: %s" 
+	   res-regexp param))
+  (setq kind (intern (concat "mmlquery-" (match-string 2 param)))
+	pname (concat ":: " (replace-match " " nil nil param 3)))
+  (unless (string-equal name pname)
+    (error "Error: the first parameter must match the item name %s: %s"
+	   pname name))
+
+  (while allparams
+    (let* ((par (car allparams))
+	   (sym1 (intern par)))
+      (cond 
+;; The first def in its article is the 'true' original for us 
+       ((and (not (get sym1 'mmlquery-definition))
+	     (equal (file-name-nondirectory (buffer-file-name 
+					     (current-buffer)))
+		    (get-mmlquery-resource-article sym1)))
+	;; we use the matching done in get-mmlquery-resource-article
+	(let ((kind1 (intern (concat "mmlquery-" (match-string 2 par)))))
+	  (put sym1 'mmlquery-definition start)
+	  (put sym1 'mmlquery-kind kind1))
+	)
+       (t
+;; otherwise it is stored among redefinitions - this is unused now
+	(put sym1 'mmlquery-redef (cons start (get sym1 'mmlquery-redef)))
+	)))
+    (setq allparams (cdr allparams)))
+
+  (add-text-properties (+ 3 start) dstart
+		       (list 'mouse-face  'highlight ; 'speedbar-selected-face   ; 'highlight ;'face 'underline 
+;			     'fontified t 
+;			     'face '(:underline t)
+			     local-map-kword map
+			     'help-echo mmlquery-item-starter-help
+			     'mmlquery-item-starter kind))
+  (put-text-property dstart end 'mmlquery-kind kind)
+  (list dstart end 'invisible kind)))
 
 (defvar mmlquery-property-map
   (let ((map (make-sparse-keymap))
@@ -2952,31 +3018,6 @@ the range of text to assign text property SYMBOL with value VALUE "
     (put-text-property start end 'mmlquery-property-fla t)
     (list start end 'invisible 'mmlquery-property)
 ))
-
-
-(defun get-mmlquery-resource-article (sym)
-"Extract the article name from a mmlquery resource SYM, append '.gab'."
-  (let ((sname (symbol-name sym)))
-    (unless (string-match "\\([A-Z_0-9]+\\):.*" sname)
-      (error "Bad article name %s in mmlquery resource %S" sname sym))
-    (concat (downcase (match-string 1 sname)) ".gab")))
-
-
-(defun mmlquery-decode-constructor (start end &optional param)
-  "Decode a constructor property for text between START and END.
-PARAM is a `<p>' found for the property.
-Value is a list `(START END SYMBOL VALUE)' with START and END denoting
-the range of text to assign text property SYMBOL with value VALUE "
-(let ((sym (intern param)))
-;; The first def in its article is the 'true' original for us 
-  (if (and (not (get sym 'constructor))
-	   (equal (get-mmlquery-resource-article sym)
-		  (file-name-nondirectory (buffer-file-name (current-buffer)))))      	   
-      (put sym 'constructor start)
-;; otherwise it is stored among redefinitions - this is unused now
-    (put sym 'constructor-redef (cons start (get sym 'constructor-redef))))
-  (list start end 'definition sym)))
-
 
 (defun mmlquery-decode-query (start end &optional param)
   "Decode a query property for text between START and END.
@@ -3099,8 +3140,7 @@ If PUSH, push positions onto the mmlquery-history."
     (unless defpos
       (message "Loading abstract %s ..." aname)
       (find-file-noselect afile)
-      (setq defpos (or (get anch 'constructor)
-		       (get anch 'mmlquery-definition))))
+      (setq defpos (get anch 'mmlquery-definition)))
     (unless defpos (error "No mmlquery definition for resource %S" anch))
 ;; The abstract may have been killed
     (unless (get-file-buffer afile)
@@ -3184,6 +3224,25 @@ mmlquery abstracts.")
      (when (and (not modified) (buffer-modified-p))
        (set-buffer-modified-p nil))))
 
+;; Not working yet, don't know why
+;; (defun mmlquery-underlined-face (face)
+;; "Return the underlined equivalent of symbol 'FACE. 
+;; If it does not exist, create it and store as a property
+;; 'mmlquery-underlined of 'FACE ."
+;; (if face   
+;;     (if (face-underline-p face) face
+;;       (let ((fc1 (get face 'mmlquery-underlined)))
+;; 	(if fc1 fc1
+;;  	  (let ((fc2 
+;; 		 (face-name 
+;; 		  (copy-face face (intern (concat (symbol-name face) 
+;; 						  "-underl"))))))
+;; ;	    (set-face-attribute fc2 nil :underline t)
+;;  	    (set-face-underline-p fc2 t)
+;;  	    (put face 'mmlquery-underlined fc2)
+;;  	    fc2)
+;; )))
+;;    'underline))
 
 (defun mmlquery-underline-highlited (start)
 "Add 'underline to 'highlite.
@@ -3199,8 +3258,13 @@ Only if `mmlquery-underlines-highlited' is non-nil."
 		(or (next-single-property-change (point) 'mouse-face 
 						 (current-buffer))
 		    (point-max))))
-	   (if (eq mfprop 'highlight)
+	   (if (and (eq mfprop 'highlight)
+		    (not (get-text-property (point) 'face)))
 	       (put-text-property (point) next-change 'face 'underline))
+;	       (let ((face (get-text-property (point) 'face)))
+;		 (setq face (mmlquery-underlined-face face))
+;		 (put-text-property (point) next-change 'face face);'(:underline "red");'underline
+;;))
 	   (goto-char next-change)))))))
 
 (defun mmlquery-underline-in-region (beg end)
@@ -3216,6 +3280,20 @@ Only if `mmlquery-underlines-highlited' is non-nil."
 
 (defun mmlquery-toggle-dfs () (interactive) (mmlquery-toggle-hiding 'mmlquery-dfs))
 (defun mmlquery-toggle-def () (interactive) (mmlquery-toggle-hiding 'mmlquery-def))
+
+(defun mmlquery-toggle-item-invis (&optional pos)
+"Toggle hiding of the mmlquery items that have the same kind as
+the item at POS."
+(interactive)
+(let ((prop (get-text-property (or pos (point)) 'mmlquery-item-starter)))
+  (or prop (error "No MMLQuery item starter at point!"))
+  (mmlquery-toggle-hiding prop)))
+
+(defun mmlquery-toggle-item-invis-mouse (event)
+"Calls `mmlquery-toggle-item-invis at the point we clicked on."
+  (interactive "e")
+  (select-window (event-window event))
+  (mmlquery-toggle-item-invis (event-point event)))
 
 (defun mmlquery-toggle-property-invis (&optional pos force)
 "Toggle hiding of the property formula at POS.
