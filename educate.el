@@ -102,7 +102,7 @@ and possibly kill the buffer containing it"
       (error "No file %s exists, get it from the server first" 
 	     edu-test-file-name))))
   ;; now we know that we are in the right buffer
-  (let* ((text (query-handle-chars-cgi
+  (let* ((text (edu-test-handle-chars-cgi
 	       (buffer-substring-no-properties
 		(point-min) (point-max))))
 	(data (concat  "session_number=" 
@@ -167,7 +167,7 @@ and possibly kill the buffer containing it"
       (and (< nr 91) (< 64 nr))
       (and (< nr 58) (< 47 nr))))
 
-(defun query-handle-chars-cgi (str)
+(defun edu-test-handle-chars-cgi (str)
 "Replace nonalfanumeric chars in STR by %code."
 (let ((slist (string-to-list str))
       (space (nreverse (string-to-list (format "%%%x" 32))))
@@ -217,8 +217,8 @@ If POSTED-DATA is non-nil, the request is POST instead of GET.
        (concat "POST " request " HTTP/1.0\r\n"
 	       "Content-type: application/x-www-form-urlencoded\r\n"
 	       "Content-length: " 
-	       (int-to-string (+ 2 (length posted-data)))
-	       "\r\n\r\n" posted-data "\r\n" )))
+	       (int-to-string (+ 1 (length posted-data)))
+	       "\r\n\r\n" posted-data "\n" )))
     ;; Watch us spin and stop Emacs from doing anything else!
     (while (equal (process-status proc) 'open)
       (when (not (accept-process-output proc 180))
