@@ -495,10 +495,10 @@ INDENT is the current indentation level."
 (put 'mizar-mode 'find-tag-default-function 'mizar-ref-at-point)
 
 (defvar mizsymbtags 
-  (substitute-in-file-name "$MIZFILES/abstr/SYMBTAGS") 
+  (substitute-in-file-name "$MIZFILES/abstr/symbtags") 
   "Symbol tags file created with stag.pl")
 (defvar mizreftags 
-  (substitute-in-file-name "$MIZFILES/abstr/REFTAGS") 
+  (substitute-in-file-name "$MIZFILES/abstr/reftags") 
   "References tags file created with stag.pl")
 
 ;; nasty to redefine these two, but working; I could not get the local vars machinery right  
