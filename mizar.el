@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.84 $
+;; $Revision: 1.85 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -3290,8 +3290,10 @@ Only if `mmlquery-underlines-highlited' is non-nil."
 "Toggle hiding of the mmlquery items that have the same kind as
 the item at POS."
 (interactive)
-(let ((prop (get-text-property (or pos (point)) 'mmlquery-item-starter)))
+(let* ((pos (or pos (point))) 
+       (prop (get-text-property pos 'mmlquery-item-starter)))
   (or prop (error "No MMLQuery item starter at point!"))
+  (goto-char pos)
   (mmlquery-toggle-hiding prop)))
 
 (defun mmlquery-toggle-item-invis-mouse (event)
@@ -3310,6 +3312,7 @@ function is used to force the hiding state."
 	 (propval (get-text-property pos 'mmlquery-property))
 	 next-change start invis)
     (or propval (error "No MMLQuery expression at point!"))
+    (goto-char pos)
     (setq next-change
 	  (or (next-single-property-change pos 'mmlquery-property (current-buffer))
 	      (point-max)))
