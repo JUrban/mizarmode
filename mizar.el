@@ -414,6 +414,8 @@ rigidly along with this one (not yet)."
 ;;;;;;;;;;; grepping ;;;;;;;;;;;;;;;;;;;;;
 ;;; we should do some additional checks for winemacs
 
+(defvar mizar-abstr (substitute-in-file-name "$MIZFILES/abstr"))
+(defvar mizar-mml (substitute-in-file-name "$MIZFILES/mml"))
 (defvar mizar-grep-case-sensitive t
 "tells if grepping is case sensitive or not")
 
@@ -424,20 +426,28 @@ rigidly along with this one (not yet)."
 (defun mizar-grep-abs (exp)
 "Runs grep on abstracts"
   (interactive "sregexp: ")
-  (let ((abs (substitute-in-file-name "$MIZFILES/abstr/*.abs")))
-    (if mizar-grep-case-sensitive
-	(grep (concat "grep -n -e \"" exp "\" " abs))
-      (grep (concat "grep -i -n -e \"" exp "\" " abs)))
-    ))
+  (let ((old default-directory))
+    (unwind-protect
+	(progn
+	  (cd mizar-abstr)
+	  (if mizar-grep-case-sensitive
+	      (grep (concat "grep -n -e \"" exp "\" *.abs"))
+	    (grep (concat "grep -i -n -e \"" exp "\" *.abs"))))
+      (cd old)
+    )))
 
 (defun mizar-grep-full (exp)
 "Runs grep on full articles"
   (interactive "sregexp: ")
-  (let ((miz (substitute-in-file-name "$MIZFILES/mml/*.miz")))
-    (if mizar-grep-case-sensitive
-	(grep (concat "grep -n -e \"" exp "\" " miz))
-      (grep (concat "grep -i -n -e \"" exp "\" " miz)))
-    ))
+  (let ((old default-directory))
+    (unwind-protect
+	(progn
+	  (cd mizar-mml)
+	  (if mizar-grep-case-sensitive
+	      (grep (concat "grep -n -e \"" exp "\" *.miz"))
+	    (grep (concat "grep -i -n -e \"" exp "\" *.miz"))))
+      (cd old)
+      )))
 
 
 ;;;;;;;;;;;;;;; imenu and speedbar handling ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -746,7 +756,7 @@ returns list of numbered messages for mizar-compile"
 (save-excursion
   (let ((buf (find-file-noselect  mizar-err-msgs))
 	(msgs (if cformat nil ""))
-	(prefix (if cformat " *" (concat mizar-error-start " ")))
+	(prefix (if cformat " *" "::> "))
 )
     (set-buffer buf)
     (goto-char (point-min))
@@ -1229,6 +1239,59 @@ Currently used are:  mouse-2, mouse-3, C-m (or RET) and M-.")
 		  mizar-do-expl t))))
 
 
+;;;;;;;;;;;;;;;  abbrevs for article references ;;;;;;;;;;;;
+(defun mizar-th-abbrevs (&optional aname)
+(interactive)
+(let ((aname (or aname
+		(file-name-nondirectory 
+		 (file-name-sans-extension 
+		  (buffer-file-name))))))
+  (setq aname (upcase aname))
+(save-excursion
+  (goto-char (point-min))
+  (let (pos0 pos1 comm (thnr 0) pairs)
+  (while (re-search-forward "[ \n\r\t]\\(theorem\\)[ \n\r\t]+" (point-max) t)
+    (setq pos1 (point)
+	  pos0 (match-end 1))
+    (goto-char pos0)
+    (beginning-of-line)
+    (setq comm (search-forward comment-start pos0 t))
+    (if comm  (beginning-of-line 2)  ;; inside comment, skip
+      (setq thnr (+ thnr 1))
+      (goto-char pos1)               ;; label  or not 
+      (if (looking-at "\\([a-zA-Z0-9_']+\\):")
+	  (define-abbrev mizar-mode-abbrev-table 
+	    (downcase (match-string 1))
+	    (concat aname ":" (number-to-string thnr))))
+;	  (setq pairs (cons (cons (match-string 1) thnr) pairs)))))
+  ))))))
+
+(defun mizar-defs-abbrevs (&optional aname)
+(interactive)
+(let ((aname (or aname
+		(file-name-nondirectory 
+		 (file-name-sans-extension 
+		  (buffer-file-name))))))
+  (setq aname (upcase aname))
+(save-excursion
+  (goto-char (point-min))
+  (let (pos0 pos1 comm (defnr 0) defname)
+  (while (re-search-forward "[ \n\r\t]:\\([a-zA-Z0-9_']+\\):[ \n\r\t]" (point-max) t)
+    (setq pos0 (match-end 1)
+	  defname (match-string 1))
+    (goto-char pos0)
+    (beginning-of-line)
+    (setq comm (search-forward comment-start pos0 t))
+    (if comm  (beginning-of-line 2)  ;; inside comment, skip
+      (setq defnr (+ defnr 1))
+      (goto-char pos0)               ;; label  or not 
+      (define-abbrev mizar-mode-abbrev-table 
+	(downcase defname)
+	(concat aname ":def " (number-to-string defnr))))
+  )))))
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defconst mizar-error-regexp "\\(\\*\\|::>,\\)\\([0-9]+\\)" "regexp used to locate error messages in a mizar text")
@@ -1416,13 +1479,6 @@ if force is non nil, do it regardless of the value of mizar-quick-run"
 	   (mizar-previous-error))
 	  (t pos))))
 
-(defun mizar-switch-to-ld ()
-"switch to mizar-launch-dir and return old default-directory if switched"
-  (if mizar-launch-dir
-      (let ((old-dir default-directory))
-	(cd mizar-launch-dir)
-	old-dir)))
-
 (defun mizar-it (&optional util noqr compil)
   "Run mizar on the text in the current .miz buffer;
 if util given, runs it instead of mizf, if noqr, does not 
@@ -1441,7 +1497,8 @@ use quick run, if compil, emulate compilation-like behavior"
 	  (t 
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
-		  (old-dir (mizar-switch-to-ld)))
+		  (old-dir (file-name-directory name)))
+	     (if mizar-launch-dir (cd mizar-launch-dir))
 	     (mizar-strip-errors)
 	     (save-buffer)
 	     (cond 
@@ -1610,7 +1667,7 @@ use quick run, if compil, emulate compilation-like behavior"
 				       nil nil      (mizar-ref-at-point))
 			 )))
 
-(defvar mizar-error-start "::>")
+(defvar mizar-error-start "^::>")
 
 (defun mizar-end-error (result pos oldpos)
   "Common end for mizar-next-error and mizar-previous-error"
