@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.106 $
+;; $Revision: 1.107 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1897,14 +1897,18 @@ See `mizar-err-codes' for the maning of TABLE."
 
 
 (defun mizar-do-errors (aname)
-"Add err-flags and errmsgs using ANAME.err in current buffer."
+"Add err-flags and errmsgs using ANAME.err in current buffer.
+Display error number in the mode line and return number of errors."
 (save-excursion
-  (let ((errors (concat aname ".err")))
+  (let ((errors (concat aname ".err")) (error-nr 0))
     (if (and (file-readable-p errors)
 	     (< 0 (file-size errors)))
 	(let ((table (mizar-get-errors aname)))
+	  (setq error-nr (length table))
 	  (mizar-error-flag aname table)
-	  (mizar-addfmsg aname table))))))
+	  (mizar-addfmsg aname table)))
+    (verifier-mode-line error-nr)
+    error-nr)))
   
 (defun mizar-comp-addmsgs (atab expl)
 "Replace errcodes in ATAB by  explanations from EXPL.
@@ -4425,6 +4429,26 @@ can be used instead, to make a summary of an article."
   (occur "[ \\n\\r]by[ \\n\\r].*:"))
 
 
+;;;;;;;;;;;;;;; Verifier mode lime ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar verifier-mode nil
+  "True if verifier mode is in use.")
+
+(add-to-list 'minor-mode-alist '(verifier-mode verifier-mode))
+(make-variable-buffer-local 'verifier-mode)
+(put '-mode 'permanent-local t)
+
+(defun verifier-mode (&optional arg)
+  ;; Dummy function for C-h m
+  "Mizar Verifier minor mode.
+This minor mode is automatically activated whenever 
+you verify a Mizar file.")
+
+(defun verifier-mode-line (error-nr)
+  "Set `verifier-mode' to display verification report.
+ERROR-NR is reported in current buffer's mode line."
+  (interactive)
+  (setq verifier-mode (concat " " "Errors:" (number-to-string error-nr)))
+  (force-mode-line-update))
 
 ;;;;;;;;;;;;;;;; Running Mizar ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -5114,7 +5138,7 @@ if that value is non-nil."
   (use-local-map mizar-mode-map)
 					;  (setq local-abbrev-table text-mode-abbrev-table)
   (setq major-mode 'mizar-mode)
-  (setq mode-name "mizar")
+  (setq mode-name "Mizar")
   (setq local-abbrev-table mizar-mode-abbrev-table)
   (mizar-mode-variables)
   (setq buffer-offer-save t)
