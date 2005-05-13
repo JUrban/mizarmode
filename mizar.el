@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.107 $
+;; $Revision: 1.108 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -426,7 +426,7 @@ Now also the environmental declarations."
  "it" "means" "mode" "of"  "otherwise" "over" 
  "pred" "provided" "qua" "reconsider" "redefine" "reflexivity" 
  "reserve" "struct" "such" "synonym" 
- "that" "then" "thesis" "where" 
+ "that" "then" "thesis" "where" "is" 
  "associativity" "commutativity" "connectedness" "irreflexivity" 
  "reflexivity" "symmetry" "uniqueness" "transitivity" "idempotence" 
  "asymmetry" "projectivity" "involutiveness")
@@ -679,7 +679,7 @@ Used for exact completion.")
     (cond
      ((looking-at "::::::") 0)		;Large comment starts
      ((looking-at "::") (current-column)) ;Small comment starts
-     ((looking-at "\\b\\(theorem\\|scheme\\|definition\\|registration\\|registrations\\|environ\\|vocabularies\\|constructors\\|requirements\\|notation\\|notations\\|reserve\\|begin\\)\\b") 0)
+     ((looking-at "\\b\\(theorem\\|scheme\\|definition\\|registration\\|registrations\\|environ\\|vocabularies\\|constructors\\|requirements\\|notation\\|notations\\|theorems\\|schemes\\|reserve\\|begin\\)\\b") 0)
      ((bobp) 0)				;Beginning of buffer
      (t
       (let ((empty t) ind more less res)
@@ -711,7 +711,7 @@ Used for exact completion.")
 	  ;; Real mizar code
 	  (cond ((looking-at "\\b\\(proof\\|now\\|hereby\\|case\\|suppose\\)\\b")
 		 (setq res (+ ind mizar-indent-width)))
-		((looking-at "\\b\\(definition\\|scheme\\|theorem\\|registration\\|registrations\\|vocabularies\\|constructors\\|requirements\\|notation\\|notations\\|reserve\\|begin\\)\\b")
+		((looking-at "\\b\\(definition\\|scheme\\|theorem\\|registration\\|registrations\\|vocabularies\\|constructors\\|requirements\\|notation\\|notations\\|theorems\\|schemes\\|reserve\\|begin\\)\\b")
 		 (setq res (+ ind 2)))
  		(t (setq res ind)))
 	  (if less (max (- ind mizar-indent-width) 0)
