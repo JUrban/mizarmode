@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.108 $
+;; $Revision: 1.109 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4429,6 +4429,72 @@ can be used instead, to make a summary of an article."
   (occur "[ \\n\\r]by[ \\n\\r].*:"))
 
 
+;;;;;;;;;;;;;;; Hiding items in abstracts ;;;;;;;;;;;;;;;;
+
+(defgroup mizar-abstracts nil
+  "Support for abstracts in the Mizar mode"
+  :group 'mizar)
+
+(defconst mizar-item-kinds
+  '(theorem definition scheme registration notation reserve canceled)
+"Top-level item kinds appearing in Mizar abstracts.
+They are used as symbols for values of the overlay property 
+'mizar-kind, and their names must correspond to the mizar keywords
+introducing these items (see `mizar-set-item-overlays-in-abstract'.")
+
+(defcustom mizar-abstracts-default-hidden-kinds nil
+"*List of item kinds that get hidden upon loading of Mizar abstracts.
+See `mizar-item-kinds' for possible values."
+:type '(repeat symbol)
+:group 'mizar-abstracts)
+
+(defun mizar-abstracts-invisibility ()
+(dolist (sym mizar-abstracts-default-hidden-kinds)
+  (add-to-invisibility-spec sym)))
+
+(defun mizar-set-item-overlays-in-abstract ()
+  "Set the overlays for invisibility of items in a Mizar abstract
+This is done for items from `mizar-item-kinds'."
+  (if (buffer-abstract-p (current-buffer))
+      (save-excursion
+	(let ((kinds mizar-item-kinds))
+	  (while kinds
+	    (let* ((kind (car kinds))
+		   (kw (symbol-name kind))
+		   (re (concat "^[ ]*" kw "[ \n\r]+" 
+			       (if (memq kind '(definition registration notation))
+				   "\\([\n\r]\\|.\\)*?\\bend\\b[; \n\r]+" 
+				 "[^;]+;[ \n\r]+"))))
+	      (goto-char (point-min))
+	      (while
+		  (re-search-forward re (point-max) t)
+		(let* ((from (match-beginning 0))
+		       (to (match-end 0)) 
+		       (overlay (make-overlay from to)))
+		  (overlay-put overlay 'invisible kind)
+		  (overlay-put overlay 'mizar-kind kind)
+		  (overlay-put overlay 
+			       'isearch-open-invisible-temporary t))))
+	    (setq kinds (cdr kinds)))))
+    (error "Not in Mizar abstract!")))
+
+(defun mizar-abs-toggle-hiding (sym)
+  (unless (buffer-abstract-p (current-buffer))
+    (error "Not in Mizar abstract!"))
+  (if (memq sym buffer-invisibility-spec)
+      (remove-from-invisibility-spec sym)
+    (add-to-invisibility-spec sym))
+  (redraw-frame (selected-frame))   ; Seems needed
+  )
+
+(defun mizar-abs-toggle-th () (interactive) (mizar-abs-toggle-hiding 'theorem))
+(defun mizar-abs-toggle-def () (interactive) (mizar-abs-toggle-hiding 'definition))
+(defun mizar-abs-toggle-sch () (interactive) (mizar-abs-toggle-hiding 'scheme))
+(defun mizar-abs-toggle-reg () (interactive) (mizar-abs-toggle-hiding 'registration))
+(defun mizar-abs-toggle-not () (interactive) (mizar-abs-toggle-hiding 'notation))
+(defun mizar-abs-toggle-res () (interactive) (mizar-abs-toggle-hiding 'reserve))
+(defun mizar-abs-toggle-can () (interactive) (mizar-abs-toggle-hiding 'canceled))
+
 ;;;;;;;;;;;;;;; Verifier mode lime ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar verifier-mode nil
   "True if verifier mode is in use.")
@@ -5143,6 +5209,8 @@ if that value is non-nil."
   (mizar-mode-variables)
   (setq buffer-offer-save t)
   (mizar-setup-imenu-sb)
+  (if (buffer-abstract-p (current-buffer))
+      (mizar-set-item-overlays-in-abstract))
   (if (and mizar-abstracts-use-view
 	       (buffer-abstract-p (current-buffer)))
       (view-mode))
@@ -5423,6 +5491,40 @@ move backward across N balanced expressions."
 (save-excursion
   (goto-char (point-min))
   (hs-hide-level level)))
+
+(setq mizar-abs-map (make-sparse-keymap))
+(easy-menu-define mizar-abs-menu
+  mizar-abs-map
+  "Submenu of hide/show used for items in Mizar abstracts."
+  '(""
+    ["Theorems" mizar-abs-toggle-th :style radio 
+     :selected (not (memq 'theorem buffer-invisibility-spec)) :active t
+     :help "Toggle hiding of theorems" ]
+    
+    ["Definitions" mizar-abs-toggle-def :style radio 
+     :selected (not (memq 'definition buffer-invisibility-spec)) :active t
+     :help "Toggle hiding of definitions" ]
+    ["Schemes" mizar-abs-toggle-sch :style radio 
+     :selected (not (memq 'scheme buffer-invisibility-spec)) :active t
+     :help "Toggle hiding of schemes" ]
+    ["Registrations" mizar-abs-toggle-reg :style radio 
+     :selected (not (memq 'registration buffer-invisibility-spec)) :active t
+     :help "Toggle hiding of registrations" ]
+    ["Notations" mizar-abs-toggle-not :style radio 
+     :selected (not (memq 'notation buffer-invisibility-spec)) :active t
+     :help "Toggle hiding of notations" ]
+    ["Reservations" mizar-abs-toggle-res :style radio 
+     :selected (not (memq 'reserve buffer-invisibility-spec)) :active t
+     :help "Toggle hiding of reservations" ]
+    ["Canceled" mizar-abs-toggle-can :style radio 
+     :selected (not (memq 'canceled buffer-invisibility-spec)) :active t
+     :help "Toggle hiding of canceled theorems" ]
+    ))
+
+(define-key-after hs-minor-mode-menu [mizar-hs-abstract-items]
+  `(menu-item  "Hide/Show items in abstracts" 
+	       ,mizar-abs-menu
+	       :enable (buffer-abstract-p (current-buffer))))
 
 (define-key-after hs-minor-mode-menu [pres-global]
   `(menu-item  "Global Proof Presentation Level" 
