@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.109 $
+;; $Revision: 1.110 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -388,13 +388,18 @@ MoMM should be installed for this."
 :type 'color
 :group 'mizar-faces)
 
-(defcustom mizar-main-keywords 
-(list "theorem" "scheme" "definition" "registration" 
-      "notation" "schemes" "constructors" "definitions" 
+(defcustom mizar-environment-keywords 
+(list "schemes" "constructors" "definitions" 
       "theorems" "vocabularies" "requirements" "registrations" 
       "notations")
-"*Keywords starting main mizar text items. 
-Now also the environmental declarations."
+"*Keywords starting mizar environmental items." 
+:type '(repeat string)
+:group 'mizar-faces)
+
+
+(defcustom mizar-main-keywords 
+(list "theorem" "scheme" "definition" "registration" "notation")
+"*Keywords starting main mizar text items." 
 :type '(repeat string)
 :group 'mizar-faces)
 
@@ -669,6 +674,13 @@ Used for exact completion.")
 (defun mizar-indent-to (indent)
   (insert-char 32 indent) )             ; 32 is space...cannot use tabs
 
+(defvar mizar-environment-kw-regexp
+  (concat "\\b" (regexp-opt mizar-environment-keywords t) "\\b")
+  "Regexp matching environmental keywords.")
+
+(defvar mizar-main-kw-regexp
+  (concat "\\b" (regexp-opt mizar-main-keywords t) "\\b")
+  "Regexp matching main keywords.")
 
 
 (defun mizar-indent-level ()
@@ -679,7 +691,9 @@ Used for exact completion.")
     (cond
      ((looking-at "::::::") 0)		;Large comment starts
      ((looking-at "::") (current-column)) ;Small comment starts
-     ((looking-at "\\b\\(theorem\\|scheme\\|definition\\|registration\\|registrations\\|environ\\|vocabularies\\|constructors\\|requirements\\|notation\\|notations\\|theorems\\|schemes\\|reserve\\|begin\\)\\b") 0)
+     ((looking-at mizar-main-kw-regexp) 0)
+     ((looking-at mizar-environment-kw-regexp) 1)
+     ((looking-at "\\b\\(environ\\|reserve\\|begin\\)\\b") 0)
      ((bobp) 0)				;Beginning of buffer
      (t
       (let ((empty t) ind more less res)
@@ -711,7 +725,9 @@ Used for exact completion.")
 	  ;; Real mizar code
 	  (cond ((looking-at "\\b\\(proof\\|now\\|hereby\\|case\\|suppose\\)\\b")
 		 (setq res (+ ind mizar-indent-width)))
-		((looking-at "\\b\\(definition\\|scheme\\|theorem\\|registration\\|registrations\\|vocabularies\\|constructors\\|requirements\\|notation\\|notations\\|theorems\\|schemes\\|reserve\\|begin\\)\\b")
+		((or (looking-at mizar-main-kw-regexp)
+		     (looking-at mizar-environment-kw-regexp)
+		     (looking-at "\\b\\(reserve\\|begin\\)\\b"))
 		 (setq res (+ ind 2)))
  		(t (setq res ind)))
 	  (if less (max (- ind mizar-indent-width) 0)
@@ -5141,7 +5157,8 @@ This is a flamewar-resolving hack."
   (let (
 	;; "Native" Mizar patterns
 	(head-predicates 
-	 (list (mizar-fnt-regexp mizar-main-keywords)
+	 (list (mizar-fnt-regexp 
+		(append mizar-main-keywords mizar-environment-keywords))
 	       0 'mizar-main-face))
 	(connectives
 	 (list (mizar-fnt-regexp mizar-formula-keywords)
