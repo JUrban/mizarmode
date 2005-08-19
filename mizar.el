@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.110 $
+;; $Revision: 1.111 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -538,6 +538,7 @@ MoMM should be installed for this."
   (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
   (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
   (define-key mizar-mode-map "\C-cs" 'mizar-insert-skeleton)
+  (define-key mizar-mode-map "\C-cu" 'mizar-run-all-irr-utils)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
   (define-key mizar-mode-map "\M-\C-i"     'mizar-ref-complete)
   (define-key mizar-mode-map "\C-c\C-q" 'query-start-entry)
@@ -4858,7 +4859,6 @@ If FORCEACC, run makeenv with the -a option."
 
 
 
-
 (defun mizar-findvoc ()
   "Find vocabulary for a symbol."
   (interactive)
@@ -4866,6 +4866,23 @@ If FORCEACC, run makeenv with the -a option."
 			 (read-string  (concat "findvoc [-iswGKLMORUV] SearchString (Default: " (current-word) "): " )
 				       nil nil      (current-word))
 			 )))
+(defvar mizar-irr-utils 
+'("relprem" "relinfer" "reliters" "chklab" "inacc" "trivdemo")
+"Sequence of irrelevant utils used in `mizar-run-all-irr-utils'.")
+
+(defun mizar-run-all-irr-utils ()
+"Run all the irrelevant utilities, stopping on the first error.
+See the variable `mizar-irr-utils' for their list and order of execution."
+(interactive)
+(let ((utils mizar-irr-utils)
+      (name (file-name-sans-extension (buffer-file-name)))
+      err)
+  (while (and utils (null err))
+    (progn
+      (mizar-it (car utils) nil nil nil t)
+      (setq err (mizar-err-codes name)
+	    utils (cdr utils))))))
+
 
 ;;;;;;;;;;;; not done yet, seems quite complicated if we have e.g.
 ;;;;;;;;;;;; reserve A for set reserve F for Function of A,B
@@ -5374,6 +5391,8 @@ if that value is non-nil."
 		["Listvoc" mizar-listvoc t]
 		["Constr" mizar-constr t])
 	  (list "Irrelevant Utilities"	    
+	    ["Execute all irrelevant utils" mizar-run-all-irr-utils 
+	     (mizar-buf-verifiable-p)]
 	    ["Irrelevant Premises" mizar-relprem (mizar-buf-verifiable-p)]
 	    ["Irrelevant Inferences" mizar-relinfer (mizar-buf-verifiable-p)]
 	    ["Irrelevant Iterative Steps" mizar-reliters (mizar-buf-verifiable-p)]
