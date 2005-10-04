@@ -8,11 +8,14 @@
 # This script prints the last propositions in "consider" items,
 # which are immediately referenced.
 
-
 use XML::LibXML;
 use strict;
 my $parser = XML::LibXML->new();
 my $doc = $parser->parse_file($ARGV[0]);
+
+# For understanding the XPath expressions, see the up-to-date
+# Mizar RELAX NG doc in the Mizar distro, or at
+# http://lipa.ms.mff.cuni.cz/~urban/Mizar.html (a bit outdated).
 
 my @result = $doc->findnodes('//Consider/Proposition[(position()=last()) 
 and (position() > 1) 
