@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.112 $
+;; $Revision: 1.113 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -5313,6 +5313,20 @@ if that value is non-nil."
 (defvar html-help-url "http://ktilinux.ms.mff.cuni.cz/~urban/MizarModeDoc/html"
 "The html help for Mizar Mode resides here")
 
+(defun mizar-browse-as-html (&optional suffix)
+"Browse in a HTML browser the article or an environment file.
+ A XSLT-capable browser like Mozilla or IE has to be 
+ default in Emacs - you may need to customize the 
+ variable `browse-url-browser-function' for this."
+(interactive)
+(let* ((name (file-name-sans-extension (buffer-file-name))))
+  (if (not suffix)
+      (browse-url (concat name ".xml"))
+    (let* ((oldname (concat name "." suffix))
+	   (newname (concat oldname ".xml")))
+      (copy-file oldname newname t t)
+      (browse-url newname)))))
+
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
   '(list  "Mizar"
@@ -5330,6 +5344,13 @@ if that value is non-nil."
 	    ["Symbol apropos" symbol-apropos t]
 	    ["Bury all abstracts" mizar-bury-all-abstracts t]
 	    ["Close all abstracts" mizar-close-all-abstracts t]
+	    )
+	  '("Browse as HTML" 
+	    :help "Mizar has to be run first. Mozilla or IE needed."
+	    ["Browse current article" (mizar-browse-as-html) t]
+	    ["Browse environmental clusters" (mizar-browse-as-html "ecl") t]
+	    ["Browse environmental theorems" (mizar-browse-as-html "eth") t]
+	    ["Browse environmental constructors" (mizar-browse-as-html "atr") t]
 	    )
 	  '("MoMM"
 	    ["Use MoMM (needs to be installed)" mizar-toggle-momm :style toggle
