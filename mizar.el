@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.113 $
+;; $Revision: 1.114 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1244,21 +1244,38 @@ Can modify `mizar-ref-table'."
   (set-buffer obj)
   (goto-char pos)
   (let ((ref (mizar-ref-at-point)))
-    (or (get  (intern-soft ref mizar-ref-table) 'expl)
-	(let ((buf (find-tag-noselect ref))
-	      (symb (intern ref mizar-ref-table))
-	      (res ""))
-	  (set-buffer buf)
-	  (setq res (if (looking-at "[^;]+;") (match-string 0)
-		      ""))
-	  ;; previous line may contain e.g. "let z;"
-	  (if (string-match ":def " ref) 
-	      (progn 
-		(forward-line -1)
-		(looking-at ".*[\n]")
-		(setq res (concat (match-string 0) res))))
-	  (put symb 'expl res)
-	  res))))))
+    (if (string-match ":" ref) ;; library reference, caching
+	(or (get  (intern-soft ref mizar-ref-table) 'expl)
+	    (let ((buf (find-tag-noselect ref))
+		  (symb (intern ref mizar-ref-table))
+		  (res ""))
+	      (set-buffer buf)
+	      (setq res (if (looking-at "[^;]+;") (match-string 0)
+			  ""))
+	      ;; previous line may contain e.g. "let z;"
+	      (if (string-match ":def " ref) 
+		  (progn 
+		    (forward-line -1)
+		    (looking-at ".*[\n]")
+		    (setq res (concat (match-string 0) res))))
+	      (put symb 'expl res)
+	      res))
+      ;; local reference, no caching
+      (if (re-search-backward (concat "\\([ \t\n\r:]" ref 
+				      "[ \t\n\r]*[{:][^;]*;\\)" )
+			      (point-min) t)
+	  (let ((res1 (match-string 0)))
+	    ;; definition
+	    (if (string-match (concat ":" ref ":") res1)
+		  (progn
+		    (forward-line -1)
+		    (looking-at (concat "\\(.*[\n].*\\):" ref ":"))
+		    (concat (match-string 1) res1))
+	      ;; proved or multiple statements
+	      (if (string-match "[ \n\r\t]+\\(proof\\|and\\)[ \n\r\t]" res1)
+		  (substring res1 1 (match-beginning 0))
+		(substring res1 1))))
+	""))))))
 
 
 (defun mizar-bubble-ref-region (beg end)
@@ -1269,6 +1286,10 @@ Can modify `mizar-ref-table'."
     (while (re-search-forward "\\([ \t\n\r,][A-Z0-9_]+:\\(def \\|sch \\|th \\)?[0-9]+\\)" 
 			      end t)
       (put-text-property (match-beginning 0) (match-end 0) 
+			 'help-echo 'mizar-get-ref-str))
+    (goto-char beg)
+    (while (re-search-forward "\\([ \n\t]\\(by\\|from\\)[ \n\r\t]\\([^;.]*\\)\\)" end t)
+      (put-text-property (match-beginning 3) (match-end 3) 
 			 'help-echo 'mizar-get-ref-str))
     (set-buffer-modified-p mod))))
 
