@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.114 $
+;; $Revision: 1.115 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -211,6 +211,12 @@ Possible values are none, first, next, previous."
 
 (defcustom mizar-verifier "verifier"
 "*The default Mizar verifier used to check Mizar articles.
+This is used in the `mizar-it' function."
+:type 'string
+:group 'mizar-running)
+
+(defcustom makeenv "makeenv"
+"*Program used for creating the article environment.
 This is used in the `mizar-it' function."
 :type 'string
 :group 'mizar-running)
@@ -4696,8 +4702,6 @@ If UTIL is given, call it instead of the Mizar verifier."
 	   (mizar-previous-error))
 	  (t pos))))
 
-(defvar makeenv "makeenv" "Program used for creating the article environment.")
-
 (defcustom mizar-forbid-accommodation nil
 "*The Mizar accomodator is not called under any circumstances.
 This is used for teaching purposes, when the article environment
@@ -5372,6 +5376,9 @@ if that value is non-nil."
 	    ["Browse environmental clusters" (mizar-browse-as-html "ecl") t]
 	    ["Browse environmental theorems" (mizar-browse-as-html "eth") t]
 	    ["Browse environmental constructors" (mizar-browse-as-html "atr") t]
+	    ["Set Mozilla (Firefox) as the default browser" 
+	    (customize-save-variable 'browse-url-browser-function 
+				     'browse-url-mozilla) t]
 	    )
 	  '("MoMM"
 	    ["Use MoMM (needs to be installed)" mizar-toggle-momm :style toggle
