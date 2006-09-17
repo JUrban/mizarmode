@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.117 $
+;; $Revision: 1.118 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -5479,6 +5479,7 @@ if that value is non-nil."
 	  ["Reserv. before point" make-reserve-summary t]
 	  "-"
 	  ["Run Mizar" mizar-it (mizar-buf-verifiable-p)]
+	  ["Accommodate & Run Mizar" (mizar-it nil nil nil nil t) (mizar-buf-verifiable-p)]
 	  ["Mizar Compile" mizar-compile (mizar-buf-verifiable-p)]
 	  ["Toggle quick-run" toggle-quick-run :style toggle :selected mizar-quick-run  :active (eq mizar-emacs 'gnuemacs)]
 	  (list "Show output"
