@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.118 $
+;; $Revision: 1.119 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1426,8 +1426,8 @@ The results are shown and clickable in the Compilation buffer. "
 	(progn
 	  (cd mizar-abstr)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "egrep -n  \"" exp "\" " flist))
-	    (grep (concat "egrep -i -n  \"" exp "\" " flist))))
+	      (grep (concat "grep -n -E \"" exp "\" " flist))
+	    (grep (concat "grep -i -n -E \"" exp "\" " flist))))
       (cd old)
     )))
 
@@ -1441,8 +1441,8 @@ The results are shown and clickable in the Compilation buffer. "
 	(progn
 	  (cd mizar-mml)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "egrep -n  \"" exp "\" " flist))
-	    (grep (concat "egrep -i -n  \"" exp "\" " flist))))
+	      (grep (concat "grep -n -E \"" exp "\" " flist))
+	    (grep (concat "grep -i -n -E \"" exp "\" " flist))))
       (cd old)
       )))
 
@@ -1569,8 +1569,8 @@ The results are shown and clickable in the Compilation buffer. "
 	(progn
 	  (cd mmlquery-abstracts)	  
 	  (if mizar-grep-case-sensitive
-	      (compile (concat "egrep -n  \"" exp "\" " flist))
-	    (compile (concat "egrep -i -n  \"" exp "\" " flist))))
+	      (compile (concat "grep -n -E \"" exp "\" " flist))
+	    (compile (concat "grep -i -n -E \"" exp "\" " flist))))
       (cd olddir)
     )))
 
