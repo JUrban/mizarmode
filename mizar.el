@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.119 $
+;; $Revision: 1.120 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -160,7 +160,7 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
   "Options for nonstandard Mizaring used when teaching Mizar"
   :group 'mizar)
 
-(defcustom mizar-newline-indents t
+(defcustom mizar-newline-indents nil
 "*Newline indents."
 :type 'boolean
 :group 'mizar-indenting)
