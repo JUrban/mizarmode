@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.121 $
+;; $Revision: 1.122 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1024,6 +1024,12 @@ The non nil values of this variable determine the initial default as follows
 	       (const :tag "always start from zero" constant-zero))
 :group 'mizar-skeletons)
 
+(defcustom mizar-skeleton-labels-on-newline nil
+"*If set, each generated skeleton label starts a new line.
+See also `mizar-skeleton-labels' and `mizar-default-label-name'."
+:type 'boolean
+:group 'mizar-skeletons)
+
 (defcustom mizar-default-label-name "Z"
 "*Default name of labels inserted when `mizar-skeleton-labels' is set.
 This is appended with a label number."
@@ -1037,14 +1043,18 @@ This is appended with a label number."
 "Returns next free label usable in proof skeletons."
 (let ((res ""))
   (when mizar-skeleton-labels
-    (setq res (concat mizar-default-label-name 
-		      (int-to-string mizar-next-sk-label) ":"))
+    (setq res (concat 
+	       (if mizar-skeleton-labels-on-newline "
+"
+		 "")
+	       mizar-default-label-name 
+	       (int-to-string mizar-next-sk-label) ":"))
     (incf mizar-next-sk-label))
   res))
     
 (defun mizar-default-assume-items (fla)
 "Create the default assumption skeleton for parsed formula FLA. 
-The skeleton is a list of of items, each item is a list of either strings 
+The skeleton is a list of items, each item is a list of either strings 
 or lists containing parsed formulas, which are later handed over to
 `mizar-pp-parsed-fla'."
 (let ((beg (car fla)))
@@ -1125,13 +1135,13 @@ or lists containing parsed formulas, which are later handed over to
 `mizar-pp-parsed-fla'."
 (let ((beg (car fla)))
   (cond 
-   ((eq 'PAR beg)
+   ((eq 'PAR beg)   ; ignore paranthesis
     (mizar-default-skeleton-items (cadr fla)))
 
-   ((stringp beg) 
+   ((stringp beg)   ; string must be atomic formula - end of recursion
     (list (list "thus" beg ";")))
 
-   ((memq beg mizar-logical-constants)
+   ((memq beg mizar-logical-constants)  ; contradiction or error formula
     (list (list "thus" (symbol-name beg) ";")))
 
    ((eq '& beg)
@@ -1139,11 +1149,11 @@ or lists containing parsed formulas, which are later handed over to
     (cond 
      ((not (third fla)) 	;; end of or recursion - no wrapping
       (mizar-default-skeleton-items (cadr fla)))
-     ((mizar-atomic-parsed-fla-p (cadr fla))	;; "atomic" - no wrapping
+     ((mizar-atomic-parsed-fla-p (cadr fla))	;; "atomic" - no wrapping in proof .. end
       (nconc
        (mizar-default-skeleton-items (cadr fla))
        (mizar-default-skeleton-items (cons '& (cddr fla)))))
-     (t				;; otherwise we are wrapping
+     (t				;; otherwise we are wrapping in proof .. end
       (nconc
        (list (list "thus" (cadr fla) ))
        (list (list "proof"))
