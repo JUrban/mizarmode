@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.120 $
+;; $Revision: 1.121 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1008,9 +1008,20 @@ or lists containing parsed formulas, which are later handed over to
 	(mapconcat 'mizar-skelitem-string skel "\n")
 	"\nend;\n"))
 
-(defcustom mizar-skeleton-labels nil
-"*If set, skeleton steps produced by `mizar-insert-skeleton' are labeled."
-:type 'boolean
+(defcustom mizar-skeleton-labels 'serial
+"*If not nil, skeleton steps produced by `mizar-insert-skeleton' are labeled.
+The labels are created by concatenating the value of 
+`mizar-default-label-name' with a label number, which increases throughout
+the skeleton from its initial value.
+The non nil values of this variable determine the initial default as follows
+
+'serial is used for starting from the last skeleton label number + 1 (default),
+'constant-one always starts from 1,
+'constant-zero always starts from 0."
+:type '(choice (const :tag "no labels" nil)
+	       (const :tag "serial" serial)
+	       (const :tag "always start from one" constant-one)
+	       (const :tag "always start from zero" constant-zero))
 :group 'mizar-skeletons)
 
 (defcustom mizar-default-label-name "Z"
@@ -1201,9 +1212,14 @@ skeleton using `mizar-skeleton-items-func', and pretty prints it using
 `mizar-skeleton-string'."
 (interactive "r")
 (or labnr (not mizar-skeleton-labels)
-    (setq labnr (string-to-number
-		 (read-string "First skeleton label: " 
-			      (int-to-string mizar-next-sk-label)))))
+    (progn
+      (if (eq mizar-skeleton-labels 'constant-zero) 
+	  (setq mizar-next-sk-label 0)
+	(if (eq mizar-skeleton-labels 'constant-one) 
+	    (setq mizar-next-sk-label 1)))
+      (setq labnr (string-to-number
+		   (read-string "First skeleton label: " 
+				(int-to-string mizar-next-sk-label))))))
 (if labnr (setq mizar-next-sk-label labnr))
 (save-excursion
   (let ((skel
