@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.122 $
+;; $Revision: 1.123 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -5402,6 +5402,7 @@ if that value is non-nil."
 	    ["Browse environmental clusters" (mizar-browse-as-html "ecl") t]
 	    ["Browse environmental theorems" (mizar-browse-as-html "eth") t]
 	    ["Browse environmental constructors" (mizar-browse-as-html "atr") t]
+	    ["Browse environmental notations" (mizar-browse-as-html "eno") t]
 	    ["Set Mozilla (Firefox) as the default browser" 
 	    (customize-save-variable 'browse-url-browser-function 
 				     'browse-url-mozilla) t]
