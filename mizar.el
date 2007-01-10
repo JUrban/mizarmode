@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.123 $
+;; $Revision: 1.124 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -5370,9 +5370,16 @@ if that value is non-nil."
  default in Emacs - you may need to customize the 
  variable `browse-url-browser-function' for this."
 (interactive)
-(let* ((name (file-name-sans-extension (buffer-file-name))))
+(let* ((name (file-name-sans-extension (buffer-file-name)))
+       (xmlname (concat name ".xml")))  
+  (or (and
+       (not (buffer-modified-p))
+       (file-readable-p xmlname)       
+       (<= (second (file-mtime (buffer-file-name))) 
+	   (second (file-mtime xmlname))))
+      (error "Run verifier before browsing HTML!"))
   (if (not suffix)
-      (browse-url (concat name ".xml"))
+      (browse-url xmlname)
     (let* ((oldname (concat name "." suffix))
 	   (newname (concat oldname ".xml")))
       (copy-file oldname newname t t)
