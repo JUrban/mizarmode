@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.124 $
+;; $Revision: 1.125 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4828,6 +4828,15 @@ If FORCEACC, run makeenv with the -a option."
 	       (if old-dir (setq default-directory old-dir)))
 	     )))))
 
+(defvar last-verification-date '(-1 -1)
+"Set to the date of last verification.
+Needed e.g. for determining if the .xml files are 
+in sync with .miz, because the .miz file is usually 
+modified with errors right after the verification 
+(and hence slightly newer than the .xml file).")
+
+(make-variable-buffer-local 'last-verification-date)
+
 (defun mizar-it (&optional util noqr compil silent forceacc options)
 "Run mizar verifier on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
@@ -4921,6 +4930,7 @@ If FORCEACC, run makeenv with the -a option."
 		   (mizar-bubble-ref-region (point-min) (point-max))
 		   (mizar-do-errors name)
 		   (save-buffer)
+		   (setq last-verification-date (file-mtime (buffer-file-name)))
 		   (mizar-handle-output)
 		   (mizar-show-errors)))
 	       )))))))
@@ -5374,9 +5384,8 @@ if that value is non-nil."
        (xmlname (concat name ".xml")))  
   (or (and
        (not (buffer-modified-p))
-       (file-readable-p xmlname)       
-       (<= (second (file-mtime (buffer-file-name))) 
-	   (second (file-mtime xmlname))))
+       (file-readable-p xmlname)
+       (equal last-verification-date (file-mtime (buffer-file-name))))
       (error "Run verifier before browsing HTML!"))
   (if (not suffix)
       (browse-url xmlname)
