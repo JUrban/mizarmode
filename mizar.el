@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.128 $
+;; $Revision: 1.129 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1315,9 +1315,9 @@ Can modify `mizar-ref-table'."
 (save-excursion
   (let ((mod (buffer-modified-p)))
     (goto-char beg)
-    (while (re-search-forward "\\([ \t\n\r,][A-Z0-9_]+:\\(def \\|sch \\|th \\)?[0-9]+\\)" 
+    (while (re-search-forward "[ \t\n\r,]\\([A-Z0-9_]+:\\(def \\|sch \\|th \\)?[0-9]+\\)" 
 			      end t)
-      (put-text-property (match-beginning 0) (match-end 0) 
+      (put-text-property (match-beginning 1) (match-end 1) 
 			 'help-echo 'mizar-get-ref-str))
     (goto-char beg)
     (while (re-search-forward "\\([ \n\t]\\(by\\|from\\)[ \n\r\t]\\([^;.]*\\)\\)" end t)
