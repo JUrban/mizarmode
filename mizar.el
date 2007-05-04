@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.129 $
+;; $Revision: 1.130 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1312,6 +1312,7 @@ Can modify `mizar-ref-table'."
 
 (defun mizar-bubble-ref-region (beg end)
 "Put bubble help to the references between BEG and END."
+(save-buffer-state nil
 (save-excursion
   (let ((mod (buffer-modified-p)))
     (goto-char beg)
@@ -1323,7 +1324,7 @@ Can modify `mizar-ref-table'."
     (while (re-search-forward "\\([ \n\t]\\(by\\|from\\)[ \n\r\t]\\([^;.]*\\)\\)" end t)
       (put-text-property (match-beginning 3) (match-end 3) 
 			 'help-echo 'mizar-get-ref-str))
-    (set-buffer-modified-p mod))))
+    (set-buffer-modified-p mod)))))
 
 
 (defvar mizar-bubble-ref-increment 10
