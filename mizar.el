@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.127 $
+;; $Revision: 1.128 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2455,6 +2455,9 @@ Uses the global tables `cstrnames' and `cstrnrs'."
   (setq mizar-boundnr 0)
   (let ((parsed (with-temp-buffer
 		  (insert prop)
+		  (goto-char (point-min))
+		  (while (search-forward "\n" (point-max) t)
+                          (replace-match ""))
 		  (xml-parse-region (point-min) (point-max)))))
     (mizar-frm-repr (car (cddr (car parsed))) cstronly)))
 
