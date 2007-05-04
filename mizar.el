@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.135 $
+;; $Revision: 1.136 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4630,13 +4630,18 @@ See `mizar-item-kinds' for possible values."
   (dolist (sym mizar-abstracts-default-hidden-kinds)
     (add-to-invisibility-spec sym)))
 
+;; shouldn't this be done for items in `mizar-abstracts-default-hidden-kinds'?
+;; No: this does not hide anything, only sets the overlays and gives
+;;     their 'invisibility property the proper "kind" value; the hiding is
+;;     then done (if user wants) by `mizar-abs-toggle-hiding', by moving
+;;     the particular "kind" value to `buffer-invisibility-spec'
 (defun mizar-set-item-overlays-in-abstract ()
   "Set the overlays for invisibility of items in a Mizar abstract.
-This is done for items from `mizar-item-kinds'." ;; shouldn't this be done for items in `mizar-abstracts-default-hidden-kinds'?
+This is done for items from `mizar-item-kinds'."
   (if (buffer-abstract-p (current-buffer))
       (save-excursion
-;;	(let ((kinds mizar-item-kinds))
-	(let ((kinds mizar-abstracts-default-hidden-kinds))
+	(let ((kinds mizar-item-kinds))
+;;	(let ((kinds mizar-abstracts-default-hidden-kinds))
 	  (while kinds
 	    (let* ((kind (car kinds))
 		   (kw (symbol-name kind))
