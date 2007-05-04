@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.133 $
+;; $Revision: 1.134 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4774,7 +4774,7 @@ If UTIL is given, call it instead of the Mizar verifier."
 
 (defun mizar-handle-output  ()
 "Display processing output according to `mizar-show-output'."
-(cond ((eq 'none mizar-show-output)
+(cond ((equal "none" mizar-show-output)
        (delete-other-windows))
       ((integerp mizar-show-output)
        (save-selected-window
