@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.131 $
+;; $Revision: 1.132 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2588,7 +2588,33 @@ Underlines and mouse-highlites the places."
 	(setq bys (cdr bys))))
     (setq after-change-functions oldhook)
     nil))))
-	
+
+(defun mizar-underline-cexpls (start)
+"Add 'underline to 'cexp.
+Only if `mizar-underlines-expls' is non-nil."
+(if mizar-underline-expls
+    (save-buffer-state 
+     nil
+     (save-excursion
+       (goto-char start)
+       (while (not (eobp))
+	 (let ((mfprop (get-text-property (point) 'cexpl))
+	       (next-change
+		(or (next-single-property-change (point) 'cexpl
+						 (current-buffer))
+		    (point-max))))
+	   (if mfprop
+	       (put-text-property (point) next-change 'face 'underline))
+;	       (let ((face (get-text-property (point) 'face)))
+;		 (setq face (mmlquery-underlined-face face))
+;		 (put-text-property (point) next-change 'face face);'(:underline "red");'underline
+;;))
+	   (goto-char next-change)))))))
+
+(defun mizar-underline-in-region (beg end)
+  (mizar-underline-cexpls beg))
+
+
 (defvar res-regexp "\\([A-Z0-9_]+\\):\\([a-z]+\\)\\([.]\\)\\([0-9]+\\)"
 "Description of the mmlquery resource format we use, see idxrepr.")
 
@@ -5370,6 +5396,14 @@ if that value is non-nil."
   (if (and mizar-abstracts-use-view
 	       (buffer-abstract-p (current-buffer)))
       (view-mode))
+  (add-to-list 'fontification-functions 'mizar-underline-cexpls)
+  (make-local-variable 'font-lock-fontify-region-function)
+  (let ((oldfun font-lock-fontify-region-function))
+    (setq font-lock-fontify-region-function
+	  `(lambda (beg end loudly) 
+	     (,oldfun beg end loudly)
+	     (mizar-underline-in-region beg end))))
+
   (mizar-bubble-ref-region (point-min) (point-max))
   (run-hooks  'mizar-mode-hook)
   )
