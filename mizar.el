@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.130 $
+;; $Revision: 1.131 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -2584,7 +2584,7 @@ Underlines and mouse-highlites the places."
 	(setq beg (point)
 	      end (min eol (+ byextent beg)))
 	(add-text-properties beg end props)
-	(put-text-property beg end 'expl frm)
+	(put-text-property beg end 'cexpl frm)
 	(setq bys (cdr bys))))
     (setq after-change-functions oldhook)
     nil))))
@@ -2776,7 +2776,7 @@ The variable `mizar-do-expl' should be non-nil."
   (interactive)
   (let ((pos (or pos (point))))
     (save-excursion
-    (let ((frm (get-text-property pos 'expl)))
+    (let ((frm (get-text-property pos 'cexpl)))
       (if frm
 	  (let ((res (mizar-transl-frm frm)))
 	    (goto-char pos)
@@ -2791,7 +2791,7 @@ The variable `mizar-do-expl' should be non-nil."
   (interactive "e")
   (select-window (event-window event))
   (save-excursion
-    (let ((frm (get-text-property (event-point event) 'expl)))
+    (let ((frm (get-text-property (event-point event) 'cexpl)))
       (if frm
 	  (let ((res (mizar-transl-frm frm)))		
 	    (goto-char (event-point event))
