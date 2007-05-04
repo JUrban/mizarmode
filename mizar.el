@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.134 $
+;; $Revision: 1.135 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -4662,15 +4662,10 @@ This is done for items from `mizar-item-kinds'." ;; shouldn't this be done for i
   "Toggle hiding of symbol SYM in abstracts."
   (unless (buffer-abstract-p (current-buffer))
     (error "Not currently in Mizar abstract!"))
-  (if (and (eq mizar-emacs 'gnuemacs)
-	   (= emacs-major-version 22))
-      (if (and (listp buffer-invisibility-spec)
-	       (memq sym buffer-invisibility-spec))
-	  (remove-from-invisibility-spec sym)
-	(add-to-invisibility-spec sym))
-    (if (memq sym buffer-invisibility-spec)
-	(remove-from-invisibility-spec sym)
-      (add-to-invisibility-spec sym)))
+  (if (and (listp buffer-invisibility-spec)
+	   (memq sym buffer-invisibility-spec))
+      (remove-from-invisibility-spec sym)
+    (add-to-invisibility-spec sym))
   (redraw-frame (selected-frame))   ; Seems needed
   )
 
