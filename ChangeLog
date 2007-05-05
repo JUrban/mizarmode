@@ -1,0 +1,10 @@
+2007-05-05  Jesse Alama  <alama@stanford.edu>
+
+	* doc/MizarMode.texi: Replace references to make-theorem-summary
+	and make-reserve-summary by mizar-make-theorem-summary and
+	mizar-make-reserve-summary, respectively.
+
+	Several small improvements (more verbose explanations).
+
+	* mizar.el (make-reserve-summary): Rename to mizar-make-reserve-summary.
+	* mizar.el (make-theorem-summary): Rename to mizar-make-theorem-summary.
