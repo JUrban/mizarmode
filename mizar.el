@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.136 $
+;; $Revision: 1.137 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -500,8 +500,8 @@ common mizar editing functions."
   (define-key mizar-mode-map "\C-c\C-b" 'mizar-chklab)
   (define-key mizar-mode-map "\C-c\C-y" 'mizar-relprem)
   (define-key mizar-mode-map "\C-c\C-a" 'mizar-inacc)
-  (define-key mizar-mode-map "\C-c\C-z" 'make-theorem-summary)
-  (define-key mizar-mode-map "\C-c\C-r" 'make-reserve-summary)
+  (define-key mizar-mode-map "\C-c\C-z" 'mizar-make-theorem-summary)
+  (define-key mizar-mode-map "\C-c\C-r" 'mizar-make-reserve-summary)
   (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
   (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
   (define-key mizar-mode-map "\C-cs" 'mizar-insert-skeleton)
@@ -894,9 +894,10 @@ See `mizar-insert-skeleton' for more."
 (interactive "r")
 (save-excursion
   (goto-char beg)
-  (let (fla (bline (current-line)) (bcol (+ 1 (current-column)))
-	(lspname (concat (file-name-sans-extension (buffer-file-name)) ".lsp" )))
-    (mizar-it  "lisppars" nil nil t)
+  (let ((fla (bline (current-line)) (bcol (+ 1 (current-column)))
+	(lspname (concat (file-name-sans-extension (buffer-file-name))
+			 ".lsp" ))))
+    (mizar-it "lisppars" nil nil t)
     (or (file-readable-p lspname)
 	(error "The lisppars utility failed, unknown error!"))
     (with-temp-buffer
@@ -1172,48 +1173,51 @@ This function is called in the interactive function
 :type 'function
 :group 'mizar-skeletons)
 
-(defun mizar-insert-skeleton (beg end &optional labnr)
-"Insert a proof skeleton for formula starting at BEG after point END.
-For normal interactive usage, just select the region containing 
-the formula, and run this function. 
-If `mizar-skeleton-labels' is set, prompts additionally for the
-first starting label number LABNR.  The labels are then generated
-using the `mizar-default-label-name' string.
-The lisppars utility needs to be installed for this to work -
-it is distributed with Mizar since version 6.4, and the
-formula has to be accessible in the article to the Mizar parser -
-e.g. not commented.
-Calls `mizar-parse-region-fla' to parse the formula, Then creates the
-skeleton using `mizar-skeleton-items-func', and pretty prints it using
-`mizar-skeleton-string'."
-(interactive "r")
-(or labnr (not mizar-skeleton-labels)
-    (progn
-      (if (eq mizar-skeleton-labels 'constant-zero) 
-	  (setq mizar-next-sk-label 0)
-	(if (eq mizar-skeleton-labels 'constant-one) 
-	    (setq mizar-next-sk-label 1)))
-      (setq labnr (string-to-number
-		   (read-string "First skeleton label: " 
-				(int-to-string mizar-next-sk-label))))))
-(if labnr (setq mizar-next-sk-label labnr))
-(save-excursion
-  (let ((skel
- 	 (mizar-skeleton-string 
-	  (funcall mizar-skeleton-items-func
-	   (cadr (mizar-parse-region-fla beg end))))))
-;; remove possible ';' and adjust end
-    (goto-char beg)
-    (while (search-forward ";" end t)
-      (replace-match "")
-      (setq end (- end 1)))
-    (goto-char end)
-    (insert skel)
-    (indent-region end (+ end (length skel)) nil))))
+(defun mizar-insert-skeleton (beg end &optional label-number)
+"Insert a proof skeleton for the formula starting at BEG after point END.
+
+If `mizar-skeleton-labels' is set, prompt additionally for the
+first starting label number LABEL-NUMBER, which should be an
+integer.  The labels are then generated using
+`mizar-default-label-name'.
+
+For this command to work properly, the lisppars utility needs to
+be installed (which probably is the case, since lisppars has been
+distributed with Mizar since version 6.4), and the Mizar parser
+must be able to access the formula contained within the region
+delimited by BEG and END (thus, it must not be within the scope
+of a comment).
+
+This command calls `mizar-parse-region-fla' to parse the formula
+in the region delimiated by BEG and END.  It then creates the
+desired skeleton by first using `mizar-skeleton-items-func', and
+then, for pretty printing, by using `mizar-skeleton-string'."
+  (interactive "r")
+  (or label-number (not mizar-skeleton-labels)
+      (progn
+	(if (eq mizar-skeleton-labels 'constant-zero) 
+	    (setq mizar-next-sk-label 0)
+	  (if (eq mizar-skeleton-labels 'constant-one) 
+	      (setq mizar-next-sk-label 1)))
+	(setq label-number
+	      (string-to-number
+	       (read-string "First skeleton label: " 
+			    (int-to-string mizar-next-sk-label))))))
+  (if label-number (setq mizar-next-sk-label labnr))
+  (save-excursion
+    (let ((skel
+	   (mizar-skeleton-string 
+	    (funcall mizar-skeleton-items-func
+		     (cadr (mizar-parse-region-fla beg end))))))
+      ;; remove possible ';' and adjust end
+      (goto-char beg)
+      (while (search-forward ";" end t)
+	(replace-match "")
+	(setq end (- end 1)))
+      (goto-char end)
+      (insert skel)
+      (indent-region end (+ end (length skel)) nil))))
 	
-
-
-
 ;;;;;;;;;;;;;;;;;  parsing references ;;;;;;;;;;;;;;;;;;;
 
 (defun mizar-ref-at-point ()
@@ -4581,15 +4585,18 @@ See the documentation for the variable `mizar-goto-error'."
 (setq mizar-goto-error where))
 
 
-(defun make-theorem-summary ()
-  "Make a summary of theorems in the buffer *Theorem-Summary*.
-Previous contents of that buffer are killed first.
-The command `hs-hide-all', accessible from the Hide/Show menu, 
-can be used instead, to make a summary of an article."
+(defun mizar-make-theorem-summary ()
+  "Make a smmary of the theorems in the the current buffer.The
+output will be put into a buffer called \"*Theorem-Summary*\"; if
+that buffer already exists when this command is called, its
+contents will be erased.
+
+(The command `hs-hide-all', accessible from the Hide/Show menu,
+can be used instead of `mizar-make-theorem-summary' to make a
+summary of an article.)"
   (interactive)
   (message "Making theorem summary...")
-  ;; This puts a description of bindings in a buffer called *Help*.
-  (setq result (make-theorems-string))
+  (setq result (mizar-make-theorems-string))
   (with-output-to-temp-buffer "*Theorem-Summary*"
     (save-excursion
       (let ((cur-mode "mizar"))
@@ -4774,7 +4781,7 @@ If UTIL is given, call it instead of the Mizar verifier."
 
 (defun mizar-handle-output  ()
 "Display processing output according to `mizar-show-output'."
-(cond ((equal "none" mizar-show-output)
+(cond ((eq 'none mizar-show-output)
        (delete-other-windows))
       ((integerp mizar-show-output)
        (save-selected-window
@@ -5104,7 +5111,7 @@ See the variable `mizar-irr-utils' for their list and order of execution."
 ; 	 (setq pos (match-beginning 0))
 ; 	 (re-search-forward (concat "[, \n]" var "[, \n]") " *\\([;]\\|by\\|proof\\)" (point-max) t))
 
-(defun make-reserve-summary ()
+(defun mizar-make-reserve-summary ()
   "Make a summary of all type reservations before current point in the article.
 Display it in the `*Occur*' buffer, which uses the `occur-mode'.
 Previous contents of that buffer are killed first.
@@ -5284,7 +5291,7 @@ This is a flamewar-resolving hack."
 
 
 
-(defun make-theorems-string ()
+(defun mizar-make-theorems-string ()
   "Make string of all theorems."
   (interactive)
   (save-excursion
@@ -5616,8 +5623,8 @@ file suffix to use."
 	     :active t
 	     :help "Also C-u C-c i"])	  
 	  "-"
-	  ["View theorems" make-theorem-summary t]
-	  ["Reserv. before point" make-reserve-summary t]
+	  ["View theorems" mizar-make-theorem-summary t]
+	  ["Reserv. before point" mizar-make-reserve-summary t]
 	  "-"
 	  ["Run Mizar" mizar-it (mizar-buf-verifiable-p)]
 	  ["Accommodate & Run Mizar" (mizar-it nil nil nil nil t) (mizar-buf-verifiable-p)]

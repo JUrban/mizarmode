@@ -242,9 +242,13 @@ For basic survival, remember at least that:
 @end table
 
 @c TEXI DOCSTRING MAGIC: mizar-it
-@deffn Command mizar-it &optional util noqr compil silent forceacc
+@deffn Command mizar-it &optional util noqr compil silent forceacc options
 Run mizar verifier on the text in the current .miz buffer.@*
 Show the result in buffer *mizar-output*.
+In interactive use, a prefix argument directs this command
+to read verifier options from the minibuffer.
+
+If @var{options} are given, pass them to the verifier.
 If @var{util} is given, run it instead of verifier.
 If @samp{@code{mizar-use-momm}}, run tptpver instead.
 If @var{noqr}, does not use quick run.
@@ -274,7 +278,7 @@ The default value is @code{t}.
 @c TEXI DOCSTRING MAGIC: mizar-show-output
 @defopt mizar-show-output 
 Determines the size of the output window after processing.@*
-Possible values: none, 4, 10, all.
+Possible values: "none", 4, 10, "all".
 
 The default value is @code{4}.
 @end defopt
@@ -370,14 +374,14 @@ These are lines beginning with ::>.
 
 @table @kbd
 @item  C-c C-r 
-@code{make-reserve-summary}
+@code{mizar-make-reserve-summary}
 @item  C-c C-z 
-@code{make-theorem-summary}
+@code{mizar-make-theorem-summary}
 @end table
 
 
-@c TEXI DOCSTRING MAGIC: make-reserve-summary
-@deffn Command make-reserve-summary 
+@c TEXI DOCSTRING MAGIC: mizar-make-reserve-summary
+@deffn Command mizar-make-reserve-summary 
 Make a summary of all type reservations before current point in the article.@*
 Display it in the @samp{@strong{Occur}} buffer, which uses the @samp{@code{occur-mode}}.
 Previous contents of that buffer are killed first.
@@ -385,8 +389,8 @@ Useful for finding out the exact meaning of variables used in
 some Mizar theorem or definition.
 @end deffn
 
-@c TEXI DOCSTRING MAGIC: make-theorem-summary
-@deffn Command make-theorem-summary 
+@c TEXI DOCSTRING MAGIC: mizar-make-theorem-summary
+@deffn Command mizar-make-theorem-summary 
 Make a summary of theorems in the buffer *Theorem-Summary*.@*
 Previous contents of that buffer are killed first.
 The command @samp{@code{hs-hide-all}}, accessible from the Hide/Show menu, 
@@ -488,14 +492,14 @@ utilities provided in the Mizar distribution.
 @kindex C-c C-l 
 @kindex C-c C-t 
 
-These are compiled utilities available in the Mizar distribution. 
-@xref{Constructor explanations}, for more utilities working on the
-constructor representation of Mizar formulas.
-
-@menu
-* Constructors and user symbols::  
-@end menu
-
+The @code{findvoc}, @code{listvoc} and @code{constr} programs are
+utilities included in the Mizar distribution.  (@xref{Constructor
+explanations}, for more utilities working on the constructor
+representation of Mizar formulas.)  Corresponding to these three
+utilities are the following @code{MizarMode}
+commands@footnote{Currently, these commands are sent to a shell via
+emacs's @code{shell-command} function, so that one must escape symbols
+(such as `|') which are special according to @code{shell-command}.}.
 
 @table @kbd
 @item  C-c C-f 
@@ -505,6 +509,10 @@ constructor representation of Mizar formulas.
 @item  C-c C-t 
 @code{mizar-constr}
 @end table
+
+@menu
+* Constructors and user symbols::  
+@end menu
 
 
 @c TEXI DOCSTRING MAGIC: mizar-findvoc
@@ -524,23 +532,38 @@ Constructor files needed for Mizar theorems, definitions,
 schemes or complete articles can be queried.
 @end deffn
 
-
 @node Constructors and user symbols,  , Simple constructor and vocabulary utilities, Simple constructor and vocabulary utilities
 @subsection Constructors and user symbols
 @cindex constructors
 @cindex user symbols
 @cindex vocabulary
 
-Mizar is overloaded on the symbol level, e.g. the sumbol '+'
-can be used for various operations.
-Before proof checking takes place, Mizar disambiguates this 
-overloading and replaces the user symbols with unique ``constructors''.
+The Mizar language is overloaded on the symbol level.  For example, the
+sumbol '+' can be used for various operations, such as the sum of two
+real numbers, the sum of two linear tranformations, or the sum of two
+group elements.  Thus, a symbol may have many meanings.  Before checking
+a proof, Mizar disambiguates overloaded symbols and replaces them with
+so-called @b{constructors}.
 
-Constructors are unambiguous and they are used to express the 
-semantics of Mizar
-formulas, so tools like MML Query, @xref{MML Query}, Mizar Proof Advisor,
-@xref{Mizar Proof Advisor}, or MoMM, @xref{MoMM}, often work with
-constructor representation.
+Unlike symbols, constructors are unambiguous.  Thus, in the statement
+@verbatim
+for V being RealLinearSpace
+for a, b being Real
+for L being Linear_Combination of V holds a * (b * L) = (a * b) * L
+@end verbatim
+(which is theorem RLVECT_2:70), the symbol `*' clearly has two meanings.
+On the left hand side of the equation `*' is used as a binary operation
+between terms of type `Real' and `Linear_Combination of V', where `V'
+has type `RealLinearSpace'.  On the left hand side the first occurence
+of `*' denotes a binary operation between terms of type Real.  When
+checking a proof, Mizar assigns different constructors to these
+different occurences of `*'.  (In the example above, there are four
+occurences of `*' but only two constructors, viz., meanings, are
+relevant.)
+
+Mizar formulas.  Mizar tools such as MML Query @xref{MML Query}, Mizar
+Proof Advisor @xref{Mizar Proof Advisor}, and MoMM @xref{MoMM}, often work
+with constructor representation of statements.
 
 @node Irrelevant Utilities, Other Utilities, Simple constructor and vocabulary utilities, Running Mizar utilities
 @section Irrelevant Utilities
@@ -554,14 +577,14 @@ constructor representation.
 @kindex C-c C-a         
 @cindex irrelevant utilities
 
-By ``Irrelevant utilities'' we mean all those Mizar utilities, that
-check for relevancy of some parts of a Mizar article.
+By ``irrelevant utilities'' we mean those Mizar utilities that check for
+the ``relevancy'' of some parts of a Mizar article.
 
-Irrelevant utilities are usually highly relevant when you finish
-your article, and want to remove unnecesary proof steps, premises,
-etc. Sometimes you can learn this way, that your proofs are unnecessarily
-complicated, or even that you were proving something else than what
-you wanted to prove.
+Typically, one uses the irrelevant utilities upon finishing a draft of
+an article to remove unnecesary proof steps, premises, etc. The
+irrelevant utilities can illustrate how a proof is unnecessarily
+complicated; they can even show that the conclusion of a proof differs
+from proposition one intended to prove.
 
 @table @kbd
 @item  C-c C-h         
@@ -632,14 +655,17 @@ Additionally, the interface to the Mizar scripts @code{miz2prel}
 and @code{miz2abs} and the @code{ratproof} utility is available
 from the menu. 
 
-Using the @code{ratproof} from the Mizar Mode is discouraged, since
-it operates directly on the edited file. The suggested replacement
-is the function @code{mizar-hide-proofs}, @xref{Proof checking}, 
-run with prefix @kbd{C-u} on the whole buffer. This is also available
-in menu as @code{<Proof checking> <@@proof -> proof on buffer>}.
+Using @code{ratproof} from Mizar Mode is discouraged, since
+@code{ratproof} operates on the file being edited. Instead, the
+suggested alternative to running @code{ratproof} is to execute the
+command @code{mizar-hide-proofs} with an empty prefix argument
+@xref{Proof checking}.  This command emulates @code{ratproof} without
+actually executing it.  The menu item @code{<Proof checking> <@@proof ->
+proof on buffer>} also corresponds to this command.
 
-This now also holds about using the scripts @code{miz2prel} and
-@code{miz2abs}, however they may get better support in the future.
+Similarly, using @code{miz2prel} and @code{miz2abs} is not recommended.
+Unlike @code{ratproof}, the programs @code{miz2prel} and @code{miz2abs}
+are not well supported nor emulated by @code{MizarMode}.
 
 @node Miscellaneous editing, Browsing Functions, Running Mizar utilities, Top
 @chapter Miscellaneous editing
@@ -662,7 +688,7 @@ This now also holds about using the scripts @code{miz2prel} and
 @c TEXI DOCSTRING MAGIC: mizar-hide-proofs
 @deffn Command mizar-hide-proofs &optional beg end remove
 Put @@ before all proof keywords between @var{beg} and @var{end} to disable checking.@*
-With prefix (C-u, which sets @var{remove} non-nil) remove them 
+With prefix (which makes @var{remove} non-nil) remove them 
 instead of adding, to enable proof checking again.
 @end deffn
 
@@ -744,8 +770,8 @@ File symbtags is included in the Mizar distribution.
 @c TEXI DOCSTRING MAGIC: mizar-mouse-symbol-def
 @deffn Command mizar-mouse-symbol-def 
 <mouse-3> is bound to this function.@*
-Runs @code{mizar-symbol-def} and the second mouse-3
-shows the symbol's completions.
+The first click runs @samp{@code{mizar-symbol-def}} and the second click shows the symbol's
+completions.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-mouse-direct-symbol-def
@@ -814,14 +840,14 @@ editing buffers.
 @deffn Command mizar-grep-abs exp
 Grep MML abstracts for regexp @var{exp}.@*
 Variable @samp{@code{mizar-grep-case-sensitive}} controls case sensitivity.
-The results are shown and clickable in the Compilation buffer. 
+The results are shown and clickable in the Compilation buffer.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-grep-full
 @deffn Command mizar-grep-full exp
 Greps full MML articles for regexp @var{exp}.@*
 Variable @samp{@code{mizar-grep-case-sensitive}} controls case sensitivity.
-The results are shown and clickable in the Compilation buffer. 
+The results are shown and clickable in the Compilation buffer.
 @end deffn
 
 @c TEXI DOCSTRING MAGIC: mizar-grep-case-sensitive
@@ -948,9 +974,10 @@ Constructor explanations are used to access and query the semantic
 (constructor) level of the Mizar formulas. 
 @xref{Constructors and user symbols}, for more on constructors.
 
-Constructor information can help a lot, if you are not sure, how
-Mizar resolves some overloaded symbols. Constructors are also
-more useful for searching, than the text-level (vocabulary) symbols. 
+Constructor information can help a lot, especially in a situation when
+one is not sure how Mizar is resolving overloaded symbols.  Also,
+searching on the level of constructors is often more useful than
+searching on the level of symbols.
 
 @menu
 * How Constructor explanations work::  
@@ -961,37 +988,37 @@ more useful for searching, than the text-level (vocabulary) symbols.
 @node How Constructor explanations work, Getting Constructor explanations, Constructor explanations, Constructor explanations
 @section How Constructor explanations work
 
-Since the translation of the Mizar article to constructor level
-is nontrivial, we use Mizar itself to get access to that level,
-and take that information from an intermediate file produced
-by Mizar during verification.
+Since the translation of the Mizar article to constructor level is
+nontrivial, we use Mizar itself to get access to that level rather than
+emulating that process in @code{MizarMode}.  Currently, Mizar produces
+intermediate files when processing an article, and it is through these
+intermediate files that we can gain access to the desired linguistic
+level.
 
 This has some drawbacks:
-@itemize
+@enumerate
 @item Mizar has to be run before the constructor info is available.
 @item We have to ensure synchronization of the editing buffer with
 the intermediate file containing the constructor information.
 @item When the ``@@proof'' keyword is used to prevent proof checking, 
 the constructor-level information is not available for the 
 nonchecked part of article.
-@end itemize
+@end enumerate
+We solve the second problem by attaching the constructor information to
+the formulas in the editing buffer as a text property.  This attachment
+is done immediately after verifying.  The places where this property is
+attached are clickable with @kbd{<S-down-mouse-3>}
+(@code{mizar-show-constrs-other-window}), which displays the constructor
+information for that place.  The constructor information is translated
+according to @code{mizar-expl-kind}) in the buffer *Constructors list*.
 
-We solve the second problem by attaching the constructor information
-to the formulas in editing buffer as text property immediately 
-after verifying. Places with this property are then clickable
-with @kbd{<S-down-mouse-3>} (@code{mizar-show-constrs-other-window}),
-which displays the constructor information for that place 
-(translated according to variable @code{mizar-expl-kind})
-in buffer *Constructors list* in other window.
-That way, the constructor information usually 
-remains relevant even after most editing operations.
-
-
-Putting the constructor info into the editing buffer can slow 
-down the verifying functions in Emacs, but for articles of average size
-the slowdown is not significant. Fot large articles, the
-``@@proof'' construct, @xref{Proof checking}, can help to prevent
-using this feature at large. 
+Putting the constructor info into the editing buffer usually slows down
+the verifying functions, since more work is being done by Emacs than
+without constructor explanations.  Nonetheless, for articles of average
+size the slowdown is insignificant. If one wishes to use constructor
+explanations while working on large articles, the ``@@proof'' construct,
+@xref{Proof checking}, since it focuses the verification process by
+ignoring certain parts of the article, may be useful.
 
 @node Getting Constructor explanations, Using Constructor explanations, How Constructor explanations work, Constructor explanations
 @section Getting Constructor explanations
@@ -1002,14 +1029,17 @@ using this feature at large.
 @code{mizar-show-constrs-other-window}
 @end table
 
-To use Constructor explanations, set the Verbosity in the menu 
-to any value different from ``none''. This influences the value
-of the variables @code{mizar-do-expl} and @code{mizar-expl-kind}.
+To use constructor explanations, set the Verbosity in the menu to any
+value different from ``none''. (This influences the value of the
+variables @code{mizar-do-expl} and @code{mizar-expl-kind}.)
 
-If you are new to this, better also check the option
-@code{Underline explanation points}, so that you know where to look
-for the clickable spots. You have to run Mizar first, for the 
-explanation points to appear, @xref{How Constructor explanations work}.
+If you are new to constructor explanations, we recommend that you also
+enable the option @code{Underline explanation points}.  When this option
+is enabled, the places in the buffer where constructor explanations are
+available will be clearly visible.  As was explained before, one must
+run Mizar on the article that one is working on before constructor
+explanations will be in effect, @xref{How Constructor explanations
+work}.
 
 
 @c TEXI DOCSTRING MAGIC: mizar-do-expl
@@ -1036,10 +1066,10 @@ The mmlquery interpreter has to be installed for this,
 see @samp{@code{mmlquery-program-name}}.
 @code{'translate} for expanded formula in absolute notation,
 @code{'raw} for the internal Mizar representation,
-@code{'expanded} for expansion of clusters,
+@code{'xml} for xml internal Mizar representation
 
-The values @code{'raw} and @code{'expanded} are for debugging only, do
-not use them to get constructor explanatios.
+The values @code{'xml} and @code{'raw} are for debugging only, do
+not use them to get constructor explanations.
 
 The default value is @code{sorted}.
 @end defopt
@@ -1054,7 +1084,7 @@ The default value is @code{nil}.
 
 @c TEXI DOCSTRING MAGIC: mizar-show-constrs-other-window
 @deffn Command mizar-show-constrs-other-window event
-Show constructors of the inference you click on.@*
+Show constructors of the inference that was just clicked on.@*
 The constructors are translated according to the variable 
 @samp{@code{mizar-expl-kind}}, and shown in the buffer *Constructors list*
 or @strong{mmlquery} if @samp{@code{mizar-expl-kind}} is @code{'mmlquery}.
@@ -1070,21 +1100,20 @@ The variable @samp{@code{mizar-do-expl}} should be non-nil.
 @kindex RET
 @kindex C-c C-c
 
-Once you get a constructor explanation of a given formula in 
-the buffer *Constructors list*, you can use it to get various 
-useful information.
+Once you have a constructor explanation (stored in the buffer
+*Constructors list*) for a given formula you can get useful information.
 
 Available operations now include 
 @itemize
 @item Browsing the semantically disambiguated MMLQuery abstract (GABs, see below)
-@item Asking MML Query (@xref{MML Query},) for meaning of a constructor.
+@item Asking MML Query (@xref{MML Query},) for the meaning of a constructor.
 @item Using tags (@xref{Browsing Functions},) to see the definition 
       of a constructor.
-@item Sending the whole formula to Mizar Proof Advisor,
+@item Sending the whole formula to the Mizar Proof Advisor,
 @xref{Mizar Proof Advisor}.
 @end itemize
 
-The MMlQuery abstracts (GABs) are now the preferred browsing methods,
+The MMLQuery abstracts (GABs) are now the preferred browsing methods,
 however they are not yet distributed with Mizar. They are downloadable
 from Grezgorz Bancerek's site 
 @uref{http://merak.pb.bialystok.pl/mmlquery/downloads/}. The detailed
@@ -1131,7 +1160,6 @@ Ask MML Query about the mmlquery resource at position @var{pos}.
 Send the contents of the *Constr Explanations* buffer to Mizar Proof Advisor.@*
 Resulting advice is shown in the buffer *Proof Advice*, where normal tag-browsing
 keyboard bindings can be used to view the suggested references.
-
 @end deffn
 
 
@@ -1270,7 +1298,6 @@ The default value is @code{30}.
 Send the contents of the *Constr Explanations* buffer to Mizar Proof Advisor.@*
 Resulting advice is shown in the buffer *Proof Advice*, where normal tag-browsing
 keyboard bindings can be used to view the suggested references.
-
 @end deffn
 
 @node MoMM, Proof Skeletons, Mizar Proof Advisor, Top
@@ -1325,7 +1352,7 @@ That's all.
 @defopt mizar-momm-dir 
 Directory containing the MoMM distribution.
 
-The default value is @code{"/usr/local/share/mizar/MoMM/"}.
+The default value is @code{"/sw/share/mizar/MoMM/"}.
 @end defopt
 
 
@@ -1420,9 +1447,17 @@ skeleton proof steps for a proof of any formula.
 
 @c TEXI DOCSTRING MAGIC: mizar-skeleton-labels
 @defopt mizar-skeleton-labels 
-If set, skeleton steps produced by @samp{@code{mizar-insert-skeleton}} are labeled.
+If not nil, skeleton steps produced by @samp{@code{mizar-insert-skeleton}} are labeled.@*
+The labels are created by concatenating the value of 
+@samp{@code{mizar-default-label-name}} with a label number, which increases throughout
+the skeleton from its initial value.
+The non nil values of this variable determine the initial default as follows
 
-The default value is @code{nil}.
+@code{'serial} is used for starting from the last skeleton label number + 1 (default),
+@code{'constant-one} always starts from 1,
+@code{'constant-zero} always starts from 0.
+
+The default value is @code{serial}.
 @end defopt
 
 @c TEXI DOCSTRING MAGIC: mizar-default-label-name
@@ -1458,8 +1493,8 @@ The default value is @code{mizar-default-skeleton-items}.
 Insert a proof skeleton for formula starting at @var{beg} after point @var{end}.@*
 For normal interactive usage, just select the region containing 
 the formula, and run this function. 
-If @samp{@code{mizar-skeleton-labels}} is set, prompts additionaly for the
-first starting label number @var{labnr}. The labels are then generated
+If @samp{@code{mizar-skeleton-labels}} is set, prompts additionally for the
+first starting label number @var{labnr}.  The labels are then generated
 using the @samp{@code{mizar-default-label-name}} string.
 The lisppars utility needs to be installed for this to work -
 it is distributed with Mizar since version 6.4, and the
@@ -1491,7 +1526,7 @@ obtained knowledge.
 
 @c TEXI DOCSTRING MAGIC: mizar-twiki-comment-error
 @deffn Command mizar-twiki-comment-error &optional errstr
-Add a comment to the Mizar Twiki description of an error message.
+Add a comment to the Mizar TWiki description of an error message @var{errstr}.
 @end deffn
 
 
