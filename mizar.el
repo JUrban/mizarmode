@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.137 $
+;; $Revision: 1.138 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -5767,9 +5767,10 @@ move backward across N balanced expressions."
 	  (goto-char (match-end 0)))
 	  ))))
 
-(defun mizar-hs-adjust-block-beginning ()
+(defun mizar-hs-adjust-block-beginning (pos)
   "Adjust the block that we are looking at."
   (save-excursion
+    (goto-char pos)
     (forward-word -1)
     (point)))
 
