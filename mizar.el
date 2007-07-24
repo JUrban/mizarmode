@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.140 $
+;; $Revision: 1.141 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1268,7 +1268,7 @@ The variable `mizar-ref-table' might be modified by this function."
 	      res))
       ;; local reference, no caching
       (if (re-search-backward (concat "\\([ \t\n\r:]" ref 
-				      "[ \t\n\r]*[{:][^;]*;\\)" )
+				      "[ \t\n\r]*[{:]\\)\\([\n]\\|.\\)+?[^\\];[\t\n\r ]" )
 			      (point-min) t)
 	  (let ((res1 (match-string 0)))
 	    ;; definition
