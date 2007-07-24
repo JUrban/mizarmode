@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.139 $
+;; $Revision: 1.140 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -1209,9 +1209,11 @@ then, for pretty printing, by using `mizar-skeleton-string'."
 	   (mizar-skeleton-string 
 	    (funcall mizar-skeleton-items-func
 		     (cadr (mizar-parse-region-fla beg end))))))
-      ;; remove possible ';' and adjust end
-      (goto-char beg)
-      (while (search-forward ";" end t)
+      ;; remove possible final ';' and adjust end
+      (goto-char end)
+      (skip-chars-backward "\r\n \t" beg)
+      (backward-char)
+      (when (search-forward ";" end t)
 	(replace-match "")
 	(setq end (- end 1)))
       (goto-char end)
@@ -1252,7 +1254,9 @@ The variable `mizar-ref-table' might be modified by this function."
 		  (symb (intern ref mizar-ref-table))
 		  (res ""))
 	      (set-buffer buf)
-	      (setq res (if (looking-at "[^;]+;") (match-string 0)
+	      ;; following regexp has to take care of the MML symbols containing semicolon:
+	      ;; ';', [;], \;
+	      (setq res (if (looking-at "\\([\n]\\|.\\)+?[^\\];[\t\n\r ]") (match-string 0)
 			  ""))
 	      ;; previous line may contain e.g. "let z;"
 	      (if (string-match ":def " ref) 
