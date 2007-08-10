@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.141 $
+;; $Revision: 1.142 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -5503,6 +5503,20 @@ file suffix to use."
       (copy-file oldname newname t t)
       (browse-url newname)))))
 
+(defun mizar-browser-customize ()
+"Set Mozilla (Firefox) as the default browser"
+(interactive)
+;; check that `browse-url-mozilla' exists
+(if (functionp 'browse-url-mozilla)
+    (customize-save-variable 'browse-url-browser-function 
+			     'browse-url-mozilla)
+  (customize-save-variable 'browse-url-browser-function 
+			   'browse-url-generic)
+  (customize-variable 'browse-url-generic-program)
+  )
+)
+
+
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
   '(list  "Mizar"
@@ -5529,8 +5543,7 @@ file suffix to use."
 	    ["Browse environmental constructors" (mizar-browse-as-html "atr") t]
 	    ["Browse environmental notations" (mizar-browse-as-html "eno") t]
 	    ["Set Mozilla (Firefox) as the default browser" 
-	    (customize-save-variable 'browse-url-browser-function 
-				     'browse-url-mozilla) t]
+	     (mizar-browser-customize) t]
 	    )
 	  '("MoMM"
 	    ["Use MoMM (needs to be installed)" mizar-toggle-momm :style toggle
