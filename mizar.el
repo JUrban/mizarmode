@@ -1,6 +1,6 @@
 ;;; mizar.el --- mizar.el -- Mizar Mode for Emacs
 ;;
-;; $Revision: 1.142 $
+;; $Revision: 1.143 $
 ;;
 ;;; License:     GPL (GNU GENERAL PUBLIC LICENSE)
 ;;
@@ -5486,7 +5486,9 @@ if that value is non-nil."
 "Browse in a HTML browser the article or an environment file.
 A XSLT-capable browser like Mozilla or IE has to be default in
 Emacs - you may need to customize the variable
-`browse-url-browser-function' for this.  Argument SUFFIX is a
+`browse-url-browser-function' for this, and possibly (if 
+the previous is set to `browse-url-generic') also the variable 
+`browse-url-generic-program'.  Argument SUFFIX is a
 file suffix to use."
 (interactive)
 (let* ((name (file-name-sans-extension (buffer-file-name)))
@@ -5497,11 +5499,11 @@ file suffix to use."
        (equal last-verification-date (file-mtime (buffer-file-name))))
       (error "Run verifier before browsing HTML!"))
   (if (not suffix)
-      (browse-url xmlname)
+      (browse-url (concat "file://" xmlname))
     (let* ((oldname (concat name "." suffix))
 	   (newname (concat oldname ".xml")))
       (copy-file oldname newname t t)
-      (browse-url newname)))))
+      (browse-url (concat "file://" newname))))))
 
 (defun mizar-browser-customize ()
 "Set Mozilla (Firefox) as the default browser"
