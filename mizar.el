@@ -1668,7 +1668,9 @@ INDENT is the current indentation level."
 	 (spec (completing-read (if default
 				    (format "%s(default %s) " string default)
 				  string)
-				'tags-complete-tag
+				;; for Emacs 23 tags-complete-tag no longer exists
+				(if (fboundp 'tags-complete-tag) 'tags-complete-tag
+				  (tags-lazy-completion-table))
 				nil nil default nil default)))
     (if (equal spec "")
 	(or default (error "There is no default tag"))
