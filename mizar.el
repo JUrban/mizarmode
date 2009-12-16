@@ -5521,6 +5521,32 @@ file suffix to use."
   )
 )
 
+;;;;;;;;;;;;;;;   AR 4 mizar and html and mw services
+(defcustom ar4mizar-server "http://mws.cs.ru.nl/"
+"Server for the AR4Mizar services."
+:type 'string
+:group 'mizar-proof-advisor)
+
+
+(defcustom ar4mizar-cgi "~mptp/cgi-bin/MizAR.cgi"
+"Path to the ar4mizar CGI script on `ar4mizar-server'."
+:type 'string
+:group 'mizar-proof-advisor)
+
+
+(defun mizar-post-to-ar4mizar (&optional suffix)
+"Browse in a HTML browser the article or an environment file.
+A XSLT-capable browser like Mozilla or IE has to be default in
+Emacs - you may need to customize the variable
+`browse-url-browser-function' for this, and possibly (if 
+the previous is set to `browse-url-generic') also the variable 
+`browse-url-generic-program'.  Argument SUFFIX is a
+file suffix to use."
+(interactive)
+(let* ((name (file-name-sans-extension (buffer-file-name)))
+      (browse-url (concat ar4mizar-server ar4mizar-cgi "?Formula=" (query-handle-chars-cgi (buffer-string)) "&Name=" name)))))
+
+
 
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
