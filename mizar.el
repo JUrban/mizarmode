@@ -2965,6 +2965,7 @@ numeric character."
 "Replace non-alphanumeric chars in STR by %code."
 (let ((slist (string-to-list str))
       (space (nreverse (string-to-list (format "%%%x" 32))))
+      (nl (nreverse (string-to-list "%0A")))
       res codel)
   (if (eq mizar-emacs 'xemacs)
       (setq slist (mapcar 'char-to-int slist)))
@@ -2972,8 +2973,10 @@ numeric character."
     (let ((i (car slist)))
       (cond ((alfanump i)
 	     (setq res (cons i res)))
-	    ((member i '(32 10 9 13))        ; "[ \n\t\r]"
+	    ((member i '(32 9)) ; 10 9 13))        ; "[ \n\t\r]"
 	     (setq res (append space res)))
+	    ((member i '(10 13)) ; 10 9 13))        ; "[ \n\t\r]"
+	     (setq res (append nl res)))
 	    (t
 	     (setq codel (nreverse (string-to-list (format "%x" i))))
 	     (setq res (nconc codel (cons 37 res))))))
@@ -5543,8 +5546,10 @@ the previous is set to `browse-url-generic') also the variable
 `browse-url-generic-program'.  Argument SUFFIX is a
 file suffix to use."
 (interactive)
-(let* ((name (file-name-sans-extension (buffer-file-name)))
-      (browse-url (concat ar4mizar-server ar4mizar-cgi "?Formula=" (query-handle-chars-cgi (buffer-string)) "&Name=" name)))))
+(let* ((aname (file-name-nondirectory
+		(file-name-sans-extension
+		 (buffer-file-name)))))
+      (browse-url (concat ar4mizar-server ar4mizar-cgi "?Formula=" (query-handle-chars-cgi (buffer-string)) "&Name=" aname))))
 
 
 
