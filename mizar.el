@@ -179,6 +179,13 @@ This is used in the `mizar-it' function."
 :type 'string
 :group 'mizar-running)
 
+(defcustom mizar-parallel-options " -j2 -e1 "
+"*Options passed to the mizp.pl Mizar parallizer.
+This is used in the `mizar-it-parallel' function.
+Run mizp.pl --man to get overview of the options."
+:type 'string
+:group 'mizar-running)
+
 (defcustom mizfiles 
 (file-name-as-directory  (substitute-in-file-name "$MIZFILES"))
 "The directory where MML is installed."
@@ -479,6 +486,7 @@ common mizar editing functions."
     nil
   (setq mizar-mode-map (make-sparse-keymap))
   (define-key mizar-mode-map  "\C-c\C-m" 'mizar-it)
+  (define-key mizar-mode-map  "\C-cj" 'mizar-it-parallel)
   (define-key mizar-mode-map  "\C-cc" 'mizar-compile)
   (define-key mizar-mode-map  "\C-c\C-n" 'mizar-next-error)
   (define-key mizar-mode-map  "\C-c\C-p" 'mizar-previous-error)
@@ -5039,6 +5047,11 @@ If FORCEACC, run makeenv with the -a option."
 		   (mizar-show-errors)))
 	       )))))))
 
+(defun mizar-it-parallel ()
+"Call the mizp.pl parallel verifier on the article.
+Only usable on systems with Perl and libxml installed."
+  (interactive)
+(mizar-it "mizp.pl" nil nil nil nil mizar-parallel-options))
 
 (defun mizar-irrths ()
 "Call Irrelevant Theorems & Schemes Detector on the article."
