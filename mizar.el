@@ -5556,7 +5556,7 @@ file suffix to use."
   (interactive)
 ;  (url-auth-user-prompt  ar4mizar-server "")
   (http-post-simple  
-   (concat ar4mizar-server ar4mizar-cgi) 
+   (concat ar4mizar-server ar4mizar-cgi)
    (list 
     (cons "ProblemSource" "Formula")
     (cons "Formula" (buffer-string)))))
