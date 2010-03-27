@@ -5549,8 +5549,8 @@ file suffix to use."
 :type 'string
 :group 'mizar-proof-advisor)
 
-
-(defun mizar-post-to-ar4mizar (&optional suffix)
+;; this sucks - the article is encoded as cgi argument of http-get
+(defun mizar-post-to-ar4mizar-old (&optional suffix)
 "Browse in a HTML browser the article or an environment file.
 A XSLT-capable browser like Mozilla or IE has to be default in
 Emacs - you may need to customize the variable
@@ -5564,6 +5564,126 @@ file suffix to use."
 		 (buffer-file-name)))))
       (browse-url (concat ar4mizar-server ar4mizar-cgi "?Formula=" (query-handle-chars-cgi (buffer-string)) "&Name=" aname))))
 
+;; borrowed from somewhere - http-post code
+;; the problem is to pass things to a browser
+(defun my-url-http-post (url args)
+      "Send ARGS to URL as a POST request."
+      (let ((url-request-method "POST")
+            (url-request-extra-headers
+             '(("Content-Type" . "application/x-www-form-urlencoded")))
+            (url-request-data
+             (mapconcat (lambda (arg)
+                          (concat (url-hexify-string (car arg))
+                                  "="
+                                  (url-hexify-string (cdr arg))))
+                        args
+                        "&")))
+        ;; if you want, replace `my-switch-to-url-buffer' with `my-kill-url-buffer'
+        (url-retrieve url 'my-switch-to-url-buffer)))
+
+    (defun my-kill-url-buffer (status)
+      "Kill the buffer returned by `url-retrieve'."
+      (kill-buffer (current-buffer)))
+
+    (defun my-switch-to-url-buffer (status)
+      "Switch to the buffer returned by `url-retreive'.
+    The buffer contains the raw HTTP response sent by the server."
+      (switch-to-buffer (current-buffer)))
+
+
+;; this is good, but only for getting errors or other text info
+;; it does not launch browser
+(defun mizar-post-to-ar4mizar-new1 (&optional suffix)
+"Browse in a HTML browser the article or an environment file.
+A XSLT-capable browser like Mozilla or IE has to be default in
+Emacs - you may need to customize the variable
+`browse-url-browser-function' for this, and possibly (if 
+the previous is set to `browse-url-generic') also the variable 
+`browse-url-generic-program'.  Argument SUFFIX is a
+file suffix to use."
+(interactive)
+(let* ((aname (file-name-nondirectory
+		(file-name-sans-extension
+		 (buffer-file-name)))))
+(my-url-http-post (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)))))
+
+
+;; the current version - creates a local html file with form
+;; that gts submitted on-load
+;; TODO: use mml.ini as additional argument selecting the library version
+(defun mizar-post-to-ar4mizar (&optional htmlonly)
+"Send the contents of the buffers to the MizAR service.
+With prefix argument, only htmlize, do not crete atp problems and links.
+Browse result in a HTML browser.
+A browser like Mozilla or IE has to be default in
+Emacs - you may need to customize the variable
+`browse-url-browser-function' for this, and possibly (if 
+the previous is set to `browse-url-generic') also the variable 
+`browse-url-generic-program'."
+(interactive "*P")
+(let* ((fname (buffer-file-name))
+       (aname (file-name-nondirectory
+		(file-name-sans-extension
+		 fname)))
+       (requestfile (concat fname ".html"))
+       (contents (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))
+       (htmlcontents (concat 
+		      mizar-ar4mizar-html-start contents 
+		      "</textarea><INPUT TYPE=\"hidden\" NAME=\"Name\" VALUE=\"" aname 
+		      "\"> <INPUT TYPE=\"submit\" VALUE=\"Send\">"
+		      (if htmlonly "" "<INPUT TYPE=\"hidden\" NAME=\"GenATP\" VALUE=\"1\">") 
+		      "</FORM> </body> </html>" 
+		      )))
+  (with-temp-buffer
+    (insert htmlcontents)
+    (write-region (point-min) (point-max) requestfile))
+(browse-url (concat "file:///" requestfile))))
+
+;; stolen from htmlize.el
+(defvar htmlize-basic-character-table
+  ;; Map characters in the 0-127 range to either one-character strings
+  ;; or to numeric entities.
+  (let ((table (make-vector 128 ?\0)))
+    ;; Map characters in the 32-126 range to themselves, others to
+    ;; &#CODE entities;
+    (dotimes (i 128)
+      (setf (aref table i) (if (and (>= i 32) (<= i 126))
+			       (char-to-string i)
+			     (format "&#%d;" i))))
+    ;; Set exceptions manually.
+    (setf
+     ;; Don't escape newline, carriage return, and TAB.
+     (aref table ?\n) "\n"
+     (aref table ?\r) "\r"
+     (aref table ?\t) "\t"
+     ;; Escape &, <, and >.
+     (aref table ?&) "&amp;"
+     (aref table ?<) "&lt;"
+     (aref table ?>) "&gt;"
+     ;; Not escaping '"' buys us a measurable speedup.  It's only
+     ;; necessary to quote it for strings used in attribute values,
+     ;; which htmlize doesn't do.
+     ;(aref table ?\") "&quot;"
+     )
+    table))
+
+(defun htmlize-protect-string (string)
+  (mapconcat (lambda (char) (aref htmlize-basic-character-table char)) string ""))
+
+(defvar  mizar-ar4mizar-html-start "
+<html> <head> <title>Automated Reasoning for Mizar</title>
+<script language=\"JavaScript\">
+function myfunc () {
+var frm = document.getElementById(\"myform\");
+frm.submit();
+}
+window.onload = myfunc;
+</script>
+  </head> <body>
+        <FORM ID=\"myform\" METHOD=\"POST\"  ACTION=\"http://mws.cs.ru.nl/~mptp/cgi-bin/MizAR.cgi\" enctype=\"multipart/form-data\">
+            <INPUT TYPE=\"hidden\" NAME=\"ProblemSource\" VALUE=\"Formula\">
+		<textarea name=\"Formula\" tabindex=\"3\"  rows=\"8\" cols=\"80\" id=\"FORMULAEProblemTextBox\">"
+)
 
 
 ;; Menu for the mizar editing buffers
