@@ -1458,7 +1458,9 @@ The results are shown and clickable in the Compilation buffer."
 
 
 (defun mizar-grep-abs-full-items (exp gab)
-"Grep MML abstracts for regexp EXP, using ';' as record separator.
+"Grep MML abstracts for regexp EXP, using ';' as record separator,
+merging each such record into one line, so that .* and .+ regexps
+work acroos multiple lines.
 If GAB is non-nil, uses the MMLQuery abstracts and '::' as separator
 instead.
 You need to have perl installed and executable for this.
@@ -1514,7 +1516,7 @@ the file positions."
  (concat 
   " '$/=\";\"; " 
   "while ($f=shift) {open(IN,$f);while (<IN>) "
-  "{ if(/placeholder/) {s/^\\n+//; print \"\\n\\n$_\"}} "
+  "{ s/\\n/;;;/g; if(/placeholder/) {s/;;;/\\n/g; s/^\\n+//; print \"\\n\\n$_\"}} "
   "close(IN)}' ")
  "A Perl program for grepping whole items that end with ';'
 in Mizar abstracts.  File names and line numbers are not printed.")
@@ -1523,7 +1525,7 @@ in Mizar abstracts.  File names and line numbers are not printed.")
  (concat 
   " '$/=\"::\"; " 
   "while ($f=shift) {open(IN,$f);while (<IN>) "
-  "{ if(/placeholder/) {s/\\n*(::)?$//; print \"\\n\\n::$_\"}} "
+  "{ s/\\n/;;;/g; if(/placeholder/) {s/;;;/\\n/g; s/\\n*(::)?$//; print \"\\n\\n::$_\"}} "
   "close(IN)}' ")
  "A Perl program for grepping whole items that end with '::'
 in MMLQuery abstracts. File names and line numbers are not printed.")
