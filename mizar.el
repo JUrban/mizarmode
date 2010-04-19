@@ -5008,7 +5008,10 @@ If FORCEACC, run makeenv with the -a option."
 		   (save-excursion
 		     (message (concat "Running " util " on " fname " ..."))
 		     (if (get-buffer "*mizar-output*")
-			 (kill-buffer "*mizar-output*"))
+			 (progn 
+			   (if (get-buffer-window "*mizar-output*")
+			       (delete-window (get-buffer-window "*mizar-output*")))
+			   (kill-buffer "*mizar-output*")))
 		     (let* ((mizout (get-buffer-create "*mizar-output*"))
 			    (excode (mizar-accom makeenv forceacc mizout name)))
 		       (if (and (numberp excode) (= 0 excode))
@@ -5560,8 +5563,8 @@ file suffix to use."
   (http-post-simple  
    (concat ar4mizar-server ar4mizar-cgi)
    (list 
-    (cons "ProblemSource" "Formula")
-    (cons "Formula" (buffer-string)))))
+    (cons 'ProblemSource "Formula")
+    (cons 'Formula (buffer-string)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;; Borrowed from http-post-simple.el (not to have the file as dependency)
