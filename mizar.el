@@ -842,6 +842,10 @@ Return list of the rest unparsed, with added car being the parsed first."
    (let ((cont (get-first-formula (cdr fla))))
      (cons (list 'not (car cont)) (cdr cont))))
 
+   ((and (eq 'does beg) (eq 'not (cadr fla)))
+   (let ((cont (get-first-formula (cddr fla))))
+     (cons (list 'does 'not (car cont)) (cdr cont))))
+
    ((eq 'ex beg)
    (let ((tmp (parse-formula (cdddr fla))))
      (cons (list 'ex (cadr fla) 'st (car tmp)) (cdr tmp))))
@@ -940,6 +944,9 @@ See `mizar-insert-skeleton' for more."
        
        ((eq 'not beg) 
 	(concat "not " (mizar-pp-parsed-fla (cadr fla))))
+
+       ((and (eq 'does beg) (eq 'not (cadr fla))) 
+	(concat "does not " (mizar-pp-parsed-fla (caddr fla))))
        
        ((memq beg mizar-logical-constants) (symbol-name beg))
        
