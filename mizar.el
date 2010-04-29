@@ -381,7 +381,7 @@ MoMM should be installed for this."
 :group 'mizar-faces)
 
 (defcustom mizar-formula-keywords
-(list "for" "ex" "not" "&" "or" "implies" "iff" "st" "holds" "being")
+(list "for" "ex" "not" "&" "or" "implies" "iff" "st" "holds" "being" "does")
 "*Keywords for logical symbols in Mizar formulas."
 :type '(repeat string)
 :group 'mizar-faces)
