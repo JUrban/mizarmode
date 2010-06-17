@@ -1387,6 +1387,14 @@ This is used e.g. for grepping if `mizar-grep-in-mml-order' is non-nil."
 :group 'mizar-files
 :group 'mizar-grep)
 
+(defcustom mizar-mml-ini (concat mizfiles "mml.ini")
+"The mml.ini file with info about the current version of Mizar and MML.
+This is used e.g. for selecting the right library version when working
+with remote services."
+:type 'string
+:group 'mizar-files
+:group 'mizar-grep)
+
 (defun mizar-toggle-grep-case-sens ()
 "Toggle the case sensitivity of MML grepping."
 (interactive)
@@ -1403,8 +1411,17 @@ and because shell-expansion is difficult across various shells an OSs.")
 If initialized, also contains the size and modifications time of
 `mizar-mml-lar', which are checked before using it.")
 
+(defvar mizar-version-data nil
+"Holds assoc list of verifier and mml version data parsed from `mizar-mml-ini'.
+If initialized, also contains the size and modifications time of
+`mizar-mml-ini', which are checked before using it.
+Use `mizar-get-version-value' to get values, e.g.,:
+(mizar-get-version-value \"NumberOfArticles\") to get \"1080\".")
+
+
 (defun mizar-init-mml-order ()
-"Initialize `mizar-mml-order-list' if necessary.  Return it."
+"Initialize `mizar-mml-order-list' if necessary.  Return it. 
+If `mizar-mml-lar' is not readable, return nil (not error)."
 (when (file-readable-p mizar-mml-lar)
   (let ((nsize (file-size mizar-mml-lar)) (ntime (file-mtime mizar-mml-lar)))
     (if (and mizar-mml-order-list
@@ -1416,6 +1433,31 @@ If initialized, also contains the size and modifications time of
 	(goto-char (point-min))
 	(setq mizar-mml-order-list 
 	      (list nsize ntime (delete "" (split-string (buffer-string) "\n")))))))))
+
+
+(defun mizar-init-version-data ()
+"Initialize `mizar-version-data' if necessary.  Return it.
+If `mizar-mml-ini' is not readable, return nil (not error)."
+(when (file-readable-p mizar-mml-ini)
+  (let ((nsize (file-size mizar-mml-ini)) (ntime (file-mtime mizar-mml-ini)))
+    (if (and mizar-version-data
+	     (= nsize (car mizar-version-data))
+	     (equal ntime (cadr mizar-version-data)))
+	mizar-version-data
+      (with-temp-buffer
+	(insert-file-contents mizar-mml-ini)
+	(goto-char (point-min))
+	(setq mizar-version-data
+	      (list nsize ntime 
+		    (mapcar '(lambda (x) (split-string x "=")) 
+			    ;; using cdr to get rid of the first element "[Mizar verifier]"
+			    (delete "[MML]" (delete "" (cdr (split-string (buffer-string) "\n"))))))))))))
+
+(defun mizar-get-version-value (key)
+"Gets value of KEY from `mizar-version-data'. 
+Nil if not existing or version data not available."
+(when (mizar-init-version-data)
+  (cdr (assoc key (third mizar-version-data)))))
 
 (defun mizar-grep-prepare-flist (ext)
 "Return a string of files ending with EXT for grep.
