@@ -1457,7 +1457,15 @@ If `mizar-mml-ini' is not readable, return nil (not error)."
 "Gets value of KEY from `mizar-version-data'. 
 Nil if not existing or version data not available."
 (when (mizar-init-version-data)
-  (cdr (assoc key (third mizar-version-data)))))
+  (cadr (assoc key (third mizar-version-data)))))
+
+(defun mizar-mml-version ()
+"Get the version of the library from mml.ini, nil if mml.ini not readable."
+(when (mizar-init-version-data)
+  (let ((anr (cadr (assoc "NumberOfArticles" (third mizar-version-data))))
+	(mmlver (cadr (assoc "MMLVersion" (third mizar-version-data)))))
+    (when (and anr mmlver)
+      (concat mmlver "." anr)))))
 
 (defun mizar-grep-prepare-flist (ext)
 "Return a string of files ending with EXT for grep.
