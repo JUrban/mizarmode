@@ -5593,14 +5593,14 @@ file suffix to use."
         ;; if you want, replace `my-switch-to-url-buffer' with `my-kill-url-buffer'
         (url-retrieve url 'my-switch-to-url-buffer)))
 
-    (defun my-kill-url-buffer (status)
-      "Kill the buffer returned by `url-retrieve'."
-      (kill-buffer (current-buffer)))
+(defun my-kill-url-buffer (status)
+  "Kill the buffer returned by `url-retrieve'."
+  (kill-buffer (current-buffer)))
 
-    (defun my-switch-to-url-buffer (status)
-      "Switch to the buffer returned by `url-retreive'.
+(defun my-switch-to-url-buffer (status)
+  "Switch to the buffer returned by `url-retreive'.
     The buffer contains the raw HTTP response sent by the server."
-      (switch-to-buffer (current-buffer)))
+  (switch-to-buffer (current-buffer)))
 
 
 ;; this is good, but only for getting errors or other text info
@@ -5620,7 +5620,7 @@ file suffix to use."
 (my-url-http-post (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)))))
 
 ;; the current version - creates a local html file with form
-;; that gts submitted on-load
+;; that gets submitted on-load
 ;; TODO: use mml.ini as additional argument selecting the library version
 (defun mizar-post-to-ar4mizar (&optional htmlonly)
 "Send the contents of the buffers to the MizAR service.
