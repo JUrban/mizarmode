@@ -5606,7 +5606,7 @@ file suffix to use."
 :group 'mizar-proof-advisor)
 
 
-(defcustom ar4mizar-cgi "~mptp/cgi-bin/MizAR.cgi"
+(defcustom ar4mizar-cgi "~mptp/cgi-bin/MizAR1096.cgi"
 "Path to the ar4mizar CGI script on `ar4mizar-server'."
 :type 'string
 :group 'mizar-proof-advisor)
@@ -5655,7 +5655,7 @@ file suffix to use."
 
 ;; this is good, but only for getting errors or other text info
 ;; it does not launch browser
-(defun mizar-post-to-ar4mizar-new1 (&optional suffix)
+(defun mizar-post-to-ar4mizar-new1 (&optional solve positions)
 "Browse in a HTML browser the article or an environment file.
 A XSLT-capable browser like Mozilla or IE has to be default in
 Emacs - you may need to customize the variable
@@ -5663,11 +5663,12 @@ Emacs - you may need to customize the variable
 the previous is set to `browse-url-generic') also the variable 
 `browse-url-generic-program'.  Argument SUFFIX is a
 file suffix to use."
-(interactive)
+(interactive "*P")
 (let* ((aname (file-name-nondirectory
 		(file-name-sans-extension
-		 (buffer-file-name)))))
-(my-url-http-post (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)))))
+		 (buffer-file-name))))
+       (solve-it (if solve '("ProveUnsolved" . "All"))))
+(my-url-http-post (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)  ("MMLVersion" . "4.145.1096") ("Verify" . "1") ("MODE" . "TEXT") ,solve-it   ))))
 
 ;; the current version - creates a local html file with form
 ;; that gets submitted on-load
@@ -5692,6 +5693,8 @@ the previous is set to `browse-url-generic') also the variable
 		      mizar-ar4mizar-html-start contents 
 		      "</textarea><INPUT TYPE=\"hidden\" NAME=\"Name\" VALUE=\"" aname 
 		      "\"> <INPUT TYPE=\"submit\" VALUE=\"Send\">"
+		      "<INPUT TYPE=\"hidden\" NAME=\"MMLVersion\" VALUE=\"4.145.1096\">"
+		      "<INPUT TYPE=\"hidden\" NAME=\"HTMLize\" VALUE=\"1\">"
 		      (if htmlonly "" "<INPUT TYPE=\"hidden\" NAME=\"GenATP\" VALUE=\"1\">") 
 		      "</FORM> </body> </html>" 
 		      )))
@@ -5741,7 +5744,7 @@ frm.submit();
 window.onload = myfunc;
 </script>
   </head> <body>
-        <FORM ID=\"myform\" METHOD=\"POST\"  ACTION=\"http://mws.cs.ru.nl/~mptp/cgi-bin/MizAR.cgi\" enctype=\"multipart/form-data\">
+        <FORM ID=\"myform\" METHOD=\"POST\"  ACTION=\"http://mws.cs.ru.nl/~mptp/cgi-bin/MizAR1096.cgi\" enctype=\"multipart/form-data\">
             <INPUT TYPE=\"hidden\" NAME=\"ProblemSource\" VALUE=\"Formula\">
 		<textarea name=\"Formula\" tabindex=\"3\"  rows=\"8\" cols=\"80\" id=\"FORMULAEProblemTextBox\">"
 )
