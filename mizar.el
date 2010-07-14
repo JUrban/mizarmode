@@ -4910,13 +4910,16 @@ Normal users should not change this option."
 
 (defun mizar-call-util (program &optional buffer &rest args)
 "Wrapper around `call-process', handling mizar options.
-Currently only `mizar-allow-long-lines'."
-(if mizar-allow-long-lines
-    (apply 'call-process program nil buffer nil "-l" args)
-  (apply 'call-process program nil buffer nil args)))
+Currently only `mizar-allow-long-lines'.
+If PROGRAM is elisp function, it is called instead of using `call-process'."
+(if (functionp program)
+    (apply program (cons buffer args))
+  (if mizar-allow-long-lines
+      (apply 'call-process program nil buffer nil "-l" args)
+    (apply 'call-process program nil buffer nil args))))
 
-(defun mizar-accom (accomname force buffer article)
-(if mizar-forbid-accommodation 0
+(defun mizar-accom (accomname force buffer article &optional never)
+(if (or never mizar-forbid-accommodation) 0
   (if force (mizar-call-util accomname buffer "-a" article)
     (mizar-call-util accomname buffer article))))
 
@@ -5008,19 +5011,20 @@ modified with errors right after the verification
 
 (make-variable-buffer-local 'last-verification-date)
 
-(defun mizar-it (&optional util noqr compil silent forceacc options)
+(defun mizar-it (&optional util noqr compil silent forceacc noacc options)
 "Run mizar verifier on the text in the current .miz buffer.
 Show the result in buffer *mizar-output*.
 In interactive use, a prefix argument directs this command
 to read verifier options from the minibuffer.
 
 If OPTIONS are given, pass them to the verifier.
-If UTIL is given, run it instead of verifier.
+If UTIL is given (either a command string or elisp function), use it instead of verifier.
 If `mizar-use-momm', run tptpver instead.
 If NOQR, does not use quick run.
 If COMPIL, emulate compilation-like behavior for error messages.
 If SILENT, just run UTIL without messaging and errorflagging.
-If FORCEACC, run makeenv with the -a option."
+If FORCEACC, run makeenv with the -a option.
+If NOACC, never try to accommodate."
   (interactive (if current-prefix-arg
 		   (list nil nil nil nil nil 
 			 (read-string "Verifier options: "))))
@@ -5030,7 +5034,7 @@ If FORCEACC, run makeenv with the -a option."
 			 mizar-verifier)))
 	(makeenv makeenv)
 	(options (or options "")))
-    (if (eq mizar-emacs 'winemacs)
+    (if (and (eq mizar-emacs 'winemacs) (stringp util))
 	(progn
 	  (setq util (concat mizfiles util)
 		makeenv (concat mizfiles makeenv))))
@@ -5039,7 +5043,7 @@ If FORCEACC, run makeenv with the -a option."
 	  ((and (not mizar-forbid-accommodation)
 		(not (executable-find makeenv)))
 	   (error (concat makeenv " not found or not executable!!")))
-	  ((not (executable-find util))
+	  ((and (stringp util) (not (executable-find util)))
 	   (error (concat util " not found or not executable!!")))
 	  (t
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
@@ -5052,7 +5056,7 @@ If FORCEACC, run makeenv with the -a option."
 	     (unwind-protect
 		 (cond
 		  (silent 
-		   (let ((excode (mizar-accom makeenv forceacc nil name)))
+		   (let ((excode (mizar-accom makeenv forceacc nil name noacc)))
 		     (if (and (numberp excode) (= 0 excode))
 			 (mizar-call-util util nil "-q" name)
 		       (error "Makeenv error, try mizaring first!"))))
@@ -5065,7 +5069,7 @@ If FORCEACC, run makeenv with the -a option."
 		     (insert "Running " util " on " fname " ...\n")
 		     (sit-for 0)	; force redisplay
 					; call-process can return string (signal-description)
-		     (let ((excode (mizar-accom makeenv forceacc cbuf name)))
+		     (let ((excode (mizar-accom makeenv forceacc cbuf name noacc)))
 		       (if (and (numberp excode) (= 0 excode))
 			   (mizar-call-util util cbuf "-q" name)))
 		     (other-window 1)))
@@ -5078,7 +5082,7 @@ If FORCEACC, run makeenv with the -a option."
 			       (delete-window (get-buffer-window "*mizar-output*")))
 			   (kill-buffer "*mizar-output*")))
 		     (let* ((mizout (get-buffer-create "*mizar-output*"))
-			    (excode (mizar-accom makeenv forceacc mizout name)))
+			    (excode (mizar-accom makeenv forceacc mizout name noacc)))
 		       (if (and (numberp excode) (= 0 excode))
 			   (shell-command (concat 
 					   util (if mizar-allow-long-lines " -q -l " 
@@ -5113,7 +5117,7 @@ If FORCEACC, run makeenv with the -a option."
 "Call the mizp.pl parallel verifier on the article.
 Only usable on systems with Perl and libxml installed."
   (interactive)
-(mizar-it "mizp.pl" nil nil nil nil mizar-parallel-options))
+(mizar-it "mizp.pl" nil nil nil nil nil mizar-parallel-options))
 
 (defun mizar-irrths ()
 "Call Irrelevant Theorems & Schemes Detector on the article."
@@ -5628,7 +5632,7 @@ file suffix to use."
 
 ;; borrowed from somewhere - http-post code
 ;; the problem is to pass things to a browser
-(defun my-url-http-post (url args)
+(defun my-url-http-post (url args &optional output-buffer)
       "Send ARGS to URL as a POST request."
       (let ((url-request-method "POST")
             (url-request-extra-headers
@@ -5655,8 +5659,9 @@ file suffix to use."
 
 ;; this is good, but only for getting errors or other text info
 ;; it does not launch browser
-(defun mizar-post-to-ar4mizar-new1 (&optional solve positions)
+(defun mizar-post-to-ar4mizar-new1 (&optional solve positions output-buffer)
 "Browse in a HTML browser the article or an environment file.
+OUTPUt-BUFFER optionally specifies the buffer used for output.
 A XSLT-capable browser like Mozilla or IE has to be default in
 Emacs - you may need to customize the variable
 `browse-url-browser-function' for this, and possibly (if 
