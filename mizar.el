@@ -5032,6 +5032,7 @@ If NOACC, never try to accommodate."
       (mizar-it-noqr options util forceacc)
   (let ((util (or util (if mizar-use-momm mizar-momm-verifier
 			 mizar-verifier)))
+	(util-name (if (stringp util) util (symbol-name util)))
 	(makeenv makeenv)
 	(options (or options "")))
     (if (and (eq mizar-emacs 'winemacs) (stringp util))
@@ -5044,7 +5045,7 @@ If NOACC, never try to accommodate."
 		(not (executable-find makeenv)))
 	   (error (concat makeenv " not found or not executable!!")))
 	  ((and (stringp util) (not (executable-find util)))
-	   (error (concat util " not found or not executable!!")))
+	   (error (concat util-name " not found or not executable!!")))
 	  (t
 	   (let* ((name (file-name-sans-extension (buffer-file-name)))
 		  (fname (file-name-nondirectory name))
@@ -5066,7 +5067,7 @@ If NOACC, never try to accommodate."
 		   (let ((cbuf (get-buffer-create "*compilation*")))
 		     (switch-to-buffer-other-window cbuf)
 		     (erase-buffer)
-		     (insert "Running " util " on " fname " ...\n")
+		     (insert "Running " util-name " on " fname " ...\n")
 		     (sit-for 0)	; force redisplay
 					; call-process can return string (signal-description)
 		     (let ((excode (mizar-accom makeenv forceacc cbuf name noacc)))
@@ -5075,7 +5076,7 @@ If NOACC, never try to accommodate."
 		     (other-window 1)))
 		  (t
 		   (save-excursion
-		     (message (concat "Running " util " on " fname " ..."))
+		     (message (concat "Running " util-name " on " fname " ..."))
 		     (if (get-buffer "*mizar-output*")
 			 (progn 
 			   (if (get-buffer-window "*mizar-output*")
@@ -5084,11 +5085,13 @@ If NOACC, never try to accommodate."
 		     (let* ((mizout (get-buffer-create "*mizar-output*"))
 			    (excode (mizar-accom makeenv forceacc mizout name noacc)))
 		       (if (and (numberp excode) (= 0 excode))
-			   (shell-command (concat 
-					   util (if mizar-allow-long-lines " -q -l " 
-						  " -q ") options " "
-						  (shell-quote-argument name))
-					  mizout)
+			   (if (functionp util) 
+			       (apply util (list mizout))
+			     (shell-command (concat 
+					     util (if mizar-allow-long-lines " -q -l " 
+						    " -q ") options " "
+						    (shell-quote-argument name))
+					    mizout))
 			 (display-buffer mizout)))
 		     (message " ... done"))))
 	       (if old-dir (setq default-directory old-dir))
@@ -5118,6 +5121,13 @@ If NOACC, never try to accommodate."
 Only usable on systems with Perl and libxml installed."
   (interactive)
 (mizar-it "mizp.pl" nil nil nil nil nil mizar-parallel-options))
+
+(defun mizar-it-remote ()
+"Call the remote verifier.
+Only usable if connected to internet."
+  (interactive)
+(mizar-it 'mizar-it-remote-intern nil nil nil nil t))
+
 
 (defun mizar-irrths ()
 "Call Irrelevant Theorems & Schemes Detector on the article."
@@ -5632,7 +5642,7 @@ file suffix to use."
 
 ;; borrowed from somewhere - http-post code
 ;; the problem is to pass things to a browser
-(defun my-url-http-post (url args &optional output-buffer)
+(defun my-url-http-post (url args &optional output-buffer synchronous)
       "Send ARGS to URL as a POST request."
       (let ((url-request-method "POST")
             (url-request-extra-headers
@@ -5645,7 +5655,11 @@ file suffix to use."
                         args
                         "&")))
         ;; if you want, replace `my-switch-to-url-buffer' with `my-kill-url-buffer'
-        (url-retrieve url 'my-switch-to-url-buffer)))
+	(if synchronous
+	    (save-excursion
+	      (set-buffer (url-retrieve-synchronously url))
+	      (buffer-string))
+        (url-retrieve url 'my-switch-to-url-buffer))))
 
 (defun my-kill-url-buffer (status)
   "Kill the buffer returned by `url-retrieve'."
@@ -5657,23 +5671,48 @@ file suffix to use."
   (switch-to-buffer (current-buffer)))
 
 
+(defconst ar4mizar-separator "==========" "String used for separating parts of the ar4mizar response")
+
 ;; this is good, but only for getting errors or other text info
 ;; it does not launch browser
 (defun mizar-post-to-ar4mizar-new1 (&optional solve positions output-buffer)
-"Browse in a HTML browser the article or an environment file.
-OUTPUt-BUFFER optionally specifies the buffer used for output.
-A XSLT-capable browser like Mozilla or IE has to be default in
-Emacs - you may need to customize the variable
-`browse-url-browser-function' for this, and possibly (if 
-the previous is set to `browse-url-generic') also the variable 
-`browse-url-generic-program'.  Argument SUFFIX is a
-file suffix to use."
+"Send the current article to a remote server for verification and advice.
+If SOLVE is non-nil, ask a remote ATP for solving of all Mizar-unsolved problems.
+If SOLVE is nil, put errors directly into the .err file (as if it was done by local verification),
+and put the verification message into OUTPUT-BUFFER.
+"
 (interactive "*P")
 (let* ((aname (file-name-nondirectory
 		(file-name-sans-extension
 		 (buffer-file-name))))
+       (errfile (concat (file-name-sans-extension (buffer-file-name)) ".err"))
        (solve-it (if solve '("ProveUnsolved" . "All"))))
-(my-url-http-post (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)  ("MMLVersion" . "4.145.1096") ("Verify" . "1") ("MODE" . "TEXT") ,solve-it   ))))
+  ;; still TODO
+  (if solve
+      (my-url-http-post 
+       (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)  ("MMLVersion" . "4.145.1096") ("Verify" . "1") ("MODE" . "TEXT") ,solve-it   )
+       output-buffer (not solve)
+       )
+    
+    (let* 
+	((res
+	   (my-url-http-post 
+	    (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)  ("MMLVersion" . "4.145.1096") ("Verify" . "1") ("MODE" . "TEXT") ,solve-it   )
+	    output-buffer (not solve)))
+	 (strlist (split-string res ar4mizar-separator))
+	 (header (car strlist))
+	 (verif-string (second strlist))
+	 (error-string (third strlist)))
+	 (save-excursion
+	   (set-buffer output-buffer)
+	   (insert verif-string))
+	 (with-temp-buffer
+	   (insert error-string)
+	   (write-region (point-min) (point-max) errfile))))))
+
+
+(defun mizar-it-remote-intern (&optional output-buffer)
+  (mizar-post-to-ar4mizar-new1 nil nil output-buffer))
 
 ;; the current version - creates a local html file with form
 ;; that gets submitted on-load
