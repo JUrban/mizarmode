@@ -5687,7 +5687,7 @@ and put the verification message into OUTPUT-BUFFER.
 		 (buffer-file-name))))
        (errfile (concat (file-name-sans-extension (buffer-file-name)) ".err"))
        (solve-it (if solve '("ProveUnsolved" . "All"))))
-  ;; still TODO
+  ;; still TODO - will not work without output-buffer nonnil, works through mizar-it-remote
   (if solve
       (my-url-http-post 
        (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)  ("MMLVersion" . "4.145.1096") ("Verify" . "1") ("MODE" . "TEXT") ,solve-it   )
