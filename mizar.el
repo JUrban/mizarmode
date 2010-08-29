@@ -5030,7 +5030,7 @@ If NOACC, never try to accommodate."
 			 (read-string "Verifier options: "))))
   (if (or noqr (not mizar-quick-run)) 
       (mizar-it-noqr options util forceacc)
-  (let ((util (or util (if mizar-use-momm mizar-momm-verifier
+  (let* ((util (or util (if mizar-use-momm mizar-momm-verifier
 			 mizar-verifier)))
 	(util-name (if (stringp util) util (symbol-name util)))
 	(makeenv makeenv)
