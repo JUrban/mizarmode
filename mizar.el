@@ -118,6 +118,11 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
   "Options for nonstandard Mizaring used when teaching Mizar"
   :group 'mizar)
 
+(defgroup mizar-remote nil
+  "Options for running Mizar and related utilities remotely"
+  :group 'mizar)
+
+
 (defcustom mizar-newline-indents nil
 "*Newline indents."
 :type 'boolean
@@ -511,7 +516,7 @@ common mizar editing functions."
   (define-key mizar-mode-map "\C-c\C-a" 'mizar-inacc)
   (define-key mizar-mode-map "\C-c\C-z" 'mizar-make-theorem-summary)
   (define-key mizar-mode-map "\C-c\C-r" 'mizar-make-reserve-summary)
-  (define-key mizar-mode-map "\C-cr" 'mizar-occur-refs)
+  (define-key mizar-mode-map "\C-cr" 'mizar-it-remote)
   (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
   (define-key mizar-mode-map "\C-cs" 'mizar-insert-skeleton)
   (define-key mizar-mode-map "\C-cu" 'mizar-run-all-irr-utils)
@@ -5617,13 +5622,12 @@ file suffix to use."
 (defcustom ar4mizar-server "http://mws.cs.ru.nl/"
 "Server for the AR4Mizar services."
 :type 'string
-:group 'mizar-proof-advisor)
-
+:group 'mizar-remote)
 
 (defcustom ar4mizar-cgi "~mptp/cgi-bin/MizAR1096.cgi"
 "Path to the ar4mizar CGI script on `ar4mizar-server'."
 :type 'string
-:group 'mizar-proof-advisor)
+:group 'mizar-remote)
 
 ;; this sucks - the article is encoded as cgi argument of http-get
 (defun mizar-post-to-ar4mizar-old (&optional suffix)
@@ -5673,9 +5677,17 @@ file suffix to use."
 
 (defconst ar4mizar-separator "==========" "String used for separating parts of the ar4mizar response")
 
+(defcustom mizar-remote-parallelization 1 
+"*Parallelization factor (number of CPUs) for remote processing.
+Only applies when remote processing is done.
+The value 1 is default - no parallelization."
+:type 'integer
+:group 'mizar-remote)
+
+
 ;; this is good, but only for getting errors or other text info
 ;; it does not launch browser
-(defun mizar-post-to-ar4mizar-new1 (&optional solve positions output-buffer)
+(defun mizar-remote-solve (&optional solve positions output-buffer)
 "Send the current article to a remote server for verification and advice.
 If SOLVE is non-nil, ask a remote ATP for solving of all Mizar-unsolved problems.
 If SOLVE is nil, put errors directly into the .err file (as if it was done by local verification),
@@ -5690,14 +5702,20 @@ and put the verification message into OUTPUT-BUFFER.
   ;; still TODO - will not work without output-buffer nonnil, works through mizar-it-remote
   (if solve
       (my-url-http-post 
-       (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)  ("MMLVersion" . "4.145.1096") ("Verify" . "1") ("MODE" . "TEXT") ,solve-it   )
+       (concat ar4mizar-server ar4mizar-cgi) 
+       `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max)))
+	 ("Name" . ,aname) ("MMLVersion" . "4.145.1096") ("Verify" . "1") 
+	 ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it  )
        output-buffer (not solve)
        )
     
     (let* 
 	((res
 	   (my-url-http-post 
-	    (concat ar4mizar-server ar4mizar-cgi) `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) ("Name" . ,aname)  ("MMLVersion" . "4.145.1096") ("Verify" . "1") ("MODE" . "TEXT") ,solve-it   )
+	    (concat ar4mizar-server ar4mizar-cgi) 
+	    `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) 
+	      ("Name" . ,aname) ("MMLVersion" . "4.145.1096") ("Verify" . "1") 
+	      ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it )
 	    output-buffer (not solve)))
 	 (strlist (split-string res ar4mizar-separator))
 	 (header (car strlist))
@@ -5712,12 +5730,12 @@ and put the verification message into OUTPUT-BUFFER.
 
 
 (defun mizar-it-remote-intern (&optional output-buffer)
-  (mizar-post-to-ar4mizar-new1 nil nil output-buffer))
+  (mizar-remote-solve nil nil output-buffer))
 
 ;; the current version - creates a local html file with form
 ;; that gets submitted on-load
 ;; TODO: use mml.ini as additional argument selecting the library version
-(defun mizar-post-to-ar4mizar (&optional htmlonly)
+(defun mizar-browse-remote (&optional htmlonly)
 "Send the contents of the buffers to the MizAR service.
 With prefix argument, only htmlize, do not crete atp problems and links.
 Browse result in a HTML browser.
@@ -5739,12 +5757,16 @@ the previous is set to `browse-url-generic') also the variable
 		      "\"> <INPUT TYPE=\"submit\" VALUE=\"Send\">"
 		      "<INPUT TYPE=\"hidden\" NAME=\"MMLVersion\" VALUE=\"4.145.1096\">"
 		      "<INPUT TYPE=\"hidden\" NAME=\"HTMLize\" VALUE=\"1\">"
-		      (if htmlonly "" "<INPUT TYPE=\"hidden\" NAME=\"GenATP\" VALUE=\"1\">") 
-		      "</FORM> </body> </html>" 
+		      "<INPUT TYPE=\"hidden\" NAME=\"Parallelize\" VALUE=\"" 
+		      (number-to-string mizar-remote-parallelization) "\">" 
+		      (if htmlonly ""
+			           "<INPUT TYPE=\"hidden\" NAME=\"GenATP\" VALUE=\"1\">") 
+		      "</FORM></div> </body> </html>" 
 		      )))
   (with-temp-buffer
     (insert htmlcontents)
     (write-region (point-min) (point-max) requestfile))
+  (message "Opening the HTML in your browser ... ")
 (browse-url (concat "file:///" requestfile))))
 
 ;; stolen from htmlize.el
@@ -5787,7 +5809,7 @@ frm.submit();
 }
 window.onload = myfunc;
 </script>
-  </head> <body>
+  </head> <body>Posting to the server ...<div style=\"display:none\">
         <FORM ID=\"myform\" METHOD=\"POST\"  ACTION=\"http://mws.cs.ru.nl/~mptp/cgi-bin/MizAR1096.cgi\" enctype=\"multipart/form-data\">
             <INPUT TYPE=\"hidden\" NAME=\"ProblemSource\" VALUE=\"Formula\">
 		<textarea name=\"Formula\" tabindex=\"3\"  rows=\"8\" cols=\"80\" id=\"FORMULAEProblemTextBox\">"
@@ -5814,7 +5836,7 @@ window.onload = myfunc;
 	    )
 	  '("Browse as HTML" 
 	    :help "Mizar has to be run first. Mozilla or IE needed."
-	    ["Browse current article" (mizar-browse-as-html) t]
+	    ["Browse current article" (mizar-browse-remote t) t]
 	    ["Browse environmental clusters" (mizar-browse-as-html "ecl") t]
 	    ["Browse environmental theorems" (mizar-browse-as-html "eth") t]
 	    ["Browse environmental constructors" (mizar-browse-as-html "atr") t]
@@ -5920,6 +5942,15 @@ window.onload = myfunc;
 	  ["View theorems" mizar-make-theorem-summary t]
 	  ["Reserv. before point" mizar-make-reserve-summary t]
 	  "-"
+	  '("Remote solving"
+	    ["Verify remotely" mizar-it-remote (mizar-buf-verifiable-p)]
+	    ["Verify and HTMLize remotely" (mizar-browse-remote t) t]
+	    ["Solve with ATP remotely" (mizar-remote-solve t) (mizar-buf-verifiable-p)]
+	    ["Verify, HTMLize, and make ATP problems remotely" (mizar-browse-remote) t]
+	    ["Set remote parallelization" 
+	     (customize-variable 'mizar-remote-parallelization)
+	     :active t]
+	    )
 	  ["Run Mizar" mizar-it (mizar-buf-verifiable-p)]
 	  ["Accommodate & Run Mizar" (mizar-it nil nil nil nil t) (mizar-buf-verifiable-p)]
 	  ["Mizar Compile" mizar-compile (mizar-buf-verifiable-p)]
