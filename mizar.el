@@ -4429,7 +4429,7 @@ then the MoMM db."
   (message "No position at point"))))
 
 ;;;;;;;;;;;;;;;;;;;;; Mizar TWiki  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar mizar-twiki-url "http://wiki.mizar.org/cgi-bin/twiki/view/Mizar/")
+(defvar mizar-twiki-url "http://wiki.mizar.org/bin/view/Mizar/")
 (defvar mizar-twiki-questions (concat mizar-twiki-url "MizarQuestion"))
 (defvar mizar-twiki-features (concat mizar-twiki-url "FeatureBrainstorming"))
 (defvar mizar-twiki-language (concat mizar-twiki-url "MizarLanguage"))
@@ -5817,7 +5817,48 @@ window.onload = myfunc;
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
   '(list  "Mizar"
-	  ["Customize Mizar Mode" (customize-group 'mizar) t]
+	  ["Customize Mizar Mode" (customize-group 'mizar) t]	    
+	  '("Select HTML browser" 
+	    ["mozilla" (customize-save-variable 'browse-url-browser-function 'browse-url-mozilla) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-mozilla) 
+	     :active (functionp 'browse-url-mozilla)]
+	    ["firefox" (customize-save-variable 'browse-url-browser-function 'browse-url-firefox) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-firefox) 
+	     :active (functionp 'browse-url-firefox)]
+["default-windows-browser" (customize-save-variable 'browse-url-browser-function 'browse-url-default-windows-browser) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-default-windows-browser) 
+	     :active (functionp 'browse-url-default-windows-browser)]
+["default-macosx-browser" (customize-save-variable 'browse-url-browser-function 'browse-url-default-macosx-browser) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-default-macosx-browser) 
+	     :active (functionp 'browse-url-default-macosx-browser)]
+["galeon" (customize-save-variable 'browse-url-browser-function 'browse-url-galeon) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-galeon) 
+	     :active (functionp 'browse-url-galeon)]
+["epiphany" (customize-save-variable 'browse-url-browser-function 'browse-url-epiphany) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-epiphany) 
+	     :active (functionp 'browse-url-epiphany)]
+["w3" (customize-save-variable 'browse-url-browser-function 'browse-url-w3) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-w3) 
+	     :active (functionp 'browse-url-w3)]
+["gnome-moz" (customize-save-variable 'browse-url-browser-function 'browse-url-gnome-moz) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-gnome-moz) 
+	     :active (functionp 'browse-url-gnome-moz)]
+["kde" (customize-save-variable 'browse-url-browser-function 'browse-url-kde) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-kde) 
+	     :active (functionp 'browse-url-kde)]
+["elinks" (customize-save-variable 'browse-url-browser-function 'browse-url-elinks) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-elinks) 
+	     :active (functionp 'browse-url-elinks)]
+["Any text browser" (customize-save-variable 'browse-url-browser-function 'browse-url-text-*) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-text-*) 
+	     :active (functionp 'browse-url-text-*)]
+["generic" (customize-save-variable 'browse-url-browser-function 'browse-url-generic) 
+	     :style radio :selected (equal browse-url-browser-function 'browse-url-generic) 
+	     :active (functionp 'browse-url-generic)]
+["other" (customize-variable 'browse-url-browser-function) t]
+	    )
+
+
 	  ["Browse HTML Help" (browse-url html-help-url) t]	  
 	  '("Goto errors"
 	    ["Next error"  mizar-next-error t]
@@ -5839,8 +5880,6 @@ window.onload = myfunc;
 	    ["Browse environmental theorems" (mizar-browse-as-html "eth") t]
 	    ["Browse environmental constructors" (mizar-browse-as-html "atr") t]
 	    ["Browse environmental notations" (mizar-browse-as-html "eno") t]
-	    ["Set Mozilla (Firefox) as the default browser" 
-	     (mizar-browser-customize) t]
 	    )
 	  '("MoMM"
 	    ["Use MoMM (needs to be installed)" mizar-toggle-momm :style toggle
