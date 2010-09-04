@@ -5695,15 +5695,28 @@ and put the verification message into OUTPUT-BUFFER.
 (let* ((aname (file-name-nondirectory
 		(file-name-sans-extension
 		 (buffer-file-name))))
+       (dir (file-name-directory (buffer-file-name)))
        (errfile (concat (file-name-sans-extension (buffer-file-name)) ".err"))
-       (solve-it (if solve '("ProveUnsolved" . "All"))))
+       (vocfile (car (file-expand-wildcards (concat dir "../dict/*.voc") t)))
+       (solve-it (if solve '("ProveUnsolved" . "All")))
+       (vocname (if vocfile (file-name-nondirectory vocfile)))
+       (vocstring (if vocfile (with-temp-buffer
+				(insert-file-contents vocfile)
+				(buffer-substring-no-properties (point-min) (point-max))))))
+
+
+
   ;; still TODO - will not work without output-buffer nonnil, works through mizar-it-remote
   (if solve
       (my-url-http-post 
        (concat ar4mizar-server ar4mizar-cgi) 
        `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max)))
 	 ("Name" . ,aname) ("MMLVersion" . "4.145.1096") ("Verify" . "1") 
-	 ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it  )
+	 ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it 
+	 ,(if vocfile (cons "VocSource" "CONTENT"))
+	 ,(if vocfile (cons "VocName" vocname))
+	 ,(if vocfile (cons "VocContent" vocstring)) 
+	 )
        output-buffer (not solve)
        )
     
@@ -5713,7 +5726,11 @@ and put the verification message into OUTPUT-BUFFER.
 	    (concat ar4mizar-server ar4mizar-cgi) 
 	    `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) 
 	      ("Name" . ,aname) ("MMLVersion" . "4.145.1096") ("Verify" . "1") 
-	      ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it )
+	      ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it
+	      ,(if vocfile (cons "VocSource" "CONTENT"))
+	      ,(if vocfile (cons "VocName" vocname))
+	      ,(if vocfile (cons "VocContent" vocstring)) 
+	      )
 	    output-buffer (not solve)))
 	 (strlist (split-string res ar4mizar-separator))
 	 (header (car strlist))
