@@ -5764,6 +5764,12 @@ the previous is set to `browse-url-generic') also the variable
        (aname (file-name-nondirectory
 		(file-name-sans-extension
 		 fname)))
+       (dir (file-name-directory (buffer-file-name)))
+       (vocfile (car (file-expand-wildcards (concat dir "../dict/*.voc") t)))
+       (vocname (if vocfile (file-name-nondirectory vocfile)))
+       (vocstring (if vocfile (with-temp-buffer
+				(insert-file-contents vocfile)
+				(htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))))
        (requestfile (concat fname ".html"))
        (contents (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))
        (htmlcontents (concat 
@@ -5774,6 +5780,10 @@ the previous is set to `browse-url-generic') also the variable
 		      "<INPUT TYPE=\"hidden\" NAME=\"HTMLize\" VALUE=\"1\">"
 		      "<INPUT TYPE=\"hidden\" NAME=\"Parallelize\" VALUE=\"" 
 		      (number-to-string mizar-remote-parallelization) "\">" 
+		      (if (not vocfile) "" 
+			(concat "<INPUT TYPE=\"hidden\" NAME=\"VocSource\" VALUE=\"CONTENT\">"
+			"<INPUT TYPE=\"hidden\" NAME=\"VocName\" VALUE=\"" vocname "\">"
+			"<INPUT TYPE=\"hidden\" NAME=\"VocContent\" VALUE=\"" vocstring "\">"))
 		      (if htmlonly ""
 			           "<INPUT TYPE=\"hidden\" NAME=\"GenATP\" VALUE=\"1\">") 
 		      "</FORM></div> </body> </html>" 
