@@ -5670,7 +5670,7 @@ file suffix to use."
 (defun my-switch-to-url-buffer (status)
   "Switch to the buffer returned by `url-retreive'.
     The buffer contains the raw HTTP response sent by the server."
-  (switch-to-buffer (current-buffer)))
+  (switch-to-buffer-other-window (current-buffer)))
 
 
 (defconst ar4mizar-separator "==========" "String used for separating parts of the ar4mizar response")
