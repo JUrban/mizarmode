@@ -515,6 +515,7 @@ common mizar editing functions."
   (define-key mizar-mode-map "\C-c\C-z" 'mizar-make-theorem-summary)
   (define-key mizar-mode-map "\C-c\C-r" 'mizar-make-reserve-summary)
   (define-key mizar-mode-map "\C-cr" 'mizar-it-remote)
+  (define-key mizar-mode-map "\C-ca" 'mizar-remote-solve-atp)
   (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
   (define-key mizar-mode-map "\C-cs" 'mizar-insert-skeleton)
   (define-key mizar-mode-map "\C-cu" 'mizar-run-all-irr-utils)
@@ -5667,10 +5668,38 @@ file suffix to use."
   "Kill the buffer returned by `url-retrieve'."
   (kill-buffer (current-buffer)))
 
+
+
+(defun add-invisible-overlay (start end)
+  "Add an overlay from `start' to `end' in the current buffer."
+  (let ((overlay (make-overlay start end)))
+    (overlay-put overlay 'invisible 'miz-ar4miz-invis)))
+
+
 (defun my-switch-to-url-buffer (status)
   "Switch to the buffer returned by `url-retreive'.
     The buffer contains the raw HTTP response sent by the server."
-  (switch-to-buffer-other-window (current-buffer)))
+  (switch-to-buffer-other-window (current-buffer))
+  (let ((bufname "*atp-output*"))
+     (if (get-buffer bufname) (kill-buffer bufname))
+     (rename-buffer bufname)
+     (add-to-invisibility-spec 'miz-ar4miz-invis)
+     (make-variable-buffer-local 'line-move-ignore-invisible)
+     (setq line-move-ignore-invisible t)
+     (save-excursion
+       (goto-char (point-min))
+       (let* ((start-position (point-min))
+	      (search-text ".*\\(:::\\|Request took\\).*")
+	      (pos (re-search-forward search-text nil t)))
+	 (while pos
+	   (beginning-of-line)
+	   (add-invisible-overlay start-position (point))
+	   (forward-line 1)
+	   (setq start-position (point))
+	   (if (eq (point) (point-max))
+	       (setq pos nil)
+	     (setq pos (re-search-forward search-text nil t))))
+	 (add-invisible-overlay start-position (point-max))))))
 
 
 (defconst ar4mizar-separator "==========" "String used for separating parts of the ar4mizar response")
@@ -5682,6 +5711,15 @@ The value 1 is default - no parallelization."
 :type 'integer
 :group 'mizar-remote)
 
+
+;; frontend
+(defun mizar-remote-solve-atp (&optional positions output-buffer)
+"Send the current article to a remote server for verification and
+ask a remote ATP for solving of all Mizar-unsolved problems.
+Calls `mizar-remote-solve'.
+"
+(interactive "*P")
+(mizar-remote-solve t positions output-buffer))
 
 ;; this is good, but only for getting errors or other text info
 ;; it does not launch browser
@@ -6009,7 +6047,7 @@ window.onload = myfunc;
 	  '("Remote solving"
 	    ["Verify remotely" mizar-it-remote (mizar-buf-verifiable-p)]
 	    ["Verify and HTMLize remotely" (mizar-browse-remote t) t]
-	    ["Solve with ATP remotely" (mizar-remote-solve t) (mizar-buf-verifiable-p)]
+	    ["Solve with ATP remotely" mizar-remote-solve-atp (mizar-buf-verifiable-p)]
 	    ["Verify, HTMLize, and make ATP problems remotely" (mizar-browse-remote) t]
 	    ["Set remote parallelization" 
 	     (customize-variable 'mizar-remote-parallelization)
