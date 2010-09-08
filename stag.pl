@@ -290,7 +290,7 @@ sub guesswhat {
       $g =substr($_,pos);
   }
 
-  $g =~ m/([^;]*)[ \r\n]for[ \r\n]([^;]*)/
+  $g =~ m/^(.*)[ \r\n]for[ \r\n](.*);/s
     or die "Bad guessing at $fnoext:$.";
 
   ($p1,$p2)= ($1, $2);    # the patterns hopefully
