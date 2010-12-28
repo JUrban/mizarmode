@@ -5672,10 +5672,10 @@ file suffix to use."
 
 
 
-(defun add-invisible-overlay (start end)
+(defun add-invisible-overlay (start end sym)
   "Add an overlay from `start' to `end' in the current buffer."
   (let ((overlay (make-overlay start end)))
-    (overlay-put overlay 'invisible 'miz-ar4miz-invis)))
+    (overlay-put overlay 'invisible sym)))
 
 
 (defun my-switch-to-url-buffer (status)
@@ -5688,20 +5688,50 @@ file suffix to use."
      (add-to-invisibility-spec 'miz-ar4miz-invis)
      (make-variable-buffer-local 'line-move-ignore-invisible)
      (setq line-move-ignore-invisible t)
-     (save-excursion
-       (goto-char (point-min))
-       (let* ((start-position (point-min))
-	      (search-text ".*\\(:::\\|Request took\\).*")
-	      (pos (re-search-forward search-text nil t)))
-	 (while pos
-	   (beginning-of-line)
-	   (add-invisible-overlay start-position (point))
-	   (forward-line 1)
-	   (setq start-position (point))
-	   (if (eq (point) (point-max))
-	       (setq pos nil)
-	     (setq pos (re-search-forward search-text nil t))))
-	 (add-invisible-overlay start-position (point-max))))))
+     (setup-atp-output-invisibility)))
+
+
+(defvar mizar-invis-button-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-m" 'mizar-toggle-atp-invis)
+    (define-key map [mouse-1] 'mizar-toggle-atp-invis)
+    map)
+"Keymap for the invisibility change button in atp-output buffer.
+Commands:
+\\{mizar-invis-button-map}")
+
+
+(defun mizar-toggle-atp-invis ()
+  "Toggle whether details in atp output are hidden."
+  (interactive)
+  (mmlquery-toggle-hiding 'miz-ar4miz-invis))
+
+
+(defun setup-atp-output-invisibility ()
+"Makes invisible all regions excluding the request time infos and
+the user-readable results (starting with at least three
+colons). Assumes that we are in the proper buffer. Adds the
+'Hide/Show details' button at the end of the buffer."
+(save-excursion
+  (goto-char (point-min))
+  (let* ((start-position (point-min))
+	 (search-text ".*\\(:::\\|Request took\\).*")
+	 (pos (re-search-forward search-text nil t))
+	 (expl-button "[Show/Hide details]")
+	 (props (list 'mouse-face 'highlight 'face 'underline
+		      local-map-kword mizar-invis-button-map)))
+    (while pos
+      (beginning-of-line)
+      (add-invisible-overlay start-position (point) 'miz-ar4miz-invis)
+      (forward-line 1)
+      (setq start-position (point))
+      (if (eq (point) (point-max))
+	  (setq pos nil)
+	(setq pos (re-search-forward search-text nil t))))
+    (add-invisible-overlay start-position (point-max) 'miz-ar4miz-invis)
+    (goto-char (point-max))
+    (add-text-properties 0 (length expl-button) props expl-button)
+    (insert "\n" expl-button "\n")  )))
 
 
 (defconst ar4mizar-separator "==========" "String used for separating parts of the ar4mizar response")
