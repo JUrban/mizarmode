@@ -516,6 +516,7 @@ common mizar editing functions."
   (define-key mizar-mode-map "\C-c\C-r" 'mizar-make-reserve-summary)
   (define-key mizar-mode-map "\C-cr" 'mizar-it-remote)
   (define-key mizar-mode-map "\C-ca" 'mizar-remote-solve-atp)
+  (define-key mizar-mode-map "\C-ch" 'mizar-browse-remote)
   (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
   (define-key mizar-mode-map "\C-cs" 'mizar-insert-skeleton)
   (define-key mizar-mode-map "\C-cu" 'mizar-run-all-irr-utils)
