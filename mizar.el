@@ -4015,7 +4015,8 @@ Used to get the 'loaded' response from MoMM.")
     (set-keymap-parent map mizar-mode-map)
     (define-key map button_kword 'mizar-ask-momm)
     map)
-"Keymap used at MoMM-sendable errors.")
+"Keymap used at MoMM-sendable errors.
+It binds right-click to `mizar-ask-momm'")
 
 
 (defconst directivenbr 8
