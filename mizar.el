@@ -5768,7 +5768,9 @@ and put the verification message into OUTPUT-BUFFER.
        (dir (file-name-directory (buffer-file-name)))
        (errfile (concat (file-name-sans-extension (buffer-file-name)) ".err"))
        (vocfile (car (file-expand-wildcards (concat dir "../dict/*.voc") t)))
-       (solve-it (if solve '("ProveUnsolved" . "All")))
+       (solve-it (if solve
+		     (if (equal solve "Positions") '("ProveUnsolved" . "Positions")
+		       '("ProveUnsolved" . "All"))))
        (vocname (if vocfile (file-name-nondirectory vocfile)))
        (vocstring (if vocfile (with-temp-buffer
 				(insert-file-contents vocfile)
@@ -5782,7 +5784,9 @@ and put the verification message into OUTPUT-BUFFER.
        (concat ar4mizar-server ar4mizar-cgi) 
        `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max)))
 	 ("Name" . ,aname) ("MMLVersion" . "4.145.1096") ("Verify" . "1") 
-	 ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it 
+	 ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) 
+	 ("MODE" . "TEXT") ,solve-it
+	 ,(if positions (cons "Positions" positions))
 	 ,(if vocfile (cons "VocSource" "CONTENT"))
 	 ,(if vocfile (cons "VocName" vocname))
 	 ,(if vocfile (cons "VocContent" vocstring)) 
