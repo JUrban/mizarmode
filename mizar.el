@@ -5841,6 +5841,7 @@ and put the verification message into OUTPUT-BUFFER.
        (dir (file-name-directory (buffer-file-name)))
        (errfile (concat (file-name-sans-extension (buffer-file-name)) ".err"))
        (vocfile (car (file-expand-wildcards (concat dir "../dict/*.voc") t)))
+       (mmlversion (mizar-mml-version))
        (solve-it (if solve
 		     (if (equal solve "Positions") '("ProveUnsolved" . "Positions")
 		       '("ProveUnsolved" . "All"))))
@@ -5856,7 +5857,7 @@ and put the verification message into OUTPUT-BUFFER.
       (my-url-http-post 
        (concat ar4mizar-server ar4mizar-cgi) 
        `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max)))
-	 ("Name" . ,aname) ("MMLVersion" . "4.145.1096") ("Verify" . "1") 
+	 ("Name" . ,aname) ("MMLVersion" . ,mmlversion) ("Verify" . "1") 
 	 ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) 
 	 ("MODE" . "TEXT") ,solve-it
 	 ,(if positions (cons "Positions" positions))
@@ -5872,7 +5873,7 @@ and put the verification message into OUTPUT-BUFFER.
 	   (my-url-http-post 
 	    (concat ar4mizar-server ar4mizar-cgi) 
 	    `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) 
-	      ("Name" . ,aname) ("MMLVersion" . "4.145.1096") ("Verify" . "1") 
+	      ("Name" . ,aname) ("MMLVersion" . ,mmlversion) ("Verify" . "1") 
 	      ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it
 	      ,(if vocfile (cons "VocSource" "CONTENT"))
 	      ,(if vocfile (cons "VocName" vocname))
@@ -5914,17 +5915,19 @@ the previous is set to `browse-url-generic') also the variable
        (dir (file-name-directory (buffer-file-name)))
        (vocfile (car (file-expand-wildcards (concat dir "../dict/*.voc") t)))
        (vocname (if vocfile (file-name-nondirectory vocfile)))
+       (mmlversion (mizar-mml-version))
        (vocstring (if vocfile (with-temp-buffer
 				(insert-file-contents vocfile)
 				(htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))))
        (requestfile (concat fname ".html"))
        (contents (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))
        (htmlcontents (concat 
-		      mizar-ar4mizar-html-start contents 
+		      mizar-ar4mizar-html-start1 ar4mizar-server ar4mizar-cgi 
+		      mizar-ar4mizar-html-start2 contents 
 		      "</textarea><INPUT TYPE=\"hidden\" NAME=\"Name\" VALUE=\"" aname 
 		      "\"> <INPUT TYPE=\"submit\" VALUE=\"Send\">"
-		      "<INPUT TYPE=\"hidden\" NAME=\"MMLVersion\" VALUE=\"4.145.1096\">"
-		      "<INPUT TYPE=\"hidden\" NAME=\"HTMLize\" VALUE=\"1\">"
+		      "<INPUT TYPE=\"hidden\" NAME=\"MMLVersion\" VALUE=\"" mmlversion
+		      "\"> <INPUT TYPE=\"hidden\" NAME=\"HTMLize\" VALUE=\"1\">"
 		      "<INPUT TYPE=\"hidden\" NAME=\"Parallelize\" VALUE=\"" 
 		      (number-to-string mizar-remote-parallelization) "\">" 
 		      (if (not vocfile) "" 
@@ -5972,7 +5975,7 @@ the previous is set to `browse-url-generic') also the variable
 (defun htmlize-protect-string (string)
   (mapconcat (lambda (char) (aref htmlize-basic-character-table char)) string ""))
 
-(defvar  mizar-ar4mizar-html-start "
+(defvar  mizar-ar4mizar-html-start1 "
 <html> <head> <title>Automated Reasoning for Mizar</title>
 <script language=\"JavaScript\">
 function myfunc () {
@@ -5982,11 +5985,14 @@ frm.submit();
 window.onload = myfunc;
 </script>
   </head> <body>Posting to the server ...<div style=\"display:none\">
-        <FORM ID=\"myform\" METHOD=\"POST\"  ACTION=\"http://mws.cs.ru.nl/~mptp/cgi-bin/MizAR1096.cgi\" enctype=\"multipart/form-data\">
+        <FORM ID=\"myform\" METHOD=\"POST\"  ACTION=\"" 
+)
+
+(defvar  mizar-ar4mizar-html-start2 
+"\" enctype=\"multipart/form-data\">
             <INPUT TYPE=\"hidden\" NAME=\"ProblemSource\" VALUE=\"Formula\">
 		<textarea name=\"Formula\" tabindex=\"3\"  rows=\"8\" cols=\"80\" id=\"FORMULAEProblemTextBox\">"
 )
-
 
 ;; Menu for the mizar editing buffers
 (defvar mizar-menu
