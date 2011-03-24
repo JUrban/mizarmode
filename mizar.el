@@ -6160,6 +6160,9 @@ window.onload = myfunc;
 	  ["Reserv. before point" mizar-make-reserve-summary t]
 	  "-"
 	  '("Remote solving"
+            ["Change remote server" (customize-variable 'ar4mizar-server) t]
+            ["by; triggers ATP completion"
+	     (customize-variable 'mizar-atp-completion) :style toggle :selected mizar-atp-completion :active t]
 	    ["Verify remotely" mizar-it-remote (mizar-buf-verifiable-p)]
 	    ["Verify and HTMLize remotely" (mizar-browse-remote t) t]
 	    ["Solve with ATP remotely" mizar-remote-solve-atp (mizar-buf-verifiable-p)]
