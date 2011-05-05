@@ -1355,7 +1355,7 @@ Used automatically if `mizar-atp-completion' is on."
 	 (msg (concat "ATP was called on this step, awaiting response for position " pos)))
     (put-text-property beg end 'help-echo msg)
     (put-text-property beg end 'atp-asked (intern pos))
-    (mizar-remote-solve-atp pos (concat buf "__" pos) (list buf line col beg))
+    (mizar-remote-solve-atp "Positions" pos (concat buf "__" pos) (list buf line col beg))
     (message "Calling ATP on position %s " pos)
     (set-buffer-modified-p mod))))
 
@@ -5818,13 +5818,13 @@ The value 1 is default - no parallelization."
 
 
 ;; frontend
-(defun mizar-remote-solve-atp (&optional positions output-buffer pushback)
+(defun mizar-remote-solve-atp (&optional solve positions output-buffer pushback)
 "Send the current article to a remote server for verification and
 ask a remote ATP for solving of all Mizar-unsolved problems.
 Calls `mizar-remote-solve'.
 "
 (interactive "*P")
-(mizar-remote-solve t positions output-buffer pushback))
+(mizar-remote-solve (or solve t) positions output-buffer pushback))
 
 ;; this is good, but only for getting errors or other text info
 ;; it does not launch browser
