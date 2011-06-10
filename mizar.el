@@ -372,7 +372,7 @@ MoMM should be installed for this."
 
 
 (defcustom mizar-main-keywords 
-(list "theorem" "scheme" "definition" "registration" "notation")
+(list "theorem" "scheme" "definition" "registration" "notation" "axiom")
 "*Keywords starting main mizar text items." 
 :type '(repeat string)
 :group 'mizar-faces)
@@ -406,8 +406,8 @@ MoMM should be installed for this."
  "pred" "provided" "qua" "reconsider" "redefine" "reflexivity" 
  "reserve" "struct" "such" "synonym" 
  "that" "then" "thesis" "when" "where" "with""is" 
- "associativity" "commutativity" "connectedness" "irreflexivity" 
- "reflexivity" "symmetry" "uniqueness" "transitivity" "idempotence" 
+ "associativity" "commutativity" "connectedness" "irreflexivity" "reduce" "reducibility"
+ "reflexivity" "symmetry" "sethood" "uniqueness" "transitivity" "idempotence" 
  "asymmetry" "projectivity" "involutiveness")
 "*Mizar keywords not mentioned in other place."
 :type '(repeat string)
