@@ -17,10 +17,11 @@
 ;; a mode for Unix version of Mizar-MSE.
 ;;
 ;; Since April 3 2000, rewritten and maintained by 
-;; Josef Urban (urban@kti.ms.mff.cuni.cz) for use with Mizar Version >= 6.
+;; Josef Urban (Josef do Urban at gmail dot com) for use with Mizar Version >= 6.
 ;;
-;; Go to http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/mizar.el
-;; to see complete revision history.
+;; Go to https://github.com/JUrban/mizarmode
+;; to see complete revision history. The latest release is at
+;; https://raw.github.com/JUrban/mizarmode/master/mizar.el .
 
 
 ;;; Usage
@@ -28,7 +29,8 @@
 ;; If you obtained this with your Mizar distribution, just append
 ;; the .emacs file enclosed there to your .emacs.
 ;; Otherwise, the latest version of .emacs is downloadable from
-;; http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/.emacs .
+;; https://raw.github.com/JUrban/mizarmode/master/.emacs .
+
 
 
 ;;; TODO: 
