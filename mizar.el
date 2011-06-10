@@ -1339,8 +1339,9 @@ Used automatically if `mizar-atp-completion' is on."
     (if (looking-at " by;")
 	(progn 
 	  (replace-match " ; :: ATP asked ... ")
-	  ;; we leave one space in the beg and end without the added properties
-	  ;; not to get sticky behavior for unsuspecting users
+	  ;; We leave one space in the beg and end without the added properties
+	  ;; not to get sticky behavior for unsuspecting users.
+	  ;; Problem is that the mizar error position is right after the formula
 	  (mizar-mark-call-atp pos1 (- (point) 1)))))))
 
 (defun mizar-mark-call-atp (beg end)
@@ -1350,12 +1351,14 @@ Used automatically if `mizar-atp-completion' is on."
   (let* ((mod (buffer-modified-p))
 	 (line (current-line))
 	 (col (current-column))
+	 (miz-col (- col 1))
 	 (pos (concat (number-to-string line) ":" (number-to-string col)))
+	 (miz-pos (concat (number-to-string line) ":" (number-to-string miz-col)))
 	 (buf (buffer-name))
 	 (msg (concat "ATP was called on this step, awaiting response for position " pos)))
     (put-text-property beg end 'help-echo msg)
     (put-text-property beg end 'atp-asked (intern pos))
-    (mizar-remote-solve-atp "Positions" pos (concat buf "__" pos) (list buf line col beg))
+    (mizar-remote-solve-atp "Positions" miz-pos (concat buf "__" pos) (list buf line col beg))
     (message "Calling ATP on position %s " pos)
     (set-buffer-modified-p mod))))
 
@@ -5762,7 +5765,8 @@ file suffix to use."
       (goto-char pos1)
       (if (not (looking-at "; :: ATP asked ... *"))
 	  (message "Position for ATP solution of %s user-edited. No inserting." mizpos)
-	(replace-match (concat "by " atpres ";")))))))
+	(replace-match (concat "by " atpres ";"))
+	(mizar-bubble-ref-incremental))))))
 
 (defvar mizar-invis-button-map
   (let ((map (make-sparse-keymap)))
