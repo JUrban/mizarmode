@@ -1532,10 +1532,12 @@ Print diagnostic message if we want, but cannot."
 		      (concat "$" mizar-mml-order-var-name))))))
   flist))
 
-(defvar grep-name "default grepping program"
+(defvar grep-name 
   (if (and (eq mizar-emacs 'winemacs) (executable-find (concat mizfiles "mizgrep.bat")))
       (concat mizfiles "mizgrep.bat")
-    "grep"))
+    "grep")
+"Default grepping program"
+)
 
 (defun mizar-grep-abs (exp)
 "Grep MML abstracts for regexp EXP.
