@@ -1527,7 +1527,7 @@ Print diagnostic message if we want, but cannot."
 	(setenv mizar-mml-order-var-name  
 		(mapconcat '(lambda (x) (concat x "." ext)) l1 " "))
 	(setq flist (if (eq mizar-emacs 'winemacs) 
-			(if (equal ext "abs") ("abstr abs") ("mml miz"))
+			(if (equal ext "abs") "abstr abs" "mml miz")
 ;			(concat "%" mizar-mml-order-var-name "%")
 		      (concat "$" mizar-mml-order-var-name))))))
   flist))
