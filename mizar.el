@@ -1532,7 +1532,7 @@ Print diagnostic message if we want, but cannot."
 		      (concat "$" mizar-mml-order-var-name))))))
   flist))
 
-(defvar grep-name 
+(defvar ordered-grep-name 
   (if (and (eq mizar-emacs 'winemacs) (executable-find (concat mizfiles "mizgrep.bat")))
       (concat mizfiles "mizgrep.bat")
     "grep")
@@ -1544,7 +1544,8 @@ Print diagnostic message if we want, but cannot."
 Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer."
   (interactive "sregexp: ")
-  (let ((old default-directory) (flist (mizar-grep-prepare-flist "abs")))
+  (let ((old default-directory) (flist (mizar-grep-prepare-flist "abs"))
+	(grep-name (if mizar-grep-in-mml-order ordered-grep-name "grep")))
     (unwind-protect
 	(progn
 	  (cd mizar-abstr)
@@ -1559,7 +1560,8 @@ The results are shown and clickable in the Compilation buffer."
 Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer."
   (interactive "sregexp: ")
-  (let ((old default-directory) (flist (mizar-grep-prepare-flist "miz")))
+  (let ((old default-directory) (flist (mizar-grep-prepare-flist "miz"))
+	(grep-name (if mizar-grep-in-mml-order ordered-grep-name "grep")))
     (unwind-protect
 	(progn
 	  (cd mizar-mml)
@@ -1692,7 +1694,8 @@ Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer."
   (interactive "sregexp: ")
   (let ((olddir default-directory) (flist (mizar-grep-prepare-flist "gab.raw"))
-	(compilation-process-setup-function 'mizar-gab-compilation-setup))
+	(compilation-process-setup-function 'mizar-gab-compilation-setup)
+	(grep-name (if mizar-grep-in-mml-order ordered-grep-name "grep")))
     (unwind-protect
 	(progn
 	  (cd mmlquery-abstracts)	  
