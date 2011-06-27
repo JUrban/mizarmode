@@ -1527,9 +1527,15 @@ Print diagnostic message if we want, but cannot."
 	(setenv mizar-mml-order-var-name  
 		(mapconcat '(lambda (x) (concat x "." ext)) l1 " "))
 	(setq flist (if (eq mizar-emacs 'winemacs) 
-			(concat "%" mizar-mml-order-var-name "%")
+			(if (equal ext "abs") ("abstr abs") ("mml miz"))
+;			(concat "%" mizar-mml-order-var-name "%")
 		      (concat "$" mizar-mml-order-var-name))))))
   flist))
+
+(defvar grep-name "default grepping program"
+  (if (and (eq mizar-emacs 'winemacs) (executable-find (concat mizfiles "mizgrep.bat")))
+      (concat mizfiles "mizgrep.bat")
+    "grep"))
 
 (defun mizar-grep-abs (exp)
 "Grep MML abstracts for regexp EXP.
@@ -1541,8 +1547,8 @@ The results are shown and clickable in the Compilation buffer."
 	(progn
 	  (cd mizar-abstr)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "grep -n -E \"" exp "\" " flist))
-	    (grep (concat "grep -i -n -E \"" exp "\" " flist))))
+	      (grep (concat grep-name " -n -E \"" exp "\" " flist))
+	    (grep (concat grep-name " -in -E \"" exp "\" " flist))))
       (cd old)
     )))
 
@@ -1556,8 +1562,8 @@ The results are shown and clickable in the Compilation buffer."
 	(progn
 	  (cd mizar-mml)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "grep -n -E \"" exp "\" " flist))
-	    (grep (concat "grep -i -n -E \"" exp "\" " flist))))
+	      (grep (concat grep-name " -n -E \"" exp "\" " flist))
+	    (grep (concat grep-name " -in -E \"" exp "\" " flist))))
       (cd old)
       )))
 
@@ -1689,8 +1695,8 @@ The results are shown and clickable in the Compilation buffer."
 	(progn
 	  (cd mmlquery-abstracts)	  
 	  (if mizar-grep-case-sensitive
-	      (compile (concat "grep -n -E \"" exp "\" " flist))
-	    (compile (concat "grep -i -n -E \"" exp "\" " flist))))
+	      (compile (concat grep-name " -n -E \"" exp "\" " flist))
+	    (compile (concat grep-name " -i -n -E \"" exp "\" " flist))))
       (cd olddir)
     )))
 
