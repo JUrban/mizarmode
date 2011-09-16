@@ -5764,11 +5764,12 @@ file suffix to use."
 	 (end (min (point-max) (+ mizpoint (* 4 mizar-atp-desync-limit))))
 	 (pos1 (text-property-any start end 'atp-asked (intern mizpos))))
     (if (not pos1) (message "Position for ATP solution of %s not found" mizpos)
-      (goto-char pos1)
-      (if (not (looking-at "; :: ATP asked ... *"))
-	  (message "Position for ATP solution of %s user-edited. No inserting." mizpos)
-	(replace-match (concat "by " atpres ";"))
-	(mizar-bubble-ref-incremental))))))
+      (save-excursion
+	(goto-char pos1)
+	(if (not (looking-at "; :: ATP asked ... *"))
+	    (message "Position for ATP solution of %s user-edited. No inserting." mizpos)
+	  (replace-match (concat "by " atpres ";"))
+	  (mizar-bubble-ref-incremental)))))))
 
 (defvar mizar-invis-button-map
   (let ((map (make-sparse-keymap)))
