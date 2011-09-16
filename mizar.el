@@ -1527,22 +1527,31 @@ Print diagnostic message if we want, but cannot."
 	(setenv mizar-mml-order-var-name  
 		(mapconcat '(lambda (x) (concat x "." ext)) l1 " "))
 	(setq flist (if (eq mizar-emacs 'winemacs) 
-			(concat "%" mizar-mml-order-var-name "%")
+			(if (equal ext "abs") "abstr abs" "mml miz")
+;			(concat "%" mizar-mml-order-var-name "%")
 		      (concat "$" mizar-mml-order-var-name))))))
   flist))
+
+(defvar ordered-grep-name 
+  (if (and (eq mizar-emacs 'winemacs) (executable-find (concat mizfiles "mizgrep.bat")))
+      (concat mizfiles "mizgrep.bat")
+    "grep")
+"Default grepping program"
+)
 
 (defun mizar-grep-abs (exp)
 "Grep MML abstracts for regexp EXP.
 Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer."
   (interactive "sregexp: ")
-  (let ((old default-directory) (flist (mizar-grep-prepare-flist "abs")))
+  (let ((old default-directory) (flist (mizar-grep-prepare-flist "abs"))
+	(grep-name (if mizar-grep-in-mml-order ordered-grep-name "grep")))
     (unwind-protect
 	(progn
 	  (cd mizar-abstr)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "grep -n -E \"" exp "\" " flist))
-	    (grep (concat "grep -i -n -E \"" exp "\" " flist))))
+	      (grep (concat grep-name " -n -E \"" exp "\" " flist))
+	    (grep (concat grep-name " -in -E \"" exp "\" " flist))))
       (cd old)
     )))
 
@@ -1551,13 +1560,14 @@ The results are shown and clickable in the Compilation buffer."
 Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer."
   (interactive "sregexp: ")
-  (let ((old default-directory) (flist (mizar-grep-prepare-flist "miz")))
+  (let ((old default-directory) (flist (mizar-grep-prepare-flist "miz"))
+	(grep-name (if mizar-grep-in-mml-order ordered-grep-name "grep")))
     (unwind-protect
 	(progn
 	  (cd mizar-mml)
 	  (if mizar-grep-case-sensitive
-	      (grep (concat "grep -n -E \"" exp "\" " flist))
-	    (grep (concat "grep -i -n -E \"" exp "\" " flist))))
+	      (grep (concat grep-name " -n -E \"" exp "\" " flist))
+	    (grep (concat grep-name " -in -E \"" exp "\" " flist))))
       (cd old)
       )))
 
@@ -1684,13 +1694,14 @@ Variable `mizar-grep-case-sensitive' controls case sensitivity.
 The results are shown and clickable in the Compilation buffer."
   (interactive "sregexp: ")
   (let ((olddir default-directory) (flist (mizar-grep-prepare-flist "gab.raw"))
-	(compilation-process-setup-function 'mizar-gab-compilation-setup))
+	(compilation-process-setup-function 'mizar-gab-compilation-setup)
+	(grep-name (if mizar-grep-in-mml-order ordered-grep-name "grep")))
     (unwind-protect
 	(progn
 	  (cd mmlquery-abstracts)	  
 	  (if mizar-grep-case-sensitive
-	      (compile (concat "grep -n -E \"" exp "\" " flist))
-	    (compile (concat "grep -i -n -E \"" exp "\" " flist))))
+	      (compile (concat grep-name " -n -E \"" exp "\" " flist))
+	    (compile (concat grep-name " -i -n -E \"" exp "\" " flist))))
       (cd olddir)
     )))
 
