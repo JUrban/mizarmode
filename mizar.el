@@ -1326,7 +1326,7 @@ The variable `mizar-ref-table' might be modified by this function."
     (set-buffer-modified-p mod)))))
 
 
-(defcustom mizar-atp-completion nil
+(defcustom mizar-atp-completion t
 "*Semicolon following \"by\" calls ATP to provide justification."
 :type 'boolean
 :group 'mizar-proof-advisor)
@@ -5674,7 +5674,7 @@ file suffix to use."
 )
 
 ;;;;;;;;;;;;;;;   AR 4 mizar and html and mw services
-(defcustom ar4mizar-server "http://mws.cs.ru.nl/"
+(defcustom ar4mizar-server "http://mizar.cs.ualberta.ca/"
 "Server for the AR4Mizar services."
 :type 'string
 :group 'mizar-remote)
@@ -5757,7 +5757,7 @@ file suffix to use."
 	       (setq allrefs (nconc allrefs (split-string (match-string 1) ","))))
 	     (setq allrefs (unique allrefs))
 	     (if allrefs (setq atpres (mapconcat 'identity allrefs ",")))
-	     (insert-atp-result mizbuf line col mizpoint mizpos atpres)
+	     (insert-atp-result mizbuf line col mizpoint mizpos atpres bufname)
 	     (message "ATP answered for position %s with %s" mizpos atpres))))
      (setup-atp-output-invisibility)))
 
@@ -5767,7 +5767,7 @@ file suffix to use."
 :group 'mizar-proof-advisor)
 
 
-(defun insert-atp-result (mizbuf line col mizpoint mizpos atpres)
+(defun insert-atp-result (mizbuf line col mizpoint mizpos atpres bufname)
 "Try to find text with property 'atp-asked set to MIZPOS around MIZPOINT and replace with ATPRES."
 (save-excursion
   (set-buffer mizbuf)
@@ -5779,7 +5779,7 @@ file suffix to use."
 	(goto-char pos1)
 	(if (not (looking-at "; :: ATP asked ... *"))
 	    (message "Position for ATP solution of %s user-edited. No inserting." mizpos)
-	  (replace-match (concat "by " atpres ";"))
+	  (replace-match (concat "by " atpres "; :: " (create-display-button "[ATP details]" "Show details of ATP call" bufname)))
 	  (mizar-bubble-ref-incremental)))))))
 
 (defvar mizar-invis-button-map
@@ -5834,6 +5834,36 @@ The value 1 is default - no parallelization."
 :type 'integer
 :group 'mizar-remote)
 
+
+(defun mizar-display-link ()
+"Display property mizar-address in other window."
+(interactive)
+(let ((buf (get-text-property (point) 'mizar-address)))
+  (display-buffer buf)))
+
+(defun mizar-display-link-mouse (event)
+  (interactive "e")
+  (select-window (event-window event))
+  (goto-char (event-point event))
+  (mizar-display-link))
+
+(defvar mizar-display-button-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-m" 'mizar-display-link)
+    (define-key map [mouse-1] 'mizar-display-link-mouse)
+    map)
+"Keymap for showing links in other window
+Commands:
+\\{mizar-display-link}")
+
+(defun create-display-button (name title buffer)
+"Creates the NAME button with TITLE opening BUFFER in other window."
+(let* ((expl-button name)
+       (props (list 'mouse-face 'highlight 'face 'underline 
+		    'mizar-address buffer 'help-echo title
+		      local-map-kword mizar-display-button-map)))
+    (add-text-properties 0 (length expl-button) props expl-button)
+    expl-button))
 
 ;; frontend
 (defun mizar-remote-solve-atp (&optional solve positions output-buffer pushback)
