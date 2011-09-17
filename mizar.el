@@ -5730,6 +5730,12 @@ file suffix to use."
     (overlay-put overlay 'invisible sym)))
 
 
+(defun mizar-is-ref (ref)
+"Tells if REF is an explicit Mizar reference."
+(or
+ (not (string-match ":" ref)) 
+ (string-match "\\([A-Z0-9_]+:\\(def \\|sch \\|th \\)?[0-9]+\\)" ref)))
+
 (defun my-switch-to-url-buffer (status &optional output-buffer pushback)
   "Switch to buffer returned by `url-retreive', rename it to OUTPUT-BUFFER or *atp-output*.
    If PUSHBACK is given, it must be a list (buffer-name line column position) telling
@@ -5755,9 +5761,9 @@ file suffix to use."
 		  (allrefs nil) (atpres "ATP-Unsolved"))
 	     (while (re-search-forward regpos (point-max) t)
 	       (setq allrefs (nconc allrefs (split-string (match-string 1) ","))))
-	     (setq allrefs (unique allrefs))
+	     (setq allrefs (unique allrefs))	     
 	     (if allrefs (setq atpres (mapconcat 'identity allrefs ",")))
-	     (insert-atp-result mizbuf line col mizpoint mizpos atpres bufname)
+	     (insert-atp-result mizbuf line col mizpoint mizpos atpres allrefs bufname)
 	     (message "ATP answered for position %s with %s" mizpos atpres))))
      (setup-atp-output-invisibility)))
 
@@ -5767,7 +5773,7 @@ file suffix to use."
 :group 'mizar-proof-advisor)
 
 
-(defun insert-atp-result (mizbuf line col mizpoint mizpos atpres bufname)
+(defun insert-atp-result (mizbuf line col mizpoint mizpos atpres allrefs bufname)
 "Try to find text with property 'atp-asked set to MIZPOS around MIZPOINT and replace with ATPRES."
 (save-excursion
   (set-buffer mizbuf)
@@ -5779,8 +5785,21 @@ file suffix to use."
 	(goto-char pos1)
 	(if (not (looking-at "; :: ATP asked ... *"))
 	    (message "Position for ATP solution of %s user-edited. No inserting." mizpos)
-	  (replace-match (concat "by " atpres "; :: " (create-display-button "[ATP details]" "Show details of ATP call" bufname)))
-	  (mizar-bubble-ref-incremental)))))))
+	  (if (not allrefs)
+	      (replace-match (concat "by " atpres "; :: " (create-display-button "[ATP details]" "Show details of ATP call" bufname)))
+	    (let (proper-refs other-refs)
+		(dolist (r1 allrefs) 
+		  (if (mizar-is-ref r1) (setq proper-refs (cons r1 proper-refs))
+		    (setq other-refs (cons r1 other-refs))))
+		(looking-at "; :: ATP asked ... *")  ;; need to repeat because the block above destroyed match-data
+		(replace-match 
+		 (concat 
+		  (if proper-refs (concat "by " (mapconcat 'identity proper-refs ","))) "; :: " 
+		  (create-display-button "[ATP details]" 
+					 (if other-refs (concat "Implicit (click for more): " 
+								(mapconcat 'identity other-refs ", ")) 
+					   "Show details of ATP call") bufname))))
+	    (mizar-bubble-ref-incremental))))))))
 
 (defvar mizar-invis-button-map
   (let ((map (make-sparse-keymap)))
