@@ -1331,6 +1331,13 @@ The variable `mizar-ref-table' might be modified by this function."
 :type 'boolean
 :group 'mizar-proof-advisor)
 
+(defcustom mizar-atp-leave-semicolon t
+"*If t, the ATP call leaves the semicolon that was used to generate a *4 error.
+If nil, the semicolon is commented afterwards, so that for example proof .. end 
+block keep there thesis. This is useful for re-trying to shorten proofblocks with ATPs."
+:type 'boolean
+:group 'mizar-proof-advisor)
+
 
 (defun mizar-atp-autocomplete ()
 "Replace \"by;\" with \"; :: ATP asked ...\" and call ATP to justify the current step.
@@ -1358,12 +1365,36 @@ Used automatically if `mizar-atp-completion' is on."
 	 (miz-pos (concat (number-to-string line) ":" (number-to-string miz-col)))
 	 (buf (buffer-name))
 	 (msg (concat "ATP was called on this step, awaiting response for position " pos)))
+    (mizar-remote-solve-atp "Positions" miz-pos (concat buf "__" pos) (list buf line col beg))
+    (unless mizar-atp-leave-semicolon
+      (goto-char beg)
+      (if (looking-at ";")  (replace-match " ")))
     (put-text-property beg end 'help-echo msg)
     (put-text-property beg end 'atp-asked (intern pos))
-    (mizar-remote-solve-atp "Positions" miz-pos (concat buf "__" pos) (list buf line col beg))
     (message "Calling ATP on position %s " pos)
     (set-buffer-modified-p mod))))
 
+(defun mizar-atp-review-proofs (beg end)
+"Call ATP on toplevel @proofs inside the block."
+(interactive "r")
+(let ((old-mizar-atp-leave-semicolon mizar-atp-leave-semicolon)
+      (old-mizar-comment-atp mizar-comment-atp))
+  (unwind-protect
+      (progn
+	(setq mizar-atp-leave-semicolon nil
+	      mizar-comment-atp t)
+	(goto-char beg)
+	(while (re-search-forward "^@proof" end t)
+	  (forward-line -1)
+	  (end-of-line)
+	  (skip-chars-backward " \t")
+	  (insert " by;") 
+	  (mizar-atp-autocomplete)
+	  (sit-for 15)
+	  (forward-line 2)
+	  ))
+    (setq mizar-atp-leave-semicolon old-mizar-atp-leave-semicolon
+	  mizar-comment-atp old-mizar-comment-atp))))
 
 (defvar mizar-bubble-ref-increment 10
 "Extent of lines where refs get incrementally bubble-helped.")
@@ -5772,6 +5803,10 @@ file suffix to use."
 :type 'integer
 :group 'mizar-proof-advisor)
 
+(defcustom mizar-comment-atp nil
+"*Keep the ATP responses commented."
+:type 'boolean
+:group 'mizar-proof-advisor)
 
 (defun insert-atp-result (mizbuf line col mizpoint mizpos atpres allrefs bufname)
 "Try to find text with property 'atp-asked set to MIZPOS around MIZPOINT and replace with ATPRES."
@@ -5783,18 +5818,22 @@ file suffix to use."
     (if (not pos1) (message "Position for ATP solution of %s not found" mizpos)
       (save-excursion
 	(goto-char pos1)
-	(if (not (looking-at "; :: ATP asked ... *"))
+	(if (not (looking-at ". :: ATP asked ... *"))
 	    (message "Position for ATP solution of %s user-edited. No inserting." mizpos)
 	  (if (not allrefs)
-	      (replace-match (concat "by " atpres "; :: " (create-display-button "[ATP details]" "Show details of ATP call" bufname)))
+	      (replace-match 
+	       (concat (if mizar-comment-atp ":: " "")
+		       "by " atpres "; :: " 
+		       (create-display-button "[ATP details]" 
+					      "Show details of ATP call" bufname)))
 	    (let (proper-refs other-refs)
 		(dolist (r1 allrefs) 
 		  (if (mizar-is-ref r1) (setq proper-refs (cons r1 proper-refs))
 		    (setq other-refs (cons r1 other-refs))))
-		(looking-at "; :: ATP asked ... *")  ;; need to repeat because the block above destroyed match-data
+		(looking-at ". :: ATP asked ... *")  ;; need to repeat because the block above destroyed match-data
 		(replace-match 
 		 (concat 
-		  (if proper-refs (concat "by " (mapconcat 'identity proper-refs ","))) "; :: " 
+		  (if proper-refs (concat (if mizar-comment-atp ":: " "") "by " (mapconcat 'identity proper-refs ","))) "; :: " 
 		  (create-display-button "[ATP details]" 
 					 (if other-refs (concat "Implicit (click for more): " 
 								(mapconcat 'identity other-refs ", ")) 
