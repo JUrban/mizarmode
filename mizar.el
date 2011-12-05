@@ -497,6 +497,7 @@ common mizar editing functions."
   (define-key mizar-mode-map  "\C-c\C-p" 'mizar-previous-error)
   (define-key mizar-mode-map "\C-c\C-e" 'mizar-strip-errors)
   (define-key mizar-mode-map "\C-c\C-d" 'mizar-hide-proofs)
+  (define-key mizar-mode-map "\C-cp" 'mizar-hide-all-proofs)
   (define-key mizar-mode-map "\C-cg" 'mizar-grep-abs)
   (define-key mizar-mode-map "\C-c\C-g" 'mizar-grep-full)
   (define-key mizar-mode-map "\C-cb" 'mizar-grep-gab)
@@ -5460,6 +5461,15 @@ instead of adding, to enable proof checking again."
     (message "... Done")
     )))
 
+(defun mizar-hide-all-proofs (&optional remove)
+"Put @@ before all proof keywords in the whole buffer to disable checking.
+With prefix (which makes REMOVE non-nil) remove them 
+instead of adding, to enable proof checking again."
+(interactive "P")
+(mizar-hide-proofs (point-min)
+		   (point-max) remove)
+)
+
 (defun mizar-move-then (&optional beg end reverse)
 "Change the placement of the 'then' keyword between BEG and END.
 With prefix (REVERSE non-nil) move from the end of lines to beginnings,
@@ -6332,11 +6342,13 @@ window.onload = myfunc;
 	  '("Proof checking"
 	    ["proof -> @proof on region" mizar-hide-proofs t]
 	    ["@proof -> proof on region" (mizar-hide-proofs (region-beginning)
-							   (region-end) t) t]
-	    ["proof -> @proof on buffer" (mizar-hide-proofs (point-min)
-							   (point-max)) t]
-	    ["@proof -> proof on buffer" (mizar-hide-proofs (point-min)
-							   (point-max) t) t]
+							   (region-end) t)
+              :active t
+              :help "Also C-u C-c C-d"]
+	    ["proof -> @proof on buffer" mizar-hide-all-proofs t]
+	    ["@proof -> proof on buffer" (mizar-hide-all-proofs t)
+	     :active t
+              :help "Also C-u C-c p"]	     
 	    )
 	  '("Then placement"
 	    ["start of lines on region" mizar-move-then t]
