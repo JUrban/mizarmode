@@ -405,7 +405,7 @@ MoMM should be installed for this."
  "defpred" "environ" "equals" "existence"
  "func" "if" "identify" "irreflexivity" 
  "it" "means" "mode" "of"  "otherwise" "over" 
- "pred" "provided" "qua" "reconsider" "redefine" "reflexivity" 
+ "pred" "provided" "qua" "reconsider" "redefine" "reduce" "reducibility" "reflexivity" 
  "reserve" "struct" "such" "synonym" 
  "that" "then" "thesis" "when" "where" "with""is" 
  "associativity" "commutativity" "connectedness" "irreflexivity" "reduce" "reducibility"
@@ -4728,7 +4728,7 @@ Show them in the buffer *Constructors List*."
   ("Predicates" "[ \n\r]\\(pred\\b.*\\)" 1)
   ("Functors" "[ \n\r]\\(func\\b.*\\)" 1)
   ("Notations" "[ \n\r]\\(\\(synonym\\|antonym\\)\\b.*\\)" 1)
-  ("Registrations" "[ \n\r]\\(\\(cluster\\|identify\\)\\b.*\\)" 1)
+  ("Registrations" "[ \n\r]\\(\\(cluster\\|identify\\|reduce\\)\\b.*\\)" 1)
   ("Schemes" "^[ ]*scheme[ \n\r]+\\([a-zA-Z0-9_']+\\)" 1)
   ("Named Defs" "[ \n\r]\\(:[a-zA-Z0-9_']+:\\)[ \n\r]" 1)
   ("Named Theorems" "^[ ]*theorem[ \n\r]+\\([a-zA-Z0-9_']+:\\)[ \n\r]" 1)
