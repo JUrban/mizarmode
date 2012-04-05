@@ -5720,7 +5720,7 @@ file suffix to use."
 :type 'string
 :group 'mizar-remote)
 
-(defcustom ar4mizar-cgi "~mptp/cgi-bin/MizAR1096.cgi"
+(defcustom ar4mizar-cgi "~mptp/cgi-bin/MizAR.cgi"
 "Path to the ar4mizar CGI script on `ar4mizar-server'."
 :type 'string
 :group 'mizar-remote)
@@ -5942,6 +5942,17 @@ Calls `mizar-remote-solve'.
 (interactive "*P")
 (mizar-remote-solve (or solve t) positions output-buffer pushback))
 
+(defun mizar-concat-vocs (vocfiles)
+"Concatenate contents of vocfiles using :::::: as a delimiter."
+(with-temp-buffer
+  (let ((l vocfiles))
+    (while l 
+      (insert-file-contents (car l))
+      (setq l (cdr l))
+      (if l (insert "::::::"))))
+  (buffer-substring-no-properties (point-min) (point-max))))
+
+
 ;; this is good, but only for getting errors or other text info
 ;; it does not launch browser
 (defun mizar-remote-solve (&optional solve positions output-buffer pushback)
@@ -5956,17 +5967,13 @@ and put the verification message into OUTPUT-BUFFER.
 		 (buffer-file-name))))
        (dir (file-name-directory (buffer-file-name)))
        (errfile (concat (file-name-sans-extension (buffer-file-name)) ".err"))
-       (vocfile (car (file-expand-wildcards (concat dir "../dict/*.voc") t)))
+       (vocfiles (file-expand-wildcards (concat dir "../dict/*.voc") t))
        (mmlversion (mizar-mml-version))
        (solve-it (if solve
 		     (if (equal solve "Positions") '("ProveUnsolved" . "Positions")
 		       '("ProveUnsolved" . "All"))))
-       (vocname (if vocfile (file-name-nondirectory vocfile)))
-       (vocstring (if vocfile (with-temp-buffer
-				(insert-file-contents vocfile)
-				(buffer-substring-no-properties (point-min) (point-max))))))
-
-
+       (vocnames (mapconcat 'file-name-nondirectory vocfiles "::"))
+       (vocstring (if vocfiles (mizar-concat-vocs vocfiles))))
 
   ;; still TODO - will not work without output-buffer nonnil, works through mizar-it-remote
   (if solve
@@ -5977,9 +5984,9 @@ and put the verification message into OUTPUT-BUFFER.
 	 ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) 
 	 ("MODE" . "TEXT") ,solve-it
 	 ,(if positions (cons "Positions" positions))
-	 ,(if vocfile (cons "VocSource" "CONTENT"))
-	 ,(if vocfile (cons "VocName" vocname))
-	 ,(if vocfile (cons "VocContent" vocstring)) 
+	 ,(if vocfiles (cons "VocSource" "CONTENT"))
+	 ,(if vocfiles (cons "VocName" vocnames))
+	 ,(if vocfiles (cons "VocContent" vocstring)) 
 	 )
        output-buffer (not solve) pushback
        )
@@ -5991,9 +5998,9 @@ and put the verification message into OUTPUT-BUFFER.
 	    `(("Formula" . ,(buffer-substring-no-properties (point-min) (point-max))) 
 	      ("Name" . ,aname) ("MMLVersion" . ,mmlversion) ("Verify" . "1") 
 	      ("Parallelize" . ,(number-to-string mizar-remote-parallelization)) ("MODE" . "TEXT") ,solve-it
-	      ,(if vocfile (cons "VocSource" "CONTENT"))
-	      ,(if vocfile (cons "VocName" vocname))
-	      ,(if vocfile (cons "VocContent" vocstring)) 
+	      ,(if vocfiles (cons "VocSource" "CONTENT"))
+	      ,(if vocfiles (cons "VocName" vocnames))
+	      ,(if vocfiles (cons "VocContent" vocstring)) 
 	      )
 	    output-buffer (not solve)))
 	 (strlist (split-string res ar4mizar-separator))
@@ -6029,12 +6036,10 @@ the previous is set to `browse-url-generic') also the variable
 		(file-name-sans-extension
 		 fname)))
        (dir (file-name-directory (buffer-file-name)))
-       (vocfile (car (file-expand-wildcards (concat dir "../dict/*.voc") t)))
-       (vocname (if vocfile (file-name-nondirectory vocfile)))
+       (vocfiles (file-expand-wildcards (concat dir "../dict/*.voc") t))
+       (vocnames (mapconcat 'file-name-nondirectory vocfiles "::"))
        (mmlversion (mizar-mml-version))
-       (vocstring (if vocfile (with-temp-buffer
-				(insert-file-contents vocfile)
-				(htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))))
+       (vocstring (if vocfiles (htmlize-protect-string (mizar-concat-vocs vocfiles))))
        (requestfile (concat fname ".html"))
        (contents (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))
        (htmlcontents (concat 
@@ -6046,9 +6051,9 @@ the previous is set to `browse-url-generic') also the variable
 		      "\"> <INPUT TYPE=\"hidden\" NAME=\"HTMLize\" VALUE=\"1\">"
 		      "<INPUT TYPE=\"hidden\" NAME=\"Parallelize\" VALUE=\"" 
 		      (number-to-string mizar-remote-parallelization) "\">" 
-		      (if (not vocfile) "" 
+		      (if (not vocfiles) "" 
 			(concat "<INPUT TYPE=\"hidden\" NAME=\"VocSource\" VALUE=\"CONTENT\">"
-			"<INPUT TYPE=\"hidden\" NAME=\"VocName\" VALUE=\"" vocname "\">"
+			"<INPUT TYPE=\"hidden\" NAME=\"VocName\" VALUE=\"" vocnames "\">"
 			"<INPUT TYPE=\"hidden\" NAME=\"VocContent\" VALUE=\"" vocstring "\">"))
 		      (if htmlonly ""
 			           "<INPUT TYPE=\"hidden\" NAME=\"GenATP\" VALUE=\"1\">") 
