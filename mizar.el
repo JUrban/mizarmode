@@ -5948,6 +5948,7 @@ Calls `mizar-remote-solve'.
   (let ((l vocfiles))
     (while l 
       (insert-file-contents (car l))
+      (goto-char (point-max))
       (setq l (cdr l))
       (if l (insert "::::::"))))
   (buffer-substring-no-properties (point-min) (point-max))))
