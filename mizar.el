@@ -408,7 +408,7 @@ MoMM should be installed for this."
  "pred" "provided" "qua" "reconsider" "redefine" "reduce" "reducibility" "reflexivity" 
  "reserve" "struct" "such" "synonym" 
  "that" "then" "thesis" "when" "where" "with""is" 
- "associativity" "commutativity" "connectedness" "irreflexivity" "reduce" "reducibility"
+ "associativity" "commutativity" "connectedness" "irreflexivity" "to" 
  "reflexivity" "symmetry" "sethood" "uniqueness" "transitivity" "idempotence" 
  "asymmetry" "projectivity" "involutiveness")
 "*Mizar keywords not mentioned in other place."
