@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 10. MML Query</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 10. MML Query">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 10. MML Query">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="MML-Query"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_9.html#Using-Constructor-explanations" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Asking-arbitrary-queries" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_9.html#Constructor-explanations" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_11.html#Mizar-Proof-Advisor" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="MML-Query-1"></a>
+<h1 class="chapter">10. MML Query</h1>
+<a name="index-C_002dc-C_002dq"></a>
+
+<dl compact="compact">
+<dt> <kbd>C-c C-q</kbd></dt>
+<dd><p><code>query-start-entry</code>
+</p></dd>
+</dl>
+
+<p>MML Query is a semantic search tool and browser for the MML, 
+written by Grzegorz Bancerek. You can find it at 
+<a href="http://megrez.mizar.org/mmlquery/">http://megrez.mizar.org/mmlquery/</a>.
+</p>
+<p>In Mizar Mode, you can either ask MML Query for a meaning of
+a constructor, See section <a href="MizarMode_9.html#Using-Constructor-explanations">Using Constructor explanations</a>, or you can
+use it to send arbitrary queries to MML Query.
+</p>
+<dl>
+<dt><a name="index-mizar_002dquery_002dbrowser"></a><u>User Option:</u> <b>mizar-query-browser</b></dt>
+<dd><p>Browser for MML Query, we allow <code>'w3</code> or default.
+</p>
+<p>The default value is <code>nil</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-query_002dtext_002doutput"></a><u>Variable:</u> <b>query-text-output</b></dt>
+<dd><p>If non-nil, text output is required from MML Query.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-query_002dstart_002dentry"></a><u>Command:</u> <b>query-start-entry</b></dt>
+<dd><p>Start a new query in buffer *MML Query input*.
+</p></dd></dl>
+
+
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Asking-arbitrary-queries">10.1 Asking arbitrary queries</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">    
+</td></tr>
+</table>
+
+<hr size="6">
+<a name="Asking-arbitrary-queries"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#MML-Query" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_11.html#Mizar-Proof-Advisor" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#MML-Query" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#MML-Query" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_11.html#Mizar-Proof-Advisor" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Asking-arbitrary-queries-1"></a>
+<h2 class="section">10.1 Asking arbitrary queries</h2>
+<a name="index-C_002dc-C_002dc-2"></a>
+<a name="index-M_002dp"></a>
+<a name="index-M_002dn"></a>
+<a name="index-M_002ds"></a>
+<a name="index-M_002dr"></a>
+
+<p>Once you are in the buffer *MML Query Input* 
+(usually by running <kbd>C-c C-q</kbd> (<code>query-start-entry</code>)), 
+you can create and edit 
+an arbitrary query, and send it to MML Query.
+</p>
+<p>Following special bindings are available in that buffer:
+</p>
+<dl compact="compact">
+<dt> <kbd>C-c C-c</kbd>		</dt>
+<dd><p><code>query-send-entry</code>
+</p></dd>
+<dt> <kbd>M-p</kbd></dt>
+<dd><p><code>query-previous-squery</code>
+</p></dd>
+<dt> <kbd>M-n</kbd></dt>
+<dd><p><code>query-next-squery</code>
+</p></dd>
+<dt> <kbd>M-s</kbd>		</dt>
+<dd><p><code>query-squery-search-forward</code>
+</p></dd>
+<dt> <kbd>M-r</kbd></dt>
+<dd><p><code>query-squery-search-reverse</code>
+</p></dd>
+</dl>
+
+
+<dl>
+<dt><a name="index-query_002dsend_002dentry"></a><u>Command:</u> <b>query-send-entry</b></dt>
+<dd><p>Send the contents of the current buffer to MML Query.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-query_002dprevious_002dsquery"></a><u>Command:</u> <b>query-previous-squery</b><i> arg</i></dt>
+<dd><p>Cycle backwards through query-squery history.<br>
+With a numeric prefix <var>arg</var>, go back <var>arg</var> queries.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-query_002dnext_002dsquery"></a><u>Command:</u> <b>query-next-squery</b><i> arg</i></dt>
+<dd><p>Cycle forward through comment history.<br>
+With a numeric prefix <var>arg</var>, go forward <var>arg</var> queries.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-query_002dsquery_002dsearch_002dforward"></a><u>Command:</u> <b>query-squery-search-forward</b><i> str</i></dt>
+<dd><p>Search forwards through squery history for substring match of <var>str</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-query_002dsquery_002dsearch_002dreverse"></a><u>Command:</u> <b>query-squery-search-reverse</b><i> str</i></dt>
+<dd><p>Search backward through squery history for substring match of <var>str</var>.
+</p></dd></dl>
+
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#MML-Query" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_11.html#Mizar-Proof-Advisor" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

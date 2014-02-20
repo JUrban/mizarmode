@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 13. Proof Skeletons</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 13. Proof Skeletons">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 13. Proof Skeletons">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="Proof-Skeletons"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_12.html#Getting-MoMM-hints" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_14.html#Mizar-TWiki" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_12.html#MoMM" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_14.html#Mizar-TWiki" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Proof-Skeletons-1"></a>
+<h1 class="chapter">13. Proof Skeletons</h1>
+<a name="index-C_002dc-s"></a>
+<a name="index-skeletons"></a>
+
+<dl compact="compact">
+<dt>  <kbd>C-c s</kbd></dt>
+<dd><p><code>mizar-insert-skeleton</code>
+</p></dd>
+</dl>
+
+<p>You can use this feature to automatically create the basic
+skeleton proof steps for a proof of any formula.
+</p>
+<dl>
+<dt><a name="index-mizar_002dskeleton_002dlabels"></a><u>User Option:</u> <b>mizar-skeleton-labels</b></dt>
+<dd><p>If not nil, skeleton steps produced by &lsquo;<samp><code>mizar-insert-skeleton</code></samp>&rsquo; are labeled.<br>
+The labels are created by concatenating the value of 
+&lsquo;<samp><code>mizar-default-label-name</code></samp>&rsquo; with a label number, which increases throughout
+the skeleton from its initial value.
+The non nil values of this variable determine the initial default as follows
+</p>
+<p><code>'serial</code> is used for starting from the last skeleton label number + 1 (default),
+<code>'constant-one</code> always starts from 1,
+<code>'constant-zero</code> always starts from 0.
+</p>
+<p>The default value is <code>serial</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002ddefault_002dlabel_002dname"></a><u>User Option:</u> <b>mizar-default-label-name</b></dt>
+<dd><p>Default name of labels inserted when &lsquo;<samp><code>mizar-skeleton-labels</code></samp>&rsquo; is set.<br>
+This is appended with a label number.
+</p>
+<p>The default value is <code>&quot;Z&quot;</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dassume_002ditems_002dfunc"></a><u>User Option:</u> <b>mizar-assume-items-func</b></dt>
+<dd><p>The function creating assumption skeletons out of a parsed formula.<br>
+See &lsquo;<samp><code>mizar-default-assume-items</code></samp>&rsquo; for an example.
+This function is called for creating assumptions in the function
+&lsquo;<samp><code>mizar-default-skeleton-items</code></samp>&rsquo;.
+</p>
+<p>The default value is <code>mizar-default-assume-items</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dskeleton_002ditems_002dfunc"></a><u>User Option:</u> <b>mizar-skeleton-items-func</b></dt>
+<dd><p>The function creating proof skeletons out of a parsed formula.<br>
+See &lsquo;<samp><code>mizar-default-skeleton-items</code></samp>&rsquo; for an example.
+This function is called in the interactive function
+&lsquo;<samp><code>mizar-insert-skeleton</code></samp>&rsquo;.
+</p>
+<p>The default value is <code>mizar-default-skeleton-items</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dinsert_002dskeleton"></a><u>Command:</u> <b>mizar-insert-skeleton</b><i> beg end &amp;optional label-number</i></dt>
+<dd><p>Insert a proof skeleton for the formula starting at <var>beg</var> after point <var>end</var>.
+</p>
+<p>If &lsquo;<samp><code>mizar-skeleton-labels</code></samp>&rsquo; is set, prompt additionally for the
+first starting label number <var>label-number</var>, which should be an
+integer.  The labels are then generated using
+&lsquo;<samp><code>mizar-default-label-name</code></samp>&rsquo;.
+</p>
+<p>For this command to work properly, the lisppars utility needs to
+be installed (which probably is the case, since lisppars has been
+distributed with Mizar since version 6.4), and the Mizar parser
+must be able to access the formula contained within the region
+delimited by <var>beg</var> and <var>end</var> (thus, it must not be within the scope
+of a comment).
+</p>
+<p>This command calls &lsquo;<samp><code>mizar-parse-region-fla</code></samp>&rsquo; to parse the formula
+in the region delimiated by <var>beg</var> and <var>end</var>.  It then creates the
+desired skeleton by first using &lsquo;<samp><code>mizar-skeleton-items-func</code></samp>&rsquo;, and
+then, for pretty printing, by using &lsquo;<samp><code>mizar-skeleton-string</code></samp>&rsquo;.
+</p></dd></dl>
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_12.html#MoMM" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_14.html#Mizar-TWiki" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

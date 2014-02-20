@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: Mizar Mode</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: Mizar Mode">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: Mizar Mode">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<table><tr><td>&nbsp;</td><td><pre class="format">START-INFO-DIR-ENTRY 
+* Mizar Mode: (MizarMode).           Emacs Authoring Environment for Mizar
+END-INFO-DIR-ENTRY
+</pre></td></tr></table>
+
+
+
+
+
+
+
+<a name="Top"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Mizar-Mode"></a>
+<h1 class="settitle">Mizar Mode</h1>
+
+<p>This file documents version 1.98 of <b>Mizar Mode</b>, an
+Emacs authoring environment for the Mizar system.
+</p>
+<p>Mizar Mode 1.98 has been tested with 
+ GNU Emacs 21.2 and Windows port of GNU Emacs 
+21.2. 
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="MizarMode_1.html#Prerequisities">1. Prerequisities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">              
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_2.html#Basic-Functions">2. Basic Functions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_3.html#Summaries-and-Hide_002fShow">3. Summaries and Hide/Show</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">     
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_4.html#Running-Mizar-utilities">4. Running Mizar utilities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">     
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_5.html#Miscellaneous-editing">5. Miscellaneous editing</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">       
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_6.html#Browsing-Functions">6. Browsing Functions</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">          
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_7.html#Grepping-in-MML">7. Grepping in MML</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_8.html#Miscellaneous-Emacs-facilities-for-fast-mizaring">8. Miscellaneous Emacs facilities for fast mizaring</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_9.html#Constructor-explanations">9. Constructor explanations</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">    
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_10.html#MML-Query">10. MML Query</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                   
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_11.html#Mizar-Proof-Advisor">11. Mizar Proof Advisor</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">         
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_12.html#MoMM">12. MoMM</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                        
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_13.html#Proof-Skeletons">13. Proof Skeletons</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                        
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_14.html#Mizar-TWiki">14. Mizar TWiki</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                 
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_15.html#Function-Index">Function and Command Index</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">              
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_16.html#Variable-Index">Variable and User Option Index</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">              
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_17.html#Keystroke-Index">Keystroke Index</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_18.html#Concept-Index">Concept Index</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">               
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment"> &mdash; The Detailed Node Listing &mdash;
+
+Prerequisities
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_1.html#Installation">1.1 Installation</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_1.html#Emacs-basics">1.2 Emacs basics</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">                
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Installation
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_1.html#XEmacs-compatibility">1.1.1 XEmacs compatibility</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">        
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Basic Functions
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_2.html#Running-Mizar">2.1 Running Mizar</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">               
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_2.html#Indentation-and-commenting">2.2 Indentation and commenting</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_2.html#Error-explanations-and-movement">2.3 Error explanations and movement</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Summaries and Hide/Show
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_3.html#Hide_002fShow-_002d-Hiding-proofs">3.1 Hide/Show - Hiding proofs</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">   
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Running Mizar utilities
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_4.html#Simple-constructor-and-vocabulary-utilities">4.1 Simple constructor and vocabulary utilities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_4.html#Irrelevant-Utilities">4.2 Irrelevant Utilities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">        
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_4.html#Other-Utilities">4.3 Other Utilities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Simple constructor and vocabulary utilities
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_4.html#Constructors-and-user-symbols">4.1.1 Constructors and user symbols</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Miscellaneous editing
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_5.html#Proof-checking">5.1 Proof checking</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">              
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_5.html#Then-placement">5.2 Then placement</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">              
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Miscellaneous Emacs facilities for fast mizaring
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_8.html#Imenu-and-Speedbar-support">8.1 Imenu and Speedbar support</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_8.html#Abbreviations">8.2 Abbreviations</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">               
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Constructor explanations
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_9.html#How-Constructor-explanations-work">9.1 How Constructor explanations work</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_9.html#Getting-Constructor-explanations">9.2 Getting Constructor explanations</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_9.html#Using-Constructor-explanations">9.3 Using Constructor explanations</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+MML Query
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_10.html#Asking-arbitrary-queries">10.1 Asking arbitrary queries</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">    
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+MoMM
+
+</pre></th></tr><tr><td align="left" valign="top"><a href="MizarMode_12.html#Installing-MoMM">12.1 Installing MoMM</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_12.html#Starting-MoMM-in-Mizar-Mode">12.2 Starting MoMM in Mizar Mode</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="MizarMode_12.html#Getting-MoMM-hints">12.3 Getting MoMM hints</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">          
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr></table>
+
+
+
+<hr size="1">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

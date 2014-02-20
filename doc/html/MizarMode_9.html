@@ -1,0 +1,343 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 9. Constructor explanations</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 9. Constructor explanations">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 9. Constructor explanations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="Constructor-explanations"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_8.html#Abbreviations" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#How-Constructor-explanations-work" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_8.html#Miscellaneous-Emacs-facilities-for-fast-mizaring" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_10.html#MML-Query" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Constructor-explanations-1"></a>
+<h1 class="chapter">9. Constructor explanations</h1>
+<a name="index-constructor-information"></a>
+
+<p>Constructor explanations are used to access and query the semantic 
+(constructor) level of the Mizar formulas. 
+See section <a href="MizarMode_4.html#Constructors-and-user-symbols">Constructors and user symbols</a>, for more on constructors.
+</p>
+<p>Constructor information can help a lot, especially in a situation when
+one is not sure how Mizar is resolving overloaded symbols.  Also,
+searching on the level of constructors is often more useful than
+searching on the level of symbols.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#How-Constructor-explanations-work">9.1 How Constructor explanations work</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Getting-Constructor-explanations">9.2 Getting Constructor explanations</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Using-Constructor-explanations">9.3 Using Constructor explanations</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+</table>
+
+<hr size="6">
+<a name="How-Constructor-explanations-work"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Constructor-explanations" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Getting-Constructor-explanations" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Constructor-explanations" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Constructor-explanations" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_10.html#MML-Query" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="How-Constructor-explanations-work-1"></a>
+<h2 class="section">9.1 How Constructor explanations work</h2>
+
+<p>Since the translation of the Mizar article to constructor level is
+nontrivial, we use Mizar itself to get access to that level rather than
+emulating that process in <code>MizarMode</code>.  Currently, Mizar produces
+intermediate files when processing an article, and it is through these
+intermediate files that we can gain access to the desired linguistic
+level.
+</p>
+<p>This has some drawbacks:
+</p><ol>
+<li> Mizar has to be run before the constructor info is available.
+</li><li> We have to ensure synchronization of the editing buffer with
+the intermediate file containing the constructor information.
+</li><li> When the &ldquo;@proof&rdquo; keyword is used to prevent proof checking, 
+the constructor-level information is not available for the 
+nonchecked part of article.
+</li></ol>
+<p>We solve the second problem by attaching the constructor information to
+the formulas in the editing buffer as a text property.  This attachment
+is done immediately after verifying.  The places where this property is
+attached are clickable with <kbd>&lt;S-down-mouse-3&gt;</kbd>
+(<code>mizar-show-constrs-other-window</code>), which displays the constructor
+information for that place.  The constructor information is translated
+according to <code>mizar-expl-kind</code>) in the buffer *Constructors list*.
+</p>
+<p>Putting the constructor info into the editing buffer usually slows down
+the verifying functions, since more work is being done by Emacs than
+without constructor explanations.  Nonetheless, for articles of average
+size the slowdown is insignificant. If one wishes to use constructor
+explanations while working on large articles, the &ldquo;@proof&rdquo; construct,
+See section <a href="MizarMode_5.html#Proof-checking">Proof checking</a>, since it focuses the verification process by
+ignoring certain parts of the article, may be useful.
+</p>
+<hr size="6">
+<a name="Getting-Constructor-explanations"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#How-Constructor-explanations-work" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Using-Constructor-explanations" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Constructor-explanations" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Constructor-explanations" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_10.html#MML-Query" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Getting-Constructor-explanations-1"></a>
+<h2 class="section">9.2 Getting Constructor explanations</h2>
+<a name="index-_003cS_002ddown_002dmouse_002d3_003e-1"></a>
+
+<dl compact="compact">
+<dt> <kbd>&lt;S-down-mouse-3&gt;</kbd> </dt>
+<dd><p><code>mizar-show-constrs-other-window</code>
+</p></dd>
+</dl>
+
+<p>To use constructor explanations, set the Verbosity in the menu to any
+value different from &ldquo;none&rdquo;. (This influences the value of the
+variables <code>mizar-do-expl</code> and <code>mizar-expl-kind</code>.)
+</p>
+<p>If you are new to constructor explanations, we recommend that you also
+enable the option <code>Underline explanation points</code>.  When this option
+is enabled, the places in the buffer where constructor explanations are
+available will be clearly visible.  As was explained before, one must
+run Mizar on the article that one is working on before constructor
+explanations will be in effect, See section <a href="#How-Constructor-explanations-work">How Constructor explanations work</a>.
+</p>
+
+<dl>
+<dt><a name="index-mizar_002ddo_002dexpl"></a><u>User Option:</u> <b>mizar-do-expl</b></dt>
+<dd><p>Use constructor explanations.<br>
+Put constructor format of <code>'by'</code> items as properties after verifier run.
+The constructor representation can then be displayed 
+(according to the value of &lsquo;<samp><code>mizar-expl-kind</code></samp>&rsquo;) and queried.
+</p>
+<p>The default value is <code>nil</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dexpl_002dkind"></a><u>User Option:</u> <b>mizar-expl-kind</b></dt>
+<dd><p>Variable controlling the display of constructor representation of formulas.<br>
+Has effect iff &lsquo;<samp><code>mizar-do-expl</code></samp>&rsquo; is non-nil.
+Possible values are now 
+</p>
+<p><code>'sorted</code> for sorted list of constructors in absolute notation.
+<code>'constructors</code> for list of constructors in absolute notation,
+<code>'mmlquery</code> behaves as <code>'sorted</code>, but constructors are inserted
+directly into the <strong>mmlquery</strong> input buffer.
+The mmlquery interpreter has to be installed for this,
+see &lsquo;<samp><code>mmlquery-program-name</code></samp>&rsquo;.
+<code>'translate</code> for expanded formula in absolute notation,
+<code>'raw</code> for the internal Mizar representation,
+<code>'xml</code> for xml internal Mizar representation
+</p>
+<p>The values <code>'xml</code> and <code>'raw</code> are for debugging only, do
+not use them to get constructor explanations.
+</p>
+<p>The default value is <code>sorted</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dunderline_002dexpls"></a><u>User Option:</u> <b>mizar-underline-expls</b></dt>
+<dd><p>If t, the clickable explanation spots in mizar buffer are underlined.<br>
+Has effect iff &lsquo;<samp><code>mizar-do-expl</code></samp>&rsquo; is non-nil.
+</p>
+<p>The default value is <code>nil</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dshow_002dconstrs_002dother_002dwindow"></a><u>Command:</u> <b>mizar-show-constrs-other-window</b><i> event</i></dt>
+<dd><p>Show constructors of the inference that was just clicked on.<br>
+The constructors are translated according to the variable 
+&lsquo;<samp><code>mizar-expl-kind</code></samp>&rsquo;, and shown in the buffer *Constructors list*
+or <strong>mmlquery</strong> if &lsquo;<samp><code>mizar-expl-kind</code></samp>&rsquo; is <code>'mmlquery</code>.
+The variable &lsquo;<samp><code>mizar-do-expl</code></samp>&rsquo; should be non-nil.
+</p></dd></dl>
+
+
+<hr size="6">
+<a name="Using-Constructor-explanations"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Getting-Constructor-explanations" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_10.html#MML-Query" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Constructor-explanations" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Constructor-explanations" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_10.html#MML-Query" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Using-Constructor-explanations-1"></a>
+<h2 class="section">9.3 Using Constructor explanations</h2>
+<a name="index-_003cmouse_002d3_003e-1"></a>
+<a name="index-M_002d_002e-1"></a>
+<a name="index-_003cmouse_002d2_003e"></a>
+<a name="index-RET"></a>
+<a name="index-C_002dc-C_002dc-1"></a>
+
+<p>Once you have a constructor explanation (stored in the buffer
+*Constructors list*) for a given formula you can get useful information.
+</p>
+<p>Available operations now include 
+</p><ul>
+<li> Browsing the semantically disambiguated MMLQuery abstract (GABs, see below)
+</li><li> Asking MML Query (See section <a href="MizarMode_10.html#MML-Query">MML Query</a>,) for the meaning of a constructor.
+</li><li> Using tags (See section <a href="MizarMode_6.html#Browsing-Functions">Browsing Functions</a>,) to see the definition 
+      of a constructor.
+</li><li> Sending the whole formula to the Mizar Proof Advisor,
+See section <a href="MizarMode_11.html#Mizar-Proof-Advisor">Mizar Proof Advisor</a>.
+</li></ul>
+
+<p>The MMLQuery abstracts (GABs) are now the preferred browsing methods,
+however they are not yet distributed with Mizar. They are downloadable
+from Grezgorz Bancerek&rsquo;s site 
+<a href="http://merak.pb.bialystok.pl/mmlquery/downloads/">http://merak.pb.bialystok.pl/mmlquery/downloads/</a>. The detailed
+description is at <a href="http://kti.mff.cuni.cz/~urban/integration.pdf">http://kti.mff.cuni.cz/~urban/integration.pdf</a>.
+</p>
+<p>The following special keybindings are available in the buffer
+*Constructors list*.
+</p>
+<dl compact="compact">
+<dt> <kbd>&lt;mouse-3&gt;</kbd></dt>
+<dd><p><code>mizar-mouse-cstr-tag</code>
+</p></dd>
+<dt> <kbd>M-.</kbd></dt>
+<dd><p><code>mizar-kbd-cstr-tag</code>
+</p></dd>
+<dt> <kbd>&lt;mouse-2&gt;</kbd></dt>
+<dd><p><code>mizar-mouse-ask-query</code>
+</p></dd>
+<dt> <kbd>RET</kbd></dt>
+<dd><p><code>mizar-kbd-ask-query</code>
+</p></dd>
+<dt> <kbd>C-c C-c</kbd></dt>
+<dd><p><code>mizar-ask-advisor</code>
+</p></dd>
+</dl>
+
+<dl>
+<dt><a name="index-mizar_002dmouse_002dcstr_002dtag"></a><u>Command:</u> <b>mizar-mouse-cstr-tag</b><i> event</i></dt>
+<dd><p>Find the definition of the mmlquery resource we clicked on.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dkbd_002dcstr_002dtag"></a><u>Command:</u> <b>mizar-kbd-cstr-tag</b><i> pos</i></dt>
+<dd><p>Find the definition of the mmlquery resource at position <var>pos</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dmouse_002dask_002dquery"></a><u>Command:</u> <b>mizar-mouse-ask-query</b><i> event</i></dt>
+<dd><p>Ask MML Query about the mmlquery resource we clicked on.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dkbd_002dask_002dquery"></a><u>Command:</u> <b>mizar-kbd-ask-query</b><i> pos</i></dt>
+<dd><p>Ask MML Query about the mmlquery resource at position <var>pos</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dask_002dadvisor"></a><u>Command:</u> <b>mizar-ask-advisor</b></dt>
+<dd><p>Send the contents of the *Constr Explanations* buffer to Mizar Proof Advisor.<br>
+Resulting advice is shown in the buffer *Proof Advice*, where normal tag-browsing
+keyboard bindings can be used to view the suggested references.
+</p></dd></dl>
+
+
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Constructor-explanations" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_10.html#MML-Query" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

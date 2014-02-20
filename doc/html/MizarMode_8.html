@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 8. Miscellaneous Emacs facilities for fast mizaring</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 8. Miscellaneous Emacs facilities for fast mizaring">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 8. Miscellaneous Emacs facilities for fast mizaring">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="Miscellaneous-Emacs-facilities-for-fast-mizaring"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_7.html#Grepping-in-MML" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Imenu-and-Speedbar-support" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_7.html#Grepping-in-MML" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_9.html#Constructor-explanations" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Miscellaneous-Emacs-facilities-for-fast-mizaring-1"></a>
+<h1 class="chapter">8. Miscellaneous Emacs facilities for fast mizaring</h1>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Imenu-and-Speedbar-support">8.1 Imenu and Speedbar support</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Abbreviations">8.2 Abbreviations</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">               
+</td></tr>
+</table>
+
+<hr size="6">
+<a name="Imenu-and-Speedbar-support"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Miscellaneous-Emacs-facilities-for-fast-mizaring" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Abbreviations" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Miscellaneous-Emacs-facilities-for-fast-mizaring" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Miscellaneous-Emacs-facilities-for-fast-mizaring" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_9.html#Constructor-explanations" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Imenu-and-Speedbar-support-1"></a>
+<h2 class="section">8.1 Imenu and Speedbar support</h2>
+<a name="index-imenu"></a>
+<a name="index-speedbar"></a>
+
+<p>When your article becomes large, it starts to be difficult
+to look up in it various definitions, theorems and other items.
+One solution is to use the Hide/Show commands, 
+See section <a href="MizarMode_3.html#Hide_002fShow-_002d-Hiding-proofs">Hide/Show - Hiding proofs</a>,
+to hide the proofs that you do not need to see.
+</p>
+
+<p>The Imenu and Speedbar facilities on the other hand simulate 
+tag-like methods, generating index of important items in the 
+edited buffer on demand. 
+The index is then accessible either from menu, or from
+the special Speedbar frame. See <a href="../emacs/Imenu.html#Imenu">Imenu: (emacs)Imenu</a>, and
+See <a href="../emacs/Speedbar.html#Speedbar">Speedbar: (emacs)Speedbar</a> for more on these facilities.
+</p>
+
+<p>In Mizar Mode, Imenu is now instructed to include into the index 
+the following items from Mizar articles:
+</p>
+<ul>
+<li> Structures
+</li><li> Modes
+</li><li> Attributes
+</li><li> Predicates
+</li><li> Functors
+</li><li> Clusters 
+</li><li> Schemes
+</li><li> Named Defintions
+</li><li> Named Theorems
+</li></ul>
+
+<hr size="6">
+<a name="Abbreviations"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Imenu-and-Speedbar-support" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_9.html#Constructor-explanations" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Miscellaneous-Emacs-facilities-for-fast-mizaring" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Miscellaneous-Emacs-facilities-for-fast-mizaring" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_9.html#Constructor-explanations" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Abbreviations-1"></a>
+<h2 class="section">8.2 Abbreviations</h2>
+<a name="index-abbreviations"></a>
+<a name="index-dynamic-abbreviations"></a>
+
+<p>Emacs can support automatic expansion of
+abbreviations as you type, See <a href="../emacs/Abbrevs.html#Abbrevs">Abbrevs: (emacs)Abbrevs</a>.
+</p>
+<p>You can use them to make shortcuts for the long strings that
+you will write often in Mizar Mode - e.g. &ldquo;theorem&rdquo;, 
+&ldquo;correctness&rdquo;, &ldquo;definition&rdquo;, etc.
+</p>
+<p>Below are some found useful by author, you can copy them to your
+&lsquo;<tt>.abbrev_defs</tt>&rsquo; file. 
+The up-to-date version of an example &lsquo;<tt>.abbrev_defs</tt>&rsquo; file
+is downloadable from the Mizar Mode CVS at
+<a href="http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/">http://kti.ms.mff.cuni.cz/cgi-bin/viewcvs.cgi/mizarmode/</a>.
+You can add more abbreviations by running
+<kbd>C-x a l</kbd> (<code>add-mode-abbrev</code>).
+</p>
+<p>Finally, if you are too lazy to define your own abbreviations, 
+Emacs also provides &ldquo;dynamic&rdquo; completion by running
+<kbd>M-/</kbd> (<code>dabbrev-expand</code>), 
+See <a href="../emacs/Dynamic-Abbrevs.html#Dynamic-Abbrevs">Dynamic Abbrevs: (emacs)Dynamic Abbrevs</a>.
+</p>
+
+
+<table><tr><td>&nbsp;</td><td><pre class="lisp">(define-abbrev-table 'mizar-mode-abbrev-table '(
+    (&quot;contra&quot; &quot;contradiction&quot; nil 0)
+    (&quot;refl&quot; &quot;reflexivity&quot; nil 0)
+    (&quot;hn&quot; &quot;hence&quot; nil 0)
+    (&quot;hl&quot; &quot;holds&quot; nil 0)
+    (&quot;pf&quot; &quot;proof&quot; nil 0)
+    (&quot;cons&quot; &quot;consider&quot; nil 0)
+    (&quot;pc&quot; &quot;per cases&quot; nil 0)
+    (&quot;coh&quot; &quot;coherence&quot; nil 0)
+    (&quot;fs&quot; &quot;FinSequence&quot; nil 0)
+    (&quot;hb&quot; &quot;hereby&quot; nil 0)
+    (&quot;sct&quot; &quot;such that&quot; nil 0)
+    (&quot;tco&quot; &quot;the carrier of&quot; nil 0)
+    (&quot;reg&quot; &quot;regular&quot; nil 0)
+    (&quot;ts&quot; &quot;thesis&quot; nil 0)
+    (&quot;rec&quot; &quot;reconsider&quot; nil 0)
+    (&quot;eq&quot;  &quot;equals&quot; nil 0)
+    (&quot;tm&quot;  &quot;theorem&quot; nil 0)
+    (&quot;el&quot; &quot;Element&quot; nil 0)
+    (&quot;supp&quot; &quot;suppose&quot; nil 0)
+    (&quot;rv&quot;   &quot;reserve&quot; nil 0)
+    (&quot;corr&quot; &quot;correctness&quot; nil 0)
+    (&quot;coh&quot; &quot;coherence&quot; nil 0)
+    (&quot;bei&quot; &quot;being&quot; nil 0)
+    (&quot;ass&quot; &quot;assume&quot; nil 0)
+    (&quot;monot&quot; &quot;monotone&quot; nil 0)
+    (&quot;uniq&quot; &quot;uniqueness&quot; nil 0)
+    (&quot;df&quot;  &quot;definition&quot; nil 0)
+    (&quot;cl&quot; &quot;cluster&quot; nil 0)
+    (&quot;exi&quot; &quot;existence&quot; nil 0)
+    (&quot;redef&quot; &quot;redefine&quot; nil 0)
+    (&quot;carr&quot; &quot;carrier&quot; nil 0)
+    (&quot;imp&quot;  &quot;implies&quot; nil 0)
+    (&quot;e&quot; &quot;end;&quot; nil 0)
+    ))
+</pre></td></tr></table>
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Miscellaneous-Emacs-facilities-for-fast-mizaring" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_9.html#Constructor-explanations" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

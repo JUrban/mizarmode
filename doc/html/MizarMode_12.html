@@ -1,0 +1,273 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 12. MoMM</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 12. MoMM">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 12. MoMM">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="MoMM"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_11.html#Mizar-Proof-Advisor" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Installing-MoMM" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_11.html#Mizar-Proof-Advisor" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_13.html#Proof-Skeletons" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="MoMM-1"></a>
+<h1 class="chapter">12. MoMM</h1>
+<a name="index-momm"></a>
+
+<p>MoMM is a matching, interreduction and database tool, downloadable from
+<a href="http://kti.ms.mff.cuni.cz/~urban/MoMM/MoMM.tar.gz">http://kti.ms.mff.cuni.cz/~urban/MoMM/MoMM.tar.gz</a>.
+</p>
+<p>It can load all of the Mizar theorems - 
+now about 60000 clauses taking about 120M RAM - and tell you very 
+quickly, if a claim you try to prove is subsumed by any of them.
+</p>
+<p>Besides, there are about 700000 clauses created by logically correct 
+generalization of all of the simple facts (simple justifications) 
+ever proved by Mizar, that can additionally be loaded and used in 
+exactly the same manner.
+</p>
+<p>MoMM is based on Stephan Schulz&rsquo;s CLIB theorem proving library,
+available at 
+<a href="http://www4.informatik.tu-muenchen.de/~schulz/WORK/eprover.html">http://www4.informatik.tu-muenchen.de/~schulz/WORK/eprover.html</a>,
+making use of its very efficient implementation and indexing, and 
+adding Mizar-specific features.
+</p>
+<p>Modified verifier (&lsquo;<tt>tptpver</tt>&rsquo;) generating MoMM problems from *4 errors 
+(inferences rejected by the Mizar checker) is available in the 
+MoMM distribution.
+</p>
+<p>You can also add your own articles to the database used by MoMM
+for the matching, using the MoMM exporter (&lsquo;<tt>tptpexp</tt>&rsquo;) and
+the additional &lsquo;<tt>relcprem</tt>&rsquo; tool from the MoMM distribution.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Installing-MoMM">12.1 Installing MoMM</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Starting-MoMM-in-Mizar-Mode">12.2 Starting MoMM in Mizar Mode</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Getting-MoMM-hints">12.3 Getting MoMM hints</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">          
+</td></tr>
+</table>
+
+
+<hr size="6">
+<a name="Installing-MoMM"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#MoMM" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Starting-MoMM-in-Mizar-Mode" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#MoMM" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#MoMM" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_13.html#Proof-Skeletons" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Installing-MoMM-1"></a>
+<h2 class="section">12.1 Installing MoMM</h2>
+
+<p>Download from <a href="http://kti.ms.mff.cuni.cz/~urban/MoMM/MoMM.tar.gz">http://kti.ms.mff.cuni.cz/~urban/MoMM/MoMM.tar.gz</a>,
+and unpack the archive into the directory &lsquo;<tt>$MIZFILES/MoMM</tt>&rsquo;. 
+</p>
+<p>If it is not possible for you, unpack to arbitrary directory,
+and then set the Mizar Mode variable <code>mizar-momm-dir</code>.
+</p>
+<p>That&rsquo;s all.
+</p>
+<dl>
+<dt><a name="index-mizar_002dmomm_002ddir"></a><u>User Option:</u> <b>mizar-momm-dir</b></dt>
+<dd><p>Directory containing the MoMM distribution.
+</p>
+<p>The default value is <code>&quot;$MIZFILES/MoMM/&quot;</code>.
+</p></dd></dl>
+
+
+<hr size="6">
+<a name="Starting-MoMM-in-Mizar-Mode"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Installing-MoMM" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Getting-MoMM-hints" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#MoMM" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#MoMM" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_13.html#Proof-Skeletons" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Starting-MoMM-in-Mizar-Mode-1"></a>
+<h2 class="section">12.2 Starting MoMM in Mizar Mode</h2>
+
+<p>To be able to use MoMM, you have to start it and load it
+with examples from other MML articles.
+Several functions and variables controlling this are described
+here, the most useful are available from menu.
+</p>
+<dl>
+<dt><a name="index-mizar_002duse_002dmomm"></a><u>User Option:</u> <b>mizar-use-momm</b></dt>
+<dd><p>If t, errors *4 are clickable, trying to get MoMM&rsquo;s hints.<br>
+MoMM should be installed for this.
+</p>
+<p>The default value is <code>nil</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dmomm_002dload_002dtptp"></a><u>User Option:</u> <b>mizar-momm-load-tptp</b></dt>
+<dd><p>If t, the simple justification clause bases are loaded into MoMM too.
+</p>
+<p>The default value is <code>t</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002drun_002dmomm_002ddefault"></a><u>Command:</u> <b>mizar-run-momm-default</b><i> &amp;optional aname thsdirs tptp</i></dt>
+<dd><p>Run MoMM for article <var>aname</var>.<br>
+Load theorems from all its directive filenames.
+If <var>thsdirs</var> is non-nil, use the theorem directive only.
+Complete typetable is loaded, which makes later on demand
+loading with &lsquo;<samp><code>mizar-momm-add-files</code></samp>&rsquo; possible.
+Use <var>tptp</var> to load the tptp files (non-theorem information) too.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002drun_002dmomm"></a><u>Command:</u> <b>mizar-run-momm</b></dt>
+<dd><p>Get type, clause and termbank files for running MoMM and run it.<br>
+Default process filter is used.  Verify that the default argument
+files exist first.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dmomm_002dadd_002dfiles"></a><u>Command:</u> <b>mizar-momm-add-files</b><i> tlist &amp;optional tptp</i></dt>
+<dd><p>Add ths files from <var>tlist</var> into running MoMM.<br>
+The type-table must be loaded on start,
+e.g. by running MoMM with all.typ.
+If <var>tptp</var>, load tptp files too.  Current directory is searched first,
+then the MoMM db.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002drun_002dmomm_002dfull"></a><u>Command:</u> <b>mizar-run-momm-full</b></dt>
+<dd><p>Fast load MoMM with the full theorems db.<br>
+This takes about <var>120m</var> in MoMM 0.2.
+</p></dd></dl>
+
+<hr size="6">
+<a name="Getting-MoMM-hints"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Starting-MoMM-in-Mizar-Mode" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_13.html#Proof-Skeletons" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#MoMM" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#MoMM" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_13.html#Proof-Skeletons" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Getting-MoMM-hints-1"></a>
+<h2 class="section">12.3 Getting MoMM hints</h2>
+<a name="index-_003cS_002ddown_002dmouse_002d3_003e-2"></a>
+
+<dl compact="compact">
+<dt> <kbd>&lt;S-down-mouse-3&gt;</kbd></dt>
+<dd><p><code>mizar-ask-momm</code>
+</p></dd>
+</dl>
+
+<p>After starting MoMM, you can use it to get hints for
+formulas rejected by the checker (formulas that gave *4 errors).
+</p>
+<p>The *4 errors become clickable with <kbd>&lt;S-down-mouse-3&gt;</kbd>,
+and MoMM&rsquo;s results are shown in the buffer *MoMM&rsquo;s Hints*.
+</p>
+<dl>
+<dt><a name="index-mizar_002dask_002dmomm"></a><u>Command:</u> <b>mizar-ask-momm</b><i> event</i></dt>
+<dd><p>Ask MoMM for hints on an error at click <var>event</var>.<br>
+The results are put into the buffer *MoMM&rsquo;s Hints*.
+</p></dd></dl>
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#MoMM" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_13.html#Proof-Skeletons" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

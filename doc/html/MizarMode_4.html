@@ -1,0 +1,359 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 4. Running Mizar utilities</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 4. Running Mizar utilities">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 4. Running Mizar utilities">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="Running-Mizar-utilities"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_3.html#Hide_002fShow-_002d-Hiding-proofs" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Simple-constructor-and-vocabulary-utilities" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_3.html#Summaries-and-Hide_002fShow" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Running-Mizar-utilities-1"></a>
+<h1 class="chapter">4. Running Mizar utilities</h1>
+<a name="index-Mizar-utilities"></a>
+
+<p>Here we deescribe how to use Mizar Mode, to run various compiled Mizar
+utilities provided in the Mizar distribution. 
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Simple-constructor-and-vocabulary-utilities">4.1 Simple constructor and vocabulary utilities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Irrelevant-Utilities">4.2 Irrelevant Utilities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">        
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Other-Utilities">4.3 Other Utilities</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">             
+</td></tr>
+</table>
+
+<hr size="6">
+<a name="Simple-constructor-and-vocabulary-utilities"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Constructors-and-user-symbols" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Simple-constructor-and-vocabulary-utilities-1"></a>
+<h2 class="section">4.1 Simple constructor and vocabulary utilities</h2>
+<a name="index-C_002dc-C_002df"></a>
+<a name="index-C_002dc-C_002dl"></a>
+<a name="index-C_002dc-C_002dt"></a>
+
+<p>The <code>findvoc</code>, <code>listvoc</code> and <code>constr</code> programs are
+utilities included in the Mizar distribution.  (See section <a href="MizarMode_9.html#Constructor-explanations">Constructor explanations</a>, for more utilities working on the constructor
+representation of Mizar formulas.)  Corresponding to these three
+utilities are the following <code>MizarMode</code>
+commands<a name="DOCF1" href="MizarMode_fot.html#FOOT1">(1)</a>.
+</p>
+<dl compact="compact">
+<dt>  <kbd>C-c C-f</kbd> </dt>
+<dd><p><code>mizar-findvoc</code>
+</p></dd>
+<dt>  <kbd>C-c C-l</kbd> </dt>
+<dd><p><code>mizar-listvoc</code>
+</p></dd>
+<dt>  <kbd>C-c C-t</kbd> </dt>
+<dd><p><code>mizar-constr</code>
+</p></dd>
+</dl>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Constructors-and-user-symbols">4.1.1 Constructors and user symbols</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+</table>
+
+
+<dl>
+<dt><a name="index-mizar_002dfindvoc"></a><u>Command:</u> <b>mizar-findvoc</b></dt>
+<dd><p>Find vocabulary for a symbol.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dlistvoc"></a><u>Command:</u> <b>mizar-listvoc</b></dt>
+<dd><p>List vocabulary.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dconstr"></a><u>Command:</u> <b>mizar-constr</b></dt>
+<dd><p>Show required constructors files.<br>
+Constructor files needed for Mizar theorems, definitions, 
+schemes or complete articles can be queried.
+</p></dd></dl>
+
+<hr size="6">
+<a name="Constructors-and-user-symbols"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Simple-constructor-and-vocabulary-utilities" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Irrelevant-Utilities" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Simple-constructor-and-vocabulary-utilities" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Constructors-and-user-symbols-1"></a>
+<h3 class="subsection">4.1.1 Constructors and user symbols</h3>
+<a name="index-constructors"></a>
+<a name="index-user-symbols"></a>
+<a name="index-vocabulary"></a>
+
+<p>The Mizar language is overloaded on the symbol level.  For example, the
+sumbol &rsquo;+&rsquo; can be used for various operations, such as the sum of two
+real numbers, the sum of two linear tranformations, or the sum of two
+group elements.  Thus, a symbol may have many meanings.  Before checking
+a proof, Mizar disambiguates overloaded symbols and replaces them with
+so-called <b>constructors</b>.
+</p>
+<p>Unlike symbols, constructors are unambiguous.  Thus, in the statement
+</p><pre class="verbatim">for V being RealLinearSpace
+for a, b being Real
+for L being Linear_Combination of V holds a * (b * L) = (a * b) * L
+</pre><p>(which is theorem RLVECT_2:70), the symbol &lsquo;*&rsquo; clearly has two meanings.
+On the left hand side of the equation &lsquo;*&rsquo; is used as a binary operation
+between terms of type &lsquo;Real&rsquo; and &lsquo;Linear_Combination of V&rsquo;, where &lsquo;V&rsquo;
+has type &lsquo;RealLinearSpace&rsquo;.  On the left hand side the first occurence
+of &lsquo;*&rsquo; denotes a binary operation between terms of type Real.  When
+checking a proof, Mizar assigns different constructors to these
+different occurences of &lsquo;*&rsquo;.  (In the example above, there are four
+occurences of &lsquo;*&rsquo; but only two constructors, viz., meanings, are
+relevant.)
+</p>
+<p>Mizar formulas.  Mizar tools such as MML Query See section <a href="MizarMode_10.html#MML-Query">MML Query</a>, Mizar
+Proof Advisor See section <a href="MizarMode_11.html#Mizar-Proof-Advisor">Mizar Proof Advisor</a>, and MoMM See section <a href="MizarMode_12.html#MoMM">MoMM</a>, often work
+with constructor representation of statements.
+</p>
+<hr size="6">
+<a name="Irrelevant-Utilities"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Constructors-and-user-symbols" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Other-Utilities" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Irrelevant-Utilities-1"></a>
+<h2 class="section">4.2 Irrelevant Utilities</h2>
+<a name="index-C_002dc-C_002dh"></a>
+<a name="index-C_002dc-TAB"></a>
+<a name="index-C_002dc-C_002do"></a>
+<a name="index-C_002dc-C_002ds"></a>
+<a name="index-C_002dc-C_002dy"></a>
+<a name="index-C_002dc-C_002db"></a>
+<a name="index-C_002dc-C_002dv"></a>
+<a name="index-C_002dc-C_002da"></a>
+<a name="index-irrelevant-utilities"></a>
+
+<p>By &ldquo;irrelevant utilities&rdquo; we mean those Mizar utilities that check for
+the &ldquo;relevancy&rdquo; of some parts of a Mizar article.
+</p>
+<p>Typically, one uses the irrelevant utilities upon finishing a draft of
+an article to remove unnecesary proof steps, premises, etc. The
+irrelevant utilities can illustrate how a proof is unnecessarily
+complicated; they can even show that the conclusion of a proof differs
+from proposition one intended to prove.
+</p>
+<dl compact="compact">
+<dt>  <kbd>C-c C-h</kbd>         </dt>
+<dd><p><code>mizar-irrths</code>
+</p></dd>
+<dt>  <kbd>C-c TAB</kbd>         </dt>
+<dd><p><code>mizar-relinfer</code>
+</p></dd>
+<dt>  <kbd>C-c C-o</kbd></dt>
+<dd><p><code>mizar-trivdemo</code>
+</p></dd>
+<dt>  <kbd>C-c C-s</kbd> </dt>
+<dd><p><code>mizar-reliters</code>
+</p></dd>
+<dt>  <kbd>C-c C-y</kbd>         </dt>
+<dd><p><code>mizar-relprem</code>
+</p></dd>
+<dt>  <kbd>C-c C-b</kbd></dt>
+<dd><p><code>mizar-chklab</code>
+</p></dd>
+<dt>  <kbd>C-c C-v</kbd>         </dt>
+<dd><p><code>mizar-irrvoc</code>
+</p></dd>
+<dt>  <kbd>C-c C-a</kbd>         </dt>
+<dd><p><code>mizar-inacc</code>
+</p></dd>
+</dl>
+
+<dl>
+<dt><a name="index-mizar_002dirrths"></a><u>Command:</u> <b>mizar-irrths</b></dt>
+<dd><p>Call Irrelevant Theorems &amp; Schemes Detector on the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002drelinfer"></a><u>Command:</u> <b>mizar-relinfer</b></dt>
+<dd><p>Call Irrelevant Inferences Detector on the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dtrivdemo"></a><u>Command:</u> <b>mizar-trivdemo</b></dt>
+<dd><p>Call Trivial Proofs Detector on the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dreliters"></a><u>Command:</u> <b>mizar-reliters</b></dt>
+<dd><p>Call Irrelevant Iterative Steps Detector on the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002drelprem"></a><u>Command:</u> <b>mizar-relprem</b></dt>
+<dd><p>Call Irrelevant Premises Detector on the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dirrvoc"></a><u>Command:</u> <b>mizar-irrvoc</b></dt>
+<dd><p>Call Irrelevant vocabulary Detector on the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dinacc"></a><u>Command:</u> <b>mizar-inacc</b></dt>
+<dd><p>Call Inaccessible Items Detector on the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dchklab"></a><u>Command:</u> <b>mizar-chklab</b></dt>
+<dd><p>Call Irrelevant Label Detector on the article.
+</p></dd></dl>
+
+<hr size="6">
+<a name="Other-Utilities"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Irrelevant-Utilities" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Other-Utilities-1"></a>
+<h2 class="section">4.3 Other Utilities</h2>
+<a name="index-miz2prel"></a>
+<a name="index-miz2abs"></a>
+<a name="index-ratproof"></a>
+
+<p>Additionally, the interface to the Mizar scripts <code>miz2prel</code> 
+and <code>miz2abs</code> and the <code>ratproof</code> utility is available
+from the menu. 
+</p>
+<p>Using <code>ratproof</code> from Mizar Mode is discouraged, since
+<code>ratproof</code> operates on the file being edited. Instead, the
+suggested alternative to running <code>ratproof</code> is to execute the
+command <code>mizar-hide-proofs</code> with an empty prefix argument
+See section <a href="MizarMode_5.html#Proof-checking">Proof checking</a>.  This command emulates <code>ratproof</code> without
+actually executing it.  The menu item <code>&lt;Proof checking&gt; &lt;@proof -&gt;
+proof on buffer&gt;</code> also corresponds to this command.
+</p>
+<p>Similarly, using <code>miz2prel</code> and <code>miz2abs</code> is not recommended.
+Unlike <code>ratproof</code>, the programs <code>miz2prel</code> and <code>miz2abs</code>
+are not well supported nor emulated by <code>MizarMode</code>.
+</p>
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Running-Mizar-utilities" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

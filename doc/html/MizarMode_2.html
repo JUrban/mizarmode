@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 2. Basic Functions</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 2. Basic Functions">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 2. Basic Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="Basic-Functions"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_1.html#Emacs-basics" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Running-Mizar" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_1.html#Prerequisities" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_3.html#Summaries-and-Hide_002fShow" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Basic-Functions-1"></a>
+<h1 class="chapter">2. Basic Functions</h1>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Running-Mizar">2.1 Running Mizar</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">               
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Indentation-and-commenting">2.2 Indentation and commenting</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+<tr><td align="left" valign="top"><a href="#Error-explanations-and-movement">2.3 Error explanations and movement</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">  
+</td></tr>
+</table>
+
+<hr size="6">
+<a name="Running-Mizar"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Basic-Functions" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Indentation-and-commenting" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Basic-Functions" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Basic-Functions" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_3.html#Summaries-and-Hide_002fShow" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Running-Mizar-1"></a>
+<h2 class="section">2.1 Running Mizar</h2>
+<a name="index-C_002dc-RET"></a>
+<a name="index-C_002dc-c"></a>
+<a name="index-verifying"></a>
+<a name="index-compilation"></a>
+
+<dl compact="compact">
+<dt>  <kbd>C-c RET</kbd>  </dt>
+<dd><p><code>mizar-it</code>
+</p></dd>
+<dt>  <kbd>C-c c</kbd></dt>
+<dd><p><code>mizar-compile</code>
+</p></dd>
+</dl>
+
+<dl>
+<dt><a name="index-mizar_002dit"></a><u>Command:</u> <b>mizar-it</b><i> &amp;optional util noqr compil silent forceacc noacc options</i></dt>
+<dd><p>Run mizar verifier on the text in the current .miz buffer.<br>
+Show the result in buffer *mizar-output*.
+In interactive use, a prefix argument directs this command
+to read verifier options from the minibuffer.
+</p>
+<p>If <var>options</var> are given, pass them to the verifier.
+If <var>util</var> is given (either a command string or elisp function), use it instead of verifier.
+If &lsquo;<samp><code>mizar-use-momm</code></samp>&rsquo;, run tptpver instead.
+If <var>noqr</var>, does not use quick run.
+If <var>compil</var>, emulate compilation-like behavior for error messages.
+If <var>silent</var>, just run <var>util</var> without messaging and errorflagging.
+If <var>forceacc</var>, run makeenv with the -a option.
+If <var>noacc</var>, never try to accommodate.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dcompile"></a><u>Command:</u> <b>mizar-compile</b><i> &amp;optional util</i></dt>
+<dd><p>Run verifier (&lsquo;<samp><code>mizar-it</code></samp>&rsquo;) in a compilation-like way.<br>
+This means that the errors are shown and clickable in buffer 
+<strong>Compilation</strong>, instead of being put into the editing buffer in
+the traditional Mizar way.
+If <var>util</var> is given, call it instead of the Mizar verifier.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dquick_002drun"></a><u>User Option:</u> <b>mizar-quick-run</b></dt>
+<dd><p>Speeds up verifier by not displaying its intermediate output.<br>
+Can be toggled from the menu, however the nil value is no
+longer supported and may be deprecated (e.g. on Windows).
+</p>
+<p>The default value is <code>t</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dshow_002doutput"></a><u>User Option:</u> <b>mizar-show-output</b></dt>
+<dd><p>Determines the size of the output window after processing.<br>
+Possible values: &quot;none&quot;, 4, 10, &quot;all&quot;.
+</p>
+<p>The default value is <code>4</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dgoto_002derror"></a><u>User Option:</u> <b>mizar-goto-error</b></dt>
+<dd><p>What error to move to after processing.<br>
+Possible values are none, first, next, previous.
+</p>
+<p>The default value is <code>&quot;next&quot;</code>.
+</p></dd></dl>
+
+
+<hr size="6">
+<a name="Indentation-and-commenting"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Running-Mizar" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Error-explanations-and-movement" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Basic-Functions" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Basic-Functions" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_3.html#Summaries-and-Hide_002fShow" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Indentation-and-commenting-1"></a>
+<h2 class="section">2.2 Indentation and commenting</h2>
+<a name="index-C_002dc-C_002dc"></a>
+<a name="index-TAB"></a>
+<a name="index-M_002dC_002d_005c"></a>
+<a name="index-indentation"></a>
+<a name="index-comments"></a>
+
+<dl compact="compact">
+<dt>  <kbd>C-c C-c</kbd> </dt>
+<dd><p><code>comment-region</code>
+</p></dd>
+<dt>  <kbd>TAB</kbd> </dt>
+<dd><p><code>mizar-indent-line</code>
+</p></dd>
+<dt>  <kbd>M-C-\</kbd> </dt>
+<dd><p><code>indent-region</code>
+</p></dd>
+</dl>
+
+<dl>
+<dt><a name="index-comment_002dregion"></a><u>Command:</u> <b>comment-region</b></dt>
+<dd><p>Comment  each line in the region.
+With C-u prefix, uncomment each line in the region.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dindent_002dline"></a><u>Command:</u> <b>mizar-indent-line</b></dt>
+<dd><p>Indent current line as Mizar code.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-indent_002dregion"></a><u>Command:</u> <b>indent-region</b></dt>
+<dd><p>Indent each nonblank line in the region.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dindent_002dwidth"></a><u>User Option:</u> <b>mizar-indent-width</b></dt>
+<dd><p>Indentation width for Mizar articles.
+</p>
+<p>The default value is <code>2</code>.
+</p></dd></dl>
+
+
+<hr size="6">
+<a name="Error-explanations-and-movement"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Indentation-and-commenting" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_3.html#Summaries-and-Hide_002fShow" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Basic-Functions" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Basic-Functions" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_3.html#Summaries-and-Hide_002fShow" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Error-explanations-and-movement-1"></a>
+<h2 class="section">2.3 Error explanations and movement</h2>
+<a name="index-C_002dc-C_002dn"></a>
+<a name="index-C_002dc-C_002dp"></a>
+<a name="index-C_002dc-C_002de"></a>
+<a name="index-error-explanations"></a>
+
+<dl compact="compact">
+<dt>  <kbd>C-c C-n</kbd>               </dt>
+<dd><p><code>mizar-next-error</code>
+</p></dd>
+<dt>  <kbd>C-c C-p</kbd>               </dt>
+<dd><p><code>mizar-previous-error</code>
+</p></dd>
+<dt>  <kbd>C-c C-e</kbd> </dt>
+<dd><p><code>mizar-strip-errors</code>
+</p></dd>
+</dl>
+
+<dl>
+<dt><a name="index-mizar_002dnext_002derror"></a><u>Command:</u> <b>mizar-next-error</b></dt>
+<dd><p>Go to the next error in a mizar text, return nil if not found.<br>
+Show the error explanation in the minibuffer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dprevious_002derror"></a><u>Command:</u> <b>mizar-previous-error</b></dt>
+<dd><p>Go to the previous error in a mizar text, return nil if not found.<br>
+Show the error explanation in the minibuffer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dstrip_002derrors"></a><u>Command:</u> <b>mizar-strip-errors</b></dt>
+<dd><p>Delete all error lines added by Mizar.<br>
+These are lines beginning with ::&gt;.
+</p></dd></dl>
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Basic-Functions" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_3.html#Summaries-and-Hide_002fShow" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

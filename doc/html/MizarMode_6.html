@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 6. Browsing Functions</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 6. Browsing Functions">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 6. Browsing Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="Browsing-Functions"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_5.html#Then-placement" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_7.html#Grepping-in-MML" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_7.html#Grepping-in-MML" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Browsing-Functions-1"></a>
+<h1 class="chapter">6. Browsing Functions</h1>
+<a name="index-M_002d_003b"></a>
+<a name="index-_003cmouse_002d3_003e"></a>
+<a name="index-_003cS_002ddown_002dmouse_002d3_003e"></a>
+<a name="index-M_002d_002e"></a>
+<a name="index-_003cS_002ddown_002dmouse_002d1_003e"></a>
+<a name="index-_003cS_002ddown_002dmouse_002d2_003e"></a>
+<a name="index-browsing"></a>
+<a name="index-symbtags"></a>
+<a name="index-reftags"></a>
+
+<p>Mizar mode has tags for library references (theorems, definitions 
+and schemes), vocabulary symbols, and  constructors
+(see <a href="MizarMode_4.html#Constructors-and-user-symbols">Constructors and user symbols</a>).
+They are produced for each new version of MML by the Library Committee, 
+and reside in files &ldquo;reftags&rdquo; and &ldquo;symbtags&rdquo; in the abstr directory
+of the Mizar distribution.
+</p>
+<p>There are several commands, keyboard and mouse shortcuts, 
+to use them for searching and browsing.
+</p>
+<p>Some other commands using symbtags need the complete constructor
+information to work. See section <a href="MizarMode_9.html#Constructor-explanations">Constructor explanations</a>, for them.
+</p>
+<dl compact="compact">
+<dt>  <kbd>M-;</kbd>     </dt>
+<dd><p><code>mizar-symbol-def</code>
+</p></dd>
+<dt>  <kbd>&lt;mouse-3&gt;</kbd></dt>
+<dd><p><code>mizar-mouse-symbol-def</code>
+</p></dd>
+<dt>  <kbd>&lt;S-down-mouse-3&gt;</kbd></dt>
+<dd><p><code>mizar-mouse-direct-symbol-def</code>
+</p></dd>
+<dt>  <kbd>M-.</kbd> </dt>
+<dd><p><code>mizar-show-ref</code>
+</p></dd>
+<dt>  <kbd>&lt;S-down-mouse-1&gt;</kbd></dt>
+<dd><p><code>mizar-mouse-direct-show-ref</code>
+</p></dd>
+<dt>  <kbd>M-*</kbd></dt>
+<dd><p><code>pop-tag-mark</code>
+</p></dd>
+</dl>
+
+
+<dl>
+<dt><a name="index-mizar_002dsymbol_002ddef"></a><u>Command:</u> <b>mizar-symbol-def</b><i> &amp;optional nocompletion tag nootherw</i></dt>
+<dd><p>Find the definition of a symbol at point with completion using file symbtags.<br>
+If in *.abs buffer, show its definition in current window, otherwise,
+i.e. in *.miz buffer, show it in other window.
+In the <strong>Completions</strong> buffer, aside from its normal key bindings,
+&rsquo;;&rsquo; is bound to show all exact matches.
+If invoked by right-click (&lsquo;<samp><code>mizar-mouse-symbol-def</code></samp>&rsquo;),
+second right-click does this too.
+<var>nocompletion</var> goes to the first hit instead.
+If <var>tag</var> is given, search for it instead.
+<var>nootherw</var> finds in current window.
+File symbtags is included in the Mizar distribution.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dmouse_002dsymbol_002ddef"></a><u>Command:</u> <b>mizar-mouse-symbol-def</b></dt>
+<dd><p>&lt;mouse-3&gt; is bound to this function.<br>
+The first click runs &lsquo;<samp><code>mizar-symbol-def</code></samp>&rsquo; and the second click shows the symbol&rsquo;s
+completions.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dmouse_002ddirect_002dsymbol_002ddef"></a><u>Command:</u> <b>mizar-mouse-direct-symbol-def</b></dt>
+<dd><p>&lt;S-down-mouse-3&gt; is bound to this function.<br>
+Goes directly to the first match of the symbol under the mouse click.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dshow_002dref"></a><u>Command:</u> <b>mizar-show-ref</b><i> &amp;optional nocompletion</i></dt>
+<dd><p>Find the library reference with completion using file reftags.<br>
+Show it in its abstract in other window.
+Non-nil <var>nocompletion</var> goes to the first hit without completing.
+Library references are theorems, definitions and schemes imported
+from other Mizar articles.
+File reftags is included in the Mizar distribution.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dmouse_002ddirect_002dshow_002dref"></a><u>Command:</u> <b>mizar-mouse-direct-show-ref</b></dt>
+<dd><p>&lt;S-down-mouse-1&gt; is bound to this function.<br>
+Goes directly to the reference under the mouse click.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mouse_002dfind_002dtag_002dhistory"></a><u>Command:</u> <b>mouse-find-tag-history</b></dt>
+<dd><p>Popup menu with last 20 visited tags and go to selection.<br>
+Works properly only for symbols (not references).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-pop_002dtag_002dmark"></a><u>Command:</u> <b>pop-tag-mark</b></dt>
+<dd><p>Go back to where the last tag search was invoked from.<br>
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dapropos"></a><u>Command:</u> <b>symbol-apropos</b></dt>
+<dd><p>Displays list of all MML symbols that match a regexp.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dbury_002dall_002dabstracts"></a><u>Command:</u> <b>mizar-bury-all-abstracts</b></dt>
+<dd><p>Bury (put at the end of buffer list) all Mizar abstracts.<br>
+Useful when you did too much browsing and want to get back to your
+editing buffers.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dclose_002dall_002dabstracts"></a><u>Command:</u> <b>mizar-close-all-abstracts</b></dt>
+<dd><p>Close all Mizar abstracts.<br>
+Useful when you did too much browsing and want to get back to your
+editing buffers.
+</p></dd></dl>
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_5.html#Miscellaneous-editing" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_7.html#Grepping-in-MML" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>

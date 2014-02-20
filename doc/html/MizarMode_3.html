@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<!-- Created on February 20, 2014 by texi2html 1.82
+texi2html was written by: 
+            Lionel Cons <Lionel.Cons@cern.ch> (original author)
+            Karl Berry  <karl@freefriends.org>
+            Olaf Bachmann <obachman@mathematik.uni-kl.de>
+            and many others.
+Maintained by: Many creative people.
+Send bugs and suggestions to <texi2html-bug@nongnu.org>
+-->
+<head>
+<title>Emacs Authoring Environment for Mizar: 3. Summaries and Hide/Show</title>
+
+<meta name="description" content="Emacs Authoring Environment for Mizar: 3. Summaries and Hide/Show">
+<meta name="keywords" content="Emacs Authoring Environment for Mizar: 3. Summaries and Hide/Show">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="texi2html 1.82">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+pre.display {font-family: serif}
+pre.format {font-family: serif}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: serif; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: serif; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.roman {font-family:serif; font-weight:normal;}
+span.sansserif {font-family:sans-serif; font-weight:normal;}
+ul.toc {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+
+<a name="Summaries-and-Hide_002fShow"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="MizarMode_2.html#Error-explanations-and-movement" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Hide_002fShow-_002d-Hiding-proofs" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode_2.html#Basic-Functions" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_4.html#Running-Mizar-utilities" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Summaries-and-Hide_002fShow-1"></a>
+<h1 class="chapter">3. Summaries and Hide/Show</h1>
+<a name="index-C_002dc-C_002dr"></a>
+<a name="index-C_002dc-C_002dz"></a>
+<a name="index-summaries"></a>
+
+
+<dl compact="compact">
+<dt>  <kbd>C-c C-r</kbd> </dt>
+<dd><p><code>mizar-make-reserve-summary</code>
+</p></dd>
+<dt>  <kbd>C-c C-z</kbd> </dt>
+<dd><p><code>mizar-make-theorem-summary</code>
+</p></dd>
+</dl>
+
+
+<dl>
+<dt><a name="index-mizar_002dmake_002dreserve_002dsummary"></a><u>Command:</u> <b>mizar-make-reserve-summary</b></dt>
+<dd><p>Make a summary of all type reservations before current point in the article.<br>
+Display it in the &lsquo;<samp><strong>Occur</strong></samp>&rsquo; buffer, which uses the &lsquo;<samp><code>occur-mode</code></samp>&rsquo;.
+Previous contents of that buffer are killed first.
+Useful for finding out the exact meaning of variables used in
+some Mizar theorem or definition.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-mizar_002dmake_002dtheorem_002dsummary"></a><u>Command:</u> <b>mizar-make-theorem-summary</b></dt>
+<dd><p>Make a smmary of the theorems in the the current buffer.The<br>
+output will be put into a buffer called &quot;*Theorem-Summary*&quot;; if
+that buffer already exists when this command is called, its
+contents will be erased.
+</p>
+<p>(The command &lsquo;<samp><code>hs-hide-all</code></samp>&rsquo;, accessible from the Hide/Show menu,
+can be used instead of &lsquo;<samp><code>mizar-make-theorem-summary</code></samp>&rsquo; to make a
+summary of an article.)
+</p></dd></dl>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top"><a href="#Hide_002fShow-_002d-Hiding-proofs">3.1 Hide/Show - Hiding proofs</a></td><td>&nbsp;&nbsp;</td><td align="left" valign="top">   
+</td></tr>
+</table>
+
+<hr size="6">
+<a name="Hide_002fShow-_002d-Hiding-proofs"></a>
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Summaries-and-Hide_002fShow" title="Previous section in reading order"> &lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_4.html#Running-Mizar-utilities" title="Next section in reading order"> &gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="#Summaries-and-Hide_002fShow" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="#Summaries-and-Hide_002fShow" title="Up section"> Up </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_4.html#Running-Mizar-utilities" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<a name="Hide_002fShow-_002d-Hiding-proofs-1"></a>
+<h2 class="section">3.1 Hide/Show - Hiding proofs</h2>
+<a name="index-_003cS_002dmouse_002d2_003e"></a>
+<a name="index-hide_002fshow"></a>
+<a name="index-proof-hiding"></a>
+
+<dl compact="compact">
+<dt>  <kbd>&lt;S-mouse-2&gt;</kbd></dt>
+<dd><p><code>hs-mouse-toggle-hiding</code>
+</p></dd>
+</dl>
+
+
+<p>Mizar Mode customizes the standard Hide/Show minor mode, 
+See <a href="../emacs/Hideshow.html#Hideshow">Hideshow: (emacs)Hideshow</a>, for hiding
+parts of proofs. 
+</p>
+<p>Except from the function <code>hs-mouse-toggle-hiding</code> bound to
+<kbd>&lt;S-mouse-2&gt;</kbd>, the following useful functions are accessible 
+from the menu Hide/Show. 
+</p>
+<dl>
+<dt><a name="index-hs_002dhide_002dall"></a><u>Command:</u> <b>hs-hide-all</b></dt>
+<dd><p>Hide all Mizar proofs in the article.<br>
+This means that instead of each top-level proof brackets like
+<code>proof ... end;</code>, <code>now ... end;</code> or <code>hereby ... end;</code>,
+you will see only three dots <code>...</code> in the buffer.<br>
+The effect is actually very similar to that of creating an abstract
+from the article, however, e.g. the top-level simple justifications
+are still visible in the buffer.<br>
+This kind of hiding has no effect on proof checking, the file
+is not modified by it. See section <a href="MizarMode_5.html#Proof-checking">Proof checking</a>, for commands that
+disable proof checking of some part of the article.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-hs_002dshow_002dblock"></a><u>Command:</u> <b>hs-show-block</b></dt>
+<dd><p>Show a selected Mizar proof.<br>
+The first block following a point is shown.<br>
+After hiding some large portion of text 
+(e.g. by &lsquo;<samp><code>hs-hide-all</code></samp>&rsquo;), use this to completely unhide
+the part you are working on.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-hs_002dhide_002dblock"></a><u>Command:</u> <b>hs-hide-block</b></dt>
+<dd><p>Hide a selected Mizar proof.<br>
+The nearest proof block around the point is hidden.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-hs_002dhide_002dlevel"></a><u>Command:</u> <b>hs-hide-level</b></dt>
+<dd><p>Hide all subproofs of the current proof block.<br>
+This command is useful for getting overview of the proof, when
+you are not interested in the detailed subproofs of its various
+lemmas.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-hs_002dshow_002dall"></a><u>Command:</u> <b>hs-show-all</b></dt>
+<dd><p>Show all of the article, cancel any hiding.<br>.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-hs_002dtoggle_002dhiding"></a><u>Command:</u> <b>hs-toggle-hiding</b></dt>
+<dd><p>Toggle hiding/showing of a block.<br>
+See &lsquo;<samp><code>hs-hide-block</code></samp>&rsquo; and &lsquo;<samp><code>hs-show-block</code></samp>&rsquo;.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-hs_002dmouse_002dtoggle_002dhiding"></a><u>Command:</u> <b>hs-mouse-toggle-hiding</b></dt>
+<dd><p>Toggle hiding/showing of a block.<br>
+This command should be bound to a mouse key.
+Argument E is a mouse event used by &lsquo;<samp><code>mouse-set-point</code></samp>&rsquo;.
+See &lsquo;<samp><code>hs-hide-block</code></samp>&rsquo; and &lsquo;<samp><code>hs-show-block</code></samp>&rsquo;.
+</p></dd></dl>
+
+
+<hr size="6">
+<table cellpadding="1" cellspacing="1" border="0">
+<tr><td valign="middle" align="left">[<a href="#Summaries-and-Hide_002fShow" title="Beginning of this chapter or previous chapter"> &lt;&lt; </a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_4.html#Running-Mizar-utilities" title="Next chapter"> &gt;&gt; </a>]</td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left"> &nbsp; </td>
+<td valign="middle" align="left">[<a href="MizarMode.html#Top" title="Cover (top) of document">Top</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_toc.html#SEC_Contents" title="Table of contents">Contents</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_15.html#Function-Index" title="Index">Index</a>]</td>
+<td valign="middle" align="left">[<a href="MizarMode_abt.html#SEC_About" title="About (help)"> ? </a>]</td>
+</tr></table>
+<p>
+ <font size="-1">
+  This document was generated by <em>Josef Urban</em> on <em>February 20, 2014</em> using <a href="http://www.nongnu.org/texi2html/"><em>texi2html 1.82</em></a>.
+ </font>
+ <br>
+
+</p>
+</body>
+</html>
