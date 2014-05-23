@@ -1071,7 +1071,7 @@ or lists containing parsed formulas, which are later handed over to
       (mizar-default-assume-items (cadr negfla)))
      ((eq 'or (car negfla))
       (mizar-default-assume-items 
-       (cons '& (mapcar '(lambda (x) (list 'not x)) (cdr negfla)))))
+       (cons '& (mapcar #'(lambda (x) (list 'not x)) (cdr negfla)))))
      ((eq 'implies (car negfla))
       (mizar-default-assume-items 
        (list '& (second negfla) (list 'not (third negfla)))))
@@ -1096,7 +1096,7 @@ This function is called for creating assumptions in the function
 "A list of generalizations corresponding to TYPES."
 (or (eq 'Q (car types)) 
     (error "Bad qualified segment: %s" (prin1-to-string types)))
-(mapcar '(lambda (x) 
+(mapcar #'(lambda (x) 
 	   (list "let" 
 		 (replace-regexp-in-string "^ *, *" "" 
 					   (mizar-being2be (car x))) ";"))
@@ -1106,7 +1106,7 @@ This function is called for creating assumptions in the function
 "Get the string of variables from TYPES."
 (or (eq 'Q (car types)) 
     (error "Bad qualified segment: %s" (prin1-to-string types)))
-(mapconcat '(lambda (x)
+(mapconcat #'(lambda (x)
 	      (replace-regexp-in-string " +\\(being\\|be\\) .*$" "" (car x)))
 	   (cdr types) ""))
 
@@ -1397,6 +1397,28 @@ Used automatically if `mizar-atp-completion' is on."
     (setq mizar-atp-leave-semicolon old-mizar-atp-leave-semicolon
 	  mizar-comment-atp old-mizar-comment-atp))))
 
+(defun mizar-atp-review-proofs1 (beg end)
+"Call ATP on toplevel proofs inside the block (assumes two spaces)."
+(interactive "r")
+(let ((old-mizar-atp-leave-semicolon mizar-atp-leave-semicolon)
+      (old-mizar-comment-atp mizar-comment-atp))
+  (unwind-protect
+      (progn
+	(setq mizar-atp-leave-semicolon nil
+	      mizar-comment-atp t)
+	(goto-char beg)
+	(while (re-search-forward "^  proof" end t)
+	  (forward-line -1)
+	  (end-of-line)
+	  (skip-chars-backward " \t")
+	  (insert " by;") 
+	  (mizar-atp-autocomplete)
+	  (sit-for 15)
+	  (forward-line 2)
+	  ))
+    (setq mizar-atp-leave-semicolon old-mizar-atp-leave-semicolon
+	  mizar-comment-atp old-mizar-comment-atp))))
+
 (defvar mizar-bubble-ref-increment 10
 "Extent of lines where refs get incrementally bubble-helped.")
 
@@ -1529,7 +1551,7 @@ If `mizar-mml-ini' is not readable, return nil (not error)."
 	(goto-char (point-min))
 	(setq mizar-version-data
 	      (list nsize ntime 
-		    (mapcar '(lambda (x) (split-string x "=")) 
+		    (mapcar #'(lambda (x) (split-string x "=")) 
 			    ;; using cdr to get rid of the first element "[Mizar verifier]"
 			    (delete "[MML]" (delete "" (cdr (split-string (buffer-string) "\n"))))))))))))
 
@@ -1557,7 +1579,7 @@ Print diagnostic message if we want, but cannot."
 	(message "%s not readable, grepping in alphabetical order" mizar-mml-lar)
       (let ((l1 (append mizar-mml-prepend (third mizar-mml-order-list))))
 	(setenv mizar-mml-order-var-name  
-		(mapconcat '(lambda (x) (concat x "." ext)) l1 " "))
+		(mapconcat #'(lambda (x) (concat x "." ext)) l1 " "))
 	(setq flist (if (eq mizar-emacs 'winemacs) 
 			(if (equal ext "abs") "abstr abs" "mml miz")
 ;			(concat "%" mizar-mml-order-var-name "%")
@@ -1922,7 +1944,7 @@ Works properly only for symbols (not references)."
   (interactive)
   (if (visit-tags-or-die mizsymbtags)
       (let* ((allowed (unique (delete nil (copy-alist find-tag-history)) ))
-	     (double (mapcar '(lambda (x) (cons x x)) (remove-from 20 allowed)))
+	     (double (mapcar #'(lambda (x) (cons x x)) (remove-from 20 allowed)))
 	     (backadded (cons (cons "Go to previous" t) double))
 	     (menu (list "Visited symbols" (cons "Tags" backadded)))
 	     (tag (x-popup-menu t menu)))
@@ -1951,7 +1973,7 @@ Useful when you did too much browsing and want to get back to your
 editing buffers."
 (interactive)
 (let* ((l (mizar-current-abstracts)) (i (length l)))
-  (mapcar '(lambda (x) (kill-buffer x)) l)
+  (mapcar #'(lambda (x) (kill-buffer x)) l)
   (message "%d abstracts closed" i)))
 
 (defun mizar-close-some-abstracts ()
@@ -1965,7 +1987,7 @@ Useful when you did too much browsing and want to get back to your
 editing buffers."
 (interactive)
 (let* ((l (mizar-current-abstracts)) (i (length l)))
-  (mapcar '(lambda (x) (bury-buffer x)) l)
+  (mapcar #'(lambda (x) (bury-buffer x)) l)
   (message "%d abstracts buried" i)))
 
 
@@ -1988,7 +2010,7 @@ Go to column COL, if FORCE, then insert spaces if short."
 ;; fixed for xemacs leaving "" in the end
 (defun buff-to-numtable ()
   (let ((l (delete "" (split-string (buffer-string) "\n"))))
-    (mapcar '(lambda (x)
+    (mapcar #'(lambda (x)
 	       (mapcar 'string-to-number (split-string x)))
 	    l)
     ))
@@ -2029,7 +2051,7 @@ the errors after the verification."
 (defun sort-for-errflag (l)
 "Sort with L, greater lines first, then by column."
 (let ((l (copy-alist l)))
-  (sort l '(lambda (x y) (or (> (car x) (car y))
+  (sort l #'(lambda (x y) (or (> (car x) (car y))
 			     (and (= (car x) (car y))
 				  (< (cadr x) (cadr y)))))
 	)))
@@ -2953,7 +2975,7 @@ displayed in the buffer *mmlquery*."
  ((eq mizar-expl-kind 'mmlquery)
   (mizar-default-query-for-list
 ;;   (mapcar 'mizar-set-mmlquery-properties
-   (mapcar '(lambda (x) (replace-regexp-in-string "[.]" " " x))
+   (mapcar #'(lambda (x) (replace-regexp-in-string "[.]" " " x))
 	   (sort (unique (expfrmrepr frm t)) 'string<))))
  (t "")))
 
@@ -5775,7 +5797,7 @@ file suffix to use."
 "Tells if REF is an explicit Mizar reference."
 (or
  (not (string-match ":" ref)) 
- (string-match "\\([A-Z0-9_]+:\\(def \\|sch \\|th \\)?[0-9]+\\)" ref)))
+ (string-match "\\([A-Z0-9_]+:\\(def \\|sch \\|th \||lemma \\)?[0-9]+\\)" ref)))
 
 (defun my-switch-to-url-buffer (status &optional output-buffer pushback)
   "Switch to buffer returned by `url-retreive', rename it to OUTPUT-BUFFER or *atp-output*.
