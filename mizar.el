@@ -2581,7 +2581,7 @@ Uses the global tables `cstrnames' and `cstrnrs'."
 
 (defun proper-list-p (object)
   "Determine whether OBJECT is a proper list."
-  (labels ((proper (current slow)
+  (cl-labels ((proper (current slow)
              (cond ((null current)       t)
                    ((atom current)       nil)
                    ((null (cdr current)) t)
