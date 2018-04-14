@@ -6001,6 +6001,12 @@ Calls `mizar-remote-solve'.
 (interactive "*P")
 (mizar-remote-solve (or solve t) positions output-buffer pushback))
 
+(defun get-string-from-file (filePath)
+  "Return filePath's file content."
+  (with-temp-buffer
+    (insert-file-contents filePath)
+    (buffer-string)))
+
 (defun mizar-concat-vocs (vocfiles)
 "Concatenate contents of vocfiles using :::::: as a delimiter."
 (with-temp-buffer
@@ -6081,10 +6087,11 @@ and put the verification message into OUTPUT-BUFFER.
 ;; the current version - creates a local html file with form
 ;; that gets submitted on-load
 ;; TODO: use mml.ini as additional argument selecting the library version
-(defun mizar-browse-remote (&optional htmlonly texing)
+(defun mizar-browse-remote (&optional htmlonly texing abstract)
 "Send the contents of the buffers to the MizAR service. 
 If TEXING is true, send to the tex/pdf server instead - in the case the PDF 
-will be sent beack to you browser.
+will be sent back to you browser.
+If ABSTRACT is true, process abstract instead of miz.
 With prefix argument, only htmlize, do not create atp problems and links.
 Browse result in a HTML browser.
 A browser like Mozilla or IE has to be default in
@@ -6098,12 +6105,15 @@ the previous is set to `browse-url-generic') also the variable
 		(file-name-sans-extension
 		 fname)))
        (dir (file-name-directory (buffer-file-name)))
+       (absfname (concat dir aname ".abs"))
        (vocfiles (file-expand-wildcards (concat dir "../dict/*.voc") t))
        (vocnames (mapconcat 'file-name-nondirectory vocfiles "::"))
        (mmlversion (mizar-mml-version))
        (vocstring (if vocfiles (htmlize-protect-string (mizar-concat-vocs vocfiles))))
        (requestfile (concat fname ".html"))
-       (contents (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))
+       (contents
+	(if abstract (htmlize-protect-string (get-string-from-file absfname))
+	  (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max)))))
        (htmlcontents (concat 
 		      mizar-ar4mizar-html-start1
 		      (if texing (concat mizar2pdf-server mizar2pdf-cgi)
@@ -6129,9 +6139,11 @@ the previous is set to `browse-url-generic') also the variable
   (message "Opening the HTML in your browser ... ")
 (browse-url (concat "file:///" requestfile))))
 
-(defun mizar-tex-remote ()
-    (interactive)
-    (mizar-browse-remote t t))
+(defun mizar-tex-remote (&optional abstract)
+  (interactive)
+  (if (not abstract)   (mizar-browse-remote t t )
+    (mizar-it "miz2abs" t)
+    (mizar-browse-remote t t t)))
 
 ;; stolen from htmlize.el
 (defvar htmlize-basic-character-table
