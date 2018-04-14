@@ -522,6 +522,7 @@ common mizar editing functions."
   (define-key mizar-mode-map "\C-ch" 'mizar-browse-remote)
   (define-key mizar-mode-map "\C-ce" 'mizar-show-environ)
   (define-key mizar-mode-map "\C-cs" 'mizar-insert-skeleton)
+  (define-key mizar-mode-map "\C-ct" 'mizar-tex-remote)
   (define-key mizar-mode-map "\C-cu" 'mizar-run-all-irr-utils)
   (define-key mizar-mode-map "\M-;"     'mizar-symbol-def)
   (define-key mizar-mode-map "\M-\C-i"     'mizar-ref-complete)
@@ -1374,6 +1375,29 @@ Used automatically if `mizar-atp-completion' is on."
     (put-text-property beg end 'atp-asked (intern pos))
     (message "Calling ATP on position %s " pos)
     (set-buffer-modified-p mod))))
+
+
+(defun mizar-atp-review-bys (beg end)
+"Call ATP on by inside the block."
+(interactive "r")
+(let ((old-mizar-atp-leave-semicolon mizar-atp-leave-semicolon)
+      (old-mizar-comment-atp mizar-comment-atp))
+  (unwind-protect
+      (progn
+	(setq mizar-atp-leave-semicolon t
+	      mizar-comment-atp t)
+	(goto-char beg)
+	(while (re-search-forward " by " end t)
+	  (insert "::")
+	  (skip-chars-backward ":: \t")
+	  (insert ";") 
+	  (mizar-atp-autocomplete)
+	  (sit-for 8)
+	  (forward-line 1)
+	  ))
+    (setq mizar-atp-leave-semicolon old-mizar-atp-leave-semicolon
+	  mizar-comment-atp old-mizar-comment-atp))))
+
 
 (defun mizar-atp-review-proofs (beg end)
 "Call ATP on toplevel @proofs inside the block."
@@ -5736,6 +5760,18 @@ file suffix to use."
   )
 )
 
+;;;;;;;;;;;;;;;   MIZAR2PDF server
+(defcustom mizar2pdf-server "http://fm.uwb.edu.pl/"
+"Server for the Mizar2PDF services."
+:type 'string
+:group 'mizar-remote)
+
+(defcustom mizar2pdf-cgi "cgi-bin/fmnewtech/pdfize.cgi"
+"Path to the Mizar2PDF CGI script on `mizar2pdf-server'."
+:type 'string
+:group 'mizar-remote)
+
+
 ;;;;;;;;;;;;;;;   AR 4 mizar and html and mw services
 (defcustom ar4mizar-server "http://mizar.cs.ualberta.ca/"
 "Server for the AR4Mizar services."
@@ -5865,7 +5901,8 @@ file suffix to use."
 		(looking-at ". :: ATP asked ... *")  ;; need to repeat because the block above destroyed match-data
 		(replace-match 
 		 (concat 
-		  (if proper-refs (concat (if mizar-comment-atp ":: " "") "by " (mapconcat 'identity proper-refs ","))) "; :: " 
+		  (if proper-refs (concat (if mizar-comment-atp ";:: " "") "by " (mapconcat 'identity proper-refs ","))) "; :: " 
+;;		  (if proper-refs (concat (if mizar-comment-atp ":: " "") "by " (mapconcat 'identity proper-refs ","))) "; :: " 
 		  (create-display-button "[ATP details]" 
 					 (if other-refs (concat "Implicit (click for more): " 
 								(mapconcat 'identity other-refs ", ")) 
@@ -6044,9 +6081,11 @@ and put the verification message into OUTPUT-BUFFER.
 ;; the current version - creates a local html file with form
 ;; that gets submitted on-load
 ;; TODO: use mml.ini as additional argument selecting the library version
-(defun mizar-browse-remote (&optional htmlonly)
-"Send the contents of the buffers to the MizAR service.
-With prefix argument, only htmlize, do not crete atp problems and links.
+(defun mizar-browse-remote (&optional htmlonly texing)
+"Send the contents of the buffers to the MizAR service. 
+If TEXING is true, send to the tex/pdf server instead - in the case the PDF 
+will be sent beack to you browser.
+With prefix argument, only htmlize, do not create atp problems and links.
 Browse result in a HTML browser.
 A browser like Mozilla or IE has to be default in
 Emacs - you may need to customize the variable
@@ -6066,7 +6105,9 @@ the previous is set to `browse-url-generic') also the variable
        (requestfile (concat fname ".html"))
        (contents (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max))))
        (htmlcontents (concat 
-		      mizar-ar4mizar-html-start1 ar4mizar-server ar4mizar-cgi 
+		      mizar-ar4mizar-html-start1
+		      (if texing (concat mizar2pdf-server mizar2pdf-cgi)
+			(concat ar4mizar-server ar4mizar-cgi)) 
 		      mizar-ar4mizar-html-start2 contents 
 		      "</textarea><INPUT TYPE=\"hidden\" NAME=\"Name\" VALUE=\"" aname 
 		      "\"> <INPUT TYPE=\"submit\" VALUE=\"Send\">"
@@ -6087,6 +6128,10 @@ the previous is set to `browse-url-generic') also the variable
     (write-region (point-min) (point-max) requestfile))
   (message "Opening the HTML in your browser ... ")
 (browse-url (concat "file:///" requestfile))))
+
+(defun mizar-tex-remote ()
+    (interactive)
+    (mizar-browse-remote t t))
 
 ;; stolen from htmlize.el
 (defvar htmlize-basic-character-table
@@ -6308,7 +6353,8 @@ window.onload = myfunc;
             ["by; triggers ATP completion"
 	     (customize-variable 'mizar-atp-completion) :style toggle :selected mizar-atp-completion :active t]
 	    ["Verify remotely" mizar-it-remote (mizar-buf-verifiable-p)]
-	    ["Verify and HTMLize remotely" (mizar-browse-remote t) t]
+            ["Verify and HTMLize remotely" (mizar-browse-remote t) t]
+	    ["Produce PDF remotely" (mizar-tex-remote) t]
 	    ["Solve with ATP remotely" mizar-remote-solve-atp (mizar-buf-verifiable-p)]
 	    ["Verify, HTMLize, and make ATP problems remotely" (mizar-browse-remote) t]
 	    ["Set remote parallelization" 
