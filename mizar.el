@@ -367,7 +367,7 @@ MoMM should be installed for this."
 (defcustom mizar-environment-keywords 
 (list "schemes" "constructors" "definitions" 
       "theorems" "vocabularies" "requirements" "registrations" 
-      "notations")
+      "notations" "equalities" "expansions")
 "*Keywords starting mizar environmental items." 
 :type '(repeat string)
 :group 'mizar-faces)
@@ -5773,7 +5773,7 @@ file suffix to use."
 
 
 ;;;;;;;;;;;;;;;   AR 4 mizar and html and mw services
-(defcustom ar4mizar-server "http://mizar.cs.ualberta.ca/"
+(defcustom ar4mizar-server "http://grid01.ciirc.cvut.cz/"
 "Server for the AR4Mizar services."
 :type 'string
 :group 'mizar-remote)
