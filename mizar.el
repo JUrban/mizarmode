@@ -5771,6 +5771,12 @@ file suffix to use."
 :type 'string
 :group 'mizar-remote)
 
+(defcustom mizar2mathjax-cgi "cgi-bin/fmnewtech/htmlize.cgi"
+"Path to the Mizar2mathjax CGI script on `mizar2pdf-server'."
+:type 'string
+:group 'mizar-remote)
+
+
 
 ;;;;;;;;;;;;;;;   AR 4 mizar and html and mw services
 (defcustom ar4mizar-server "http://grid01.ciirc.cvut.cz/"
@@ -6116,7 +6122,7 @@ the previous is set to `browse-url-generic') also the variable
 	  (htmlize-protect-string (buffer-substring-no-properties (point-min) (point-max)))))
        (htmlcontents (concat 
 		      mizar-ar4mizar-html-start1
-		      (if texing (concat mizar2pdf-server mizar2pdf-cgi)
+		      (if texing (concat mizar2pdf-server (if htmlonly mizar2mathjax-cgi mizar2pdf-cgi))
 			(concat ar4mizar-server ar4mizar-cgi)) 
 		      mizar-ar4mizar-html-start2 contents 
 		      "</textarea><INPUT TYPE=\"hidden\" NAME=\"Name\" VALUE=\"" aname 
@@ -6139,11 +6145,12 @@ the previous is set to `browse-url-generic') also the variable
   (message "Opening the HTML in your browser ... ")
 (browse-url (concat "file:///" requestfile))))
 
-(defun mizar-tex-remote (&optional abstract)
+(defun mizar-tex-remote (&optional abstract html)
   (interactive)
-  (if (not abstract)   (mizar-browse-remote t t )
+  (if (not abstract)   (mizar-browse-remote html t )
     (mizar-it "miz2abs" t)
-    (mizar-browse-remote t t t)))
+    (mizar-browse-remote html t t)))
+
 
 ;; stolen from htmlize.el
 (defvar htmlize-basic-character-table
@@ -6366,7 +6373,8 @@ window.onload = myfunc;
 	     (customize-variable 'mizar-atp-completion) :style toggle :selected mizar-atp-completion :active t]
 	    ["Verify remotely" mizar-it-remote (mizar-buf-verifiable-p)]
             ["Verify and HTMLize remotely" (mizar-browse-remote t) t]
-	    ["Produce PDF remotely" (mizar-tex-remote) t]
+            ["Produce PDF remotely" (mizar-tex-remote) t]
+	    ["Produce MathJax remotely" (mizar-tex-remote nil t) t]
 	    ["Solve with ATP remotely" mizar-remote-solve-atp (mizar-buf-verifiable-p)]
 	    ["Verify, HTMLize, and make ATP problems remotely" (mizar-browse-remote) t]
 	    ["Set remote parallelization" 
