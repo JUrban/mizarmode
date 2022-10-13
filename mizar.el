@@ -22,7 +22,9 @@
 ;; Go to https://github.com/JUrban/mizarmode
 ;; to see complete revision history. The latest release is at
 ;; https://raw.github.com/JUrban/mizarmode/master/mizar.el .
-
+;;
+;; Uses cl-lib instead of the deprecated package cl.
+;; The cl-lib package was introduced in Emacs-24.3.
 
 ;;; Usage
 ;;
@@ -30,7 +32,6 @@
 ;; the .emacs file enclosed there to your .emacs.
 ;; Otherwise, the latest version of .emacs is downloadable from
 ;; https://raw.github.com/JUrban/mizarmode/master/.emacs .
-
 
 
 ;;; TODO: 
@@ -55,7 +56,7 @@ Valid values are 'gnuemacs,'Xemacs and 'winemacs.")
   )
 
 (require 'comint)
-(require 'cl)
+(require 'cl-lib)
 (require 'easymenu)
 (require 'etags)
 (require 'hideshow)
@@ -863,7 +864,7 @@ Return list of the rest unparsed, with added car being the parsed first."
 
    ((eq 'for beg)
    (let (rest (start (list 'for (cadr fla))))
-     (if (eq 'st (third fla))
+     (if (eq 'st (cl-third fla))
 	 (setq fla (parse-formula (cdddr fla))
 	       start (nconc start (list 'st (car fla)))
 	       rest (cdr fla))
@@ -970,7 +971,7 @@ See `mizar-insert-skeleton' for more."
 		(mizar-pp-parsed-fla (fourth fla))))
        
        ((eq 'for beg)
-	(let* ((st_occurs (eq 'st (third fla)))
+	(let* ((st_occurs (eq 'st (cl-third fla)))
 	       (rest (if st_occurs (cddddr fla) (cddr fla))))
 	  (concat 
 	   "for " (mizar-pp-types (cadr fla))
@@ -1043,7 +1044,7 @@ This is appended with a label number."
 		 "")
 	       mizar-default-label-name 
 	       (int-to-string mizar-next-sk-label) ":"))
-    (incf mizar-next-sk-label))
+    (cl-incf mizar-next-sk-label))
   res))
     
 (defun mizar-default-assume-items (fla)
@@ -1075,7 +1076,7 @@ or lists containing parsed formulas, which are later handed over to
        (cons '& (mapcar #'(lambda (x) (list 'not x)) (cdr negfla)))))
      ((eq 'implies (car negfla))
       (mizar-default-assume-items 
-       (list '& (second negfla) (list 'not (third negfla)))))
+       (list '& (second negfla) (list 'not (cl-third negfla)))))
      (t (list (list "assume" (mizar-next-sk-label) fla ";"))))))
 
    (t (list (list "assume" (mizar-next-sk-label) fla ";")))
@@ -1141,7 +1142,7 @@ or lists containing parsed formulas, which are later handed over to
    ((eq '& beg)
 ;; we have to create subproofs for complicated conjuncts
     (cond 
-     ((not (third fla)) 	;; end of or recursion - no wrapping
+     ((not (cl-third fla)) 	;; end of or recursion - no wrapping
       (mizar-default-skeleton-items (cadr fla)))
      ((mizar-atomic-parsed-fla-p (cadr fla))	;; "atomic" - no wrapping in proof .. end
       (nconc
@@ -1156,7 +1157,7 @@ or lists containing parsed formulas, which are later handed over to
        (mizar-default-skeleton-items (cons '& (cddr fla)))))))
 
    ((eq 'or beg)
-    (if (not (third fla)) ;; end of or recursion
+    (if (not (cl-third fla)) ;; end of or recursion
 	(mizar-default-skeleton-items (cadr fla))
       (nconc 
        (funcall mizar-assume-items-func (list 'not (cadr fla)))
@@ -1165,14 +1166,14 @@ or lists containing parsed formulas, which are later handed over to
    ((eq 'implies beg)
     (nconc
      (funcall mizar-assume-items-func (cadr fla))
-     (mizar-default-skeleton-items (third fla))))
+     (mizar-default-skeleton-items (cl-third fla))))
 
    ((eq 'iff beg)
     (nconc 
      (list (list "hereby"))
-     (mizar-default-skeleton-items (list 'implies (cadr fla) (third fla)))
+     (mizar-default-skeleton-items (list 'implies (cadr fla) (cl-third fla)))
      (list (list "end;"))
-     (mizar-default-skeleton-items (list 'implies (third fla) (cadr fla)))))
+     (mizar-default-skeleton-items (list 'implies (cl-third fla) (cadr fla)))))
 
    ((eq 'ex beg)
     (nconc 
@@ -1182,12 +1183,12 @@ or lists containing parsed formulas, which are later handed over to
 	   
    ((eq 'for beg)
     (nconc (mizar-skel-generalization (cadr fla))
-	   (if (eq 'st (third fla))
+	   (if (eq 'st (cl-third fla))
 	       (mizar-default-skeleton-items 
 		(list 'implies (fourth fla) 
 		      (if (eq 'holds (fifth fla)) (sixth fla) (fifth fla))))
 	     (mizar-default-skeleton-items
-	      (if (eq 'holds (third fla)) (fourth fla) (third fla))))))
+	      (if (eq 'holds (cl-third fla)) (fourth fla) (cl-third fla))))))
    
    (t (list (list "thus" fla ";")))
    )))
@@ -1583,13 +1584,13 @@ If `mizar-mml-ini' is not readable, return nil (not error)."
 "Gets value of KEY from `mizar-version-data'. 
 Nil if not existing or version data not available."
 (when (mizar-init-version-data)
-  (cadr (assoc key (third mizar-version-data)))))
+  (cadr (assoc key (cl-third mizar-version-data)))))
 
 (defun mizar-mml-version ()
 "Get the version of the library from mml.ini, nil if mml.ini not readable."
 (when (mizar-init-version-data)
-  (let ((anr (cadr (assoc "NumberOfArticles" (third mizar-version-data))))
-	(mmlver (cadr (assoc "MMLVersion" (third mizar-version-data)))))
+  (let ((anr (cadr (assoc "NumberOfArticles" (cl-third mizar-version-data))))
+	(mmlver (cadr (assoc "MMLVersion" (cl-third mizar-version-data)))))
     (when (and anr mmlver)
       (concat mmlver "." anr)))))
 
@@ -1601,7 +1602,7 @@ Print diagnostic message if we want, but cannot."
   (when mizar-grep-in-mml-order
     (if (null (mizar-init-mml-order))
 	(message "%s not readable, grepping in alphabetical order" mizar-mml-lar)
-      (let ((l1 (append mizar-mml-prepend (third mizar-mml-order-list))))
+      (let ((l1 (append mizar-mml-prepend (cl-third mizar-mml-order-list))))
 	(setenv mizar-mml-order-var-name  
 		(mapconcat #'(lambda (x) (concat x "." ext)) l1 " "))
 	(setq flist (if (eq mizar-emacs 'winemacs) 
@@ -2196,7 +2197,7 @@ If CFORMAT, return list of numbered messages for `mizar-compile'."
 
 (defun mizar-err-codes (aname &optional table)
   "Generate a list of mizar error codes."
-  (sort (unique (mapcar 'third (or table (mizar-get-errors aname)))) '<))
+  (sort (unique (mapcar 'cl-third (or table (mizar-get-errors aname)))) '<))
   
 (defun mizar-addfmsg (aname &optional table)
 "Insert error explanations into mizar buffer for ANAME (like addfmsg).
@@ -2230,7 +2231,7 @@ ATAB is reversed."
   (while atab
     (let* ((l1 expl)
 	   (currecord (car atab))
-	   (ercode (third currecord)))
+	   (ercode (cl-third currecord)))
       (while (not (= ercode (caar l1)))
 	(setq l1 (cdr l1)))
       (setq msgs (concat aname ".miz:" (number-to-string (car currecord)) ":"
@@ -2530,7 +2531,7 @@ Uses the global tables `cstrnames' and `cstrnrs'."
 (defvar mizartoken2human
   (let ((table (make-vector 256 0))
 	(i 0))
-    (while (< i 256) (aset table i (char-to-string i)) (incf i))
+    (while (< i 256) (aset table i (char-to-string i)) (cl-incf i))
     (aset table 38 "and ")
     (aset table 170 "not ")
     (aset table 157 "for ")
@@ -2593,7 +2594,7 @@ Uses the global tables `cstrnames' and `cstrnrs'."
  ((eq head 'Fraenkel)
   (let ((res "") (lbound mizar-boundnr))
     (while (eq (caar args) 'Typ)
-      (let ((tmp (concat "B" (int-to-string (incf mizar-boundnr))
+      (let ((tmp (concat "B" (int-to-string (cl-incf mizar-boundnr))
 			 " is " (mizar-typ-repr (car args)))))
 	(setq res (if (equal res "") tmp (concat res ", " tmp)))
 	(setq args (cdr args))))
@@ -2648,7 +2649,7 @@ Uses the global tables `cstrnames' and `cstrnrs'."
       (concat "( " (mapconcat 'mizar-frm-repr args " & ") " )" ))
      ((eq head 'For) 
       (let ((res
-	     (concat "for B" (int-to-string (incf mizar-boundnr)) " being"
+	     (concat "for B" (int-to-string (cl-incf mizar-boundnr)) " being"
 		     (mizar-typ-repr (car args)) " holds "
 		     (mizar-frm-repr (cadr args)))))
 	(decf mizar-boundnr)
@@ -2785,7 +2786,7 @@ places."
       (let* ((rec (car bys))
 	     (line (car rec))
 	     (col (cadr rec))
-	     (frm (third rec))
+	     (frm (cl-third rec))
 	     beg eol end)
 	(goto-line line)
 	(end-of-line)
@@ -3645,7 +3646,7 @@ PARAM replaced with space.  Additional parameters can be given by using PARAMS."
 	(put sym1 'mmlquery-redef (cons start (get sym1 'mmlquery-redef)))
 	)))
     (setq allparams (cdr allparams)))
-  (incf dstart)  ;; this believs that end of line follows
+  (cl-incf dstart)  ;; this believs that end of line follows
   (add-text-properties (+ 3 start) dstart
 		       (list 'mouse-face  'highlight ; 'speedbar-selected-face   ; 'highlight ;'face 'underline 
 ;			     'fontified t 
@@ -3860,7 +3861,7 @@ which was killed."
   (if (cadr history-pos)
       (find-file (cadr history-pos))
     (error "Cannot go back because the temporary buffer was deleted.")))
-(goto-char (third history-pos)))
+(goto-char (cl-third history-pos)))
 
 
 (defun mmlquery-previous ()
@@ -3874,7 +3875,7 @@ to be able to return here with `mmlquery-next'."
   (if (<= (ring-length mmlquery-history) (+ 1 mmlquery-history-position))
       (message "No previous definitions visited.")
 
-    (incf mmlquery-history-position)
+    (cl-incf mmlquery-history-position)
     (mmlquery-goto-history-pos (ring-ref mmlquery-history 
 					 mmlquery-history-position))))
 
@@ -5858,7 +5859,7 @@ file suffix to use."
 	 (save-excursion
 	   (goto-char (point-min))
 	   (let* ((mizbuf (car pushback)) (line (cadr pushback)) 
-		  (col (third pushback)) (mizpoint (fourth pushback))
+		  (col (cl-third pushback)) (mizpoint (fourth pushback))
 		  (colstr (int-to-string col)) (colstr1 (int-to-string (- col 1))) 
 		  (linestr (int-to-string line)) (atppos (concat linestr "_" colstr1)) 
 		  (mizpos (concat linestr ":" colstr))
@@ -6078,7 +6079,7 @@ and put the verification message into OUTPUT-BUFFER.
 	 (strlist (split-string res ar4mizar-separator))
 	 (header (car strlist))
 	 (verif-string (second strlist))
-	 (error-string (third strlist)))
+	 (error-string (cl-third strlist)))
 	 (save-excursion
 	   (set-buffer output-buffer)
 	   (insert verif-string))
