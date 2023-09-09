@@ -2093,7 +2093,8 @@ If TABLE is not given, get it with `mizar-get-errors'."
 		   local-map-kword mizar-momm-err-map)))
   (if atab
       (save-excursion
-	(setq lline (goto-line (caar atab)))
+    (setq lline (progn (goto-char (point-min))
+                       (forward-line (1- (caar atab)))))
 	(if (or (and (eq mizar-emacs 'xemacs) (not lline))
 		(and (not (eq mizar-emacs 'xemacs)) (< 0 lline)))
 	    (error "Main buffer and the error file do not agree, run verifier!"))
