@@ -5624,7 +5624,9 @@ This is a flamewar-resolving hack."
 	  (if bold (make-face-bold facename))
 	  (if ital (make-face-italic facename))
 	  (if bold (make-face-bold facename))
-	  (set-face-underline-p facename under)
+      (if (>= emacs-major-version 24)
+	      (set-face-underline facename under)
+	    (set-face-underline-p facename under))
 	  ;; This is needed under Emacs 20 for some reason.
 	  (set facename facename)
 	  ))
