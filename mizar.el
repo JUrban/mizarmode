@@ -2604,7 +2604,7 @@ Uses the global tables `cstrnames' and `cstrnrs'."
     res))
  (t (error "Unexpected Mizar term: %s" (symbol-name head))))))
 
-(defun proper-list-p (object)
+(defun mizar-proper-list-p (object)
   "Determine whether OBJECT is a proper list."
   (cl-labels ((proper (current slow)
              (cond ((null current)       t)
@@ -2615,15 +2615,15 @@ Uses the global tables `cstrnames' and `cstrnrs'."
                    (t                    (proper (cddr current) (cdr slow))))))
     (proper object (cons nil object))))
 
-(defun delete-tree (elt seq)
+(defun mizar-delete-tree (elt seq)
   "Delete element ELT from the sequence SEQ, regarded as a tree."
   (if (atom seq)
       (if (equal seq elt)
 	  nil
 	seq)
-    (if (proper-list-p seq)
+    (if (mizar-proper-list-p seq)
 	(let ((trimmed (delete elt seq)))
-	  (mapcar #'(lambda (s) (delete-tree elt s)) trimmed))
+	  (mapcar #'(lambda (s) (mizar-delete-tree elt s)) trimmed))
       seq)))
 
       
@@ -2670,7 +2670,7 @@ Uses the global tables `cstrnames' and `cstrnrs'."
 		  (while (search-forward "\n" (point-max) t)
                           (replace-match ""))
 		  (xml-parse-region (point-min) (point-max)))))
-    (let ((trimmed (delete-tree "\n" parsed)))
+    (let ((trimmed (mizar-delete-tree "\n" parsed)))
       (mizar-frm-repr (car (cddr (car trimmed))) cstronly))))
 
 (defun frmrepr-abs (frm &optional cstronly)
